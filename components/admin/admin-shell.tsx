@@ -30,9 +30,9 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/admin/commandes", label: "Commandes", icon: Package },
+  { href: "/admin/commandes", label: "Commandes du jour", icon: Package },
   { href: "/admin/livreurs", label: "Livreurs", icon: UserRound },
-  { href: "/admin/menus", label: "Menus", icon: Calendar },
+  { href: "/admin/menus", label: "Menu du jour", icon: Calendar },
   { href: "/admin/produits", label: "Produits", icon: IceCreamCone },
   {
     href: "/admin/site-builder",
@@ -48,7 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/admin/parametres/livraison",
-    label: "Livraison & créneaux",
+    label: "Créneaux livraison",
     icon: Truck,
   },
   {

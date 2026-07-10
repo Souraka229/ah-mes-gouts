@@ -39,16 +39,17 @@ export function getScheduleForDay(
   );
 }
 
-/** Aujourd'hui + 6 jours suivants où le jour est actif. */
+/** Aujourd'hui + N-1 jours suivants où le jour est actif. */
 export function getSelectableDates(
   schedules: DeliveryScheduleConfig[],
   type: FulfillmentType,
   now = new Date(),
+  daysAhead = 7,
 ): Date[] {
   const dates: Date[] = [];
   const base = startOfDay(now);
 
-  for (let offset = 0; offset < 7; offset++) {
+  for (let offset = 0; offset < daysAhead; offset++) {
     const date = new Date(base);
     date.setDate(base.getDate() + offset);
     const schedule = getScheduleForDay(schedules, type, date.getDay());

@@ -19,9 +19,16 @@ export type DeliveryScheduleConfig = {
   isActive: boolean;
 };
 
+export type DeliveryOptions = {
+  maxOrdersPerSlot: number;
+  bookingDaysAhead: number;
+  pickupAddress: string;
+};
+
 export type DeliveryConfig = {
   zones: DeliveryZoneConfig[];
   schedules: DeliveryScheduleConfig[];
+  options: DeliveryOptions;
 };
 
 export type TimeSlotOption = {

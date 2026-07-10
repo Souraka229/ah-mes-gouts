@@ -53,6 +53,15 @@ model DeliverySchedule {
   isActive     Boolean @default(true)
 }
 
+/// Réglages globaux livraison (créneaux, capacité) — édités par l'admin.
+model DeliveryOptions {
+  id               String   @id @default("default")
+  maxOrdersPerSlot Int      @default(5)
+  bookingDaysAhead Int      @default(7)
+  pickupAddress    String   @default("Gift & ENTREMETS — Cotonou, Bénin")
+  updatedAt        DateTime @updatedAt
+}
+
 model Driver {
   id          String   @id @default(cuid())
   name        String

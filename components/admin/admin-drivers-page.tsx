@@ -1,10 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Loader2, Plus, Truck, UserX } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Loader2,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Truck,
+  UserX,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  buildDriverPortalUrl,
+  buildDriverWelcomeMessage,
+  buildWhatsAppShareUrl,
+} from "@/lib/driver/portal-links";
 import { cn } from "@/lib/utils";
 
 type DriverRow = {
@@ -14,6 +28,7 @@ type DriverRow = {
   accessToken: string;
   isActive: boolean;
   createdAt: string;
+  deliveriesToday: number;
 };
 
 export function AdminDriversPage() {
@@ -23,6 +38,7 @@ export function AdminDriversPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,21 +59,25 @@ export function AdminDriversPage() {
     void load();
   }, [load]);
 
-  const portalUrl = (token: string) => {
-    if (typeof window === "undefined") return `/livreur/${token}`;
-    return `${window.location.origin}/livreur/${token}`;
-  };
+  const portalUrl = (token: string) => buildDriverPortalUrl(token);
 
   const copyLink = async (driver: DriverRow) => {
     const url = portalUrl(driver.accessToken);
     try {
       await navigator.clipboard.writeText(url);
       setCopiedId(driver.id);
-      toast.success("Lien copié dans le presse-papiers");
+      toast.success("Lien copié");
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      toast.error("Copie impossible — copiez manuellement");
+      toast.error("Copie impossible");
     }
+  };
+
+  const sendWhatsApp = (driver: DriverRow) => {
+    const url = portalUrl(driver.accessToken);
+    const message = buildDriverWelcomeMessage(driver.name, url);
+    const waUrl = buildWhatsAppShareUrl(driver.phone, message);
+    window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
   const createDriver = async (e: React.FormEvent) => {
@@ -73,12 +93,15 @@ export function AdminDriversPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
       });
-      const data = (await res.json()) as { driver?: DriverRow; error?: string };
+      const data = (await res.json()) as {
+        driver?: DriverRow;
+        error?: string;
+      };
       if (!res.ok) throw new Error(data.error ?? "Erreur");
       setDrivers((prev) => [data.driver!, ...prev]);
       setName("");
       setPhone("");
-      toast.success("Livreur créé — copiez son lien portail");
+      toast.success("Livreur créé — envoyez-lui son lien WhatsApp");
       void copyLink(data.driver!);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Création impossible");
@@ -88,6 +111,7 @@ export function AdminDriversPage() {
   };
 
   const toggleActive = async (driver: DriverRow) => {
+    setBusyId(driver.id);
     const next = !driver.isActive;
     const res = await fetch(`/api/admin/drivers/${driver.id}`, {
       method: "PATCH",
@@ -96,6 +120,7 @@ export function AdminDriversPage() {
     });
     if (!res.ok) {
       toast.error("Modification impossible");
+      setBusyId(null);
       return;
     }
     const data = (await res.json()) as { driver: DriverRow };
@@ -103,6 +128,35 @@ export function AdminDriversPage() {
       prev.map((d) => (d.id === driver.id ? data.driver : d)),
     );
     toast.success(next ? "Livreur activé" : "Livreur désactivé");
+    setBusyId(null);
+  };
+
+  const regenerateLink = async (driver: DriverRow) => {
+    if (
+      !window.confirm(
+        `Régénérer le lien de ${driver.name} ? L'ancien lien ne fonctionnera plus.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(driver.id);
+    const res = await fetch(`/api/admin/drivers/${driver.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ regenerateToken: true }),
+    });
+    if (!res.ok) {
+      toast.error("Impossible de régénérer le lien");
+      setBusyId(null);
+      return;
+    }
+    const data = (await res.json()) as { driver: DriverRow };
+    setDrivers((prev) =>
+      prev.map((d) => (d.id === driver.id ? data.driver : d)),
+    );
+    toast.success("Nouveau lien généré — renvoyez-le au livreur");
+    void copyLink(data.driver);
+    setBusyId(null);
   };
 
   return (
@@ -111,43 +165,50 @@ export function AdminDriversPage() {
         <h1 className="font-display text-3xl font-semibold text-primary">
           Livreurs
         </h1>
-        <p className="mt-2 font-body text-sm text-muted-foreground">
-          Créez un livreur, copiez son lien personnel — il voit uniquement ses
-          livraisons du jour sur mobile.
+        <p className="mt-2 max-w-2xl font-body text-sm text-muted-foreground">
+          Ajoutez un livreur avec son nom et son téléphone — aucun mot de passe.
+          Partagez son lien personnel sur WhatsApp : il voit uniquement ses
+          livraisons du jour.
         </p>
       </header>
 
       <form
         onSubmit={createDriver}
-        className="rounded-2xl border border-border bg-card p-6 space-y-4"
+        className="rounded-2xl border-2 border-accent/30 bg-card p-6 space-y-4"
       >
         <h2 className="font-display text-lg font-semibold text-primary">
-          Ajouter un livreur
+          Nouveau livreur
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="font-body text-sm font-medium">Nom complet</label>
+            <label className="font-body text-sm font-medium">
+              Nom complet <span className="text-destructive">*</span>
+            </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Kossi Mensah"
-              className="mt-1 w-full rounded-xl border border-border bg-bg px-3 py-2.5 font-body text-sm"
+              className="mt-1 w-full rounded-xl border border-border bg-bg px-3 py-3 font-body text-base"
             />
           </div>
           <div>
-            <label className="font-body text-sm font-medium">Téléphone</label>
+            <label className="font-body text-sm font-medium">
+              Téléphone <span className="text-destructive">*</span>
+            </label>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+229 97 00 00 00"
-              className="mt-1 w-full rounded-xl border border-border bg-bg px-3 py-2.5 font-body text-sm"
+              type="tel"
+              className="mt-1 w-full rounded-xl border border-border bg-bg px-3 py-3 font-body text-base"
             />
           </div>
         </div>
         <Button
           type="submit"
           disabled={creating}
-          className="cursor-pointer gap-2"
+          size="lg"
+          className="cursor-pointer gap-2 bg-accent text-text hover:bg-accent/90"
         >
           {creating ? (
             <Loader2 className="size-4 animate-spin" />
@@ -167,61 +228,112 @@ export function AdminDriversPage() {
         <div className="rounded-2xl border border-dashed border-border px-6 py-12 text-center">
           <Truck className="mx-auto size-10 text-muted-foreground/50" />
           <p className="mt-4 font-body text-sm text-muted-foreground">
-            Aucun livreur. Créez-en un pour assigner les commandes « Prête ».
+            Aucun livreur pour l&apos;instant.
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
-          {drivers.map((driver) => (
-            <li
-              key={driver.id}
-              className={cn(
-                "rounded-2xl border bg-card p-5",
-                driver.isActive ? "border-border" : "border-dashed opacity-70",
-              )}
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-display text-lg font-semibold text-primary">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <table className="w-full min-w-[40rem] font-body text-sm">
+            <thead>
+              <tr className="border-b border-border bg-bg/80 text-left text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Livreur</th>
+                <th className="px-4 py-3 font-medium">Téléphone</th>
+                <th className="px-4 py-3 font-medium text-center">
+                  Aujourd&apos;hui
+                </th>
+                <th className="px-4 py-3 font-medium">Statut</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {drivers.map((driver) => (
+                <tr
+                  key={driver.id}
+                  className={cn(
+                    "border-b border-border/60 last:border-0",
+                    !driver.isActive && "opacity-60",
+                  )}
+                >
+                  <td className="px-4 py-4 font-medium text-primary">
                     {driver.name}
-                  </p>
-                  <p className="mt-1 font-body text-sm text-muted-foreground">
+                  </td>
+                  <td className="px-4 py-4 text-muted-foreground">
                     {driver.phone}
-                  </p>
-                  <p className="mt-2 break-all font-mono text-xs text-muted-foreground">
-                    {portalUrl(driver.accessToken)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer gap-2"
-                    onClick={() => void copyLink(driver)}
-                  >
-                    {copiedId === driver.id ? (
-                      <Check className="size-4 text-success" />
-                    ) : (
-                      <Copy className="size-4" />
-                    )}
-                    Copier le lien
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={driver.isActive ? "outline" : "default"}
-                    size="sm"
-                    className="cursor-pointer gap-2"
-                    onClick={() => void toggleActive(driver)}
-                  >
-                    <UserX className="size-4" />
-                    {driver.isActive ? "Désactiver" : "Activer"}
-                  </Button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  </td>
+                  <td className="px-4 py-4 text-center">
+                    <span className="inline-flex min-w-8 justify-center rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                      {driver.deliveriesToday}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-xs font-semibold",
+                        driver.isActive
+                          ? "bg-success/15 text-success"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {driver.isActive ? "Actif" : "Inactif"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer gap-1.5"
+                        disabled={busyId === driver.id}
+                        onClick={() => void copyLink(driver)}
+                      >
+                        {copiedId === driver.id ? (
+                          <Check className="size-3.5 text-success" />
+                        ) : (
+                          <Copy className="size-3.5" />
+                        )}
+                        Copier lien
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="cursor-pointer gap-1.5 bg-[#25D366] text-white hover:bg-[#20bd5a]"
+                        disabled={busyId === driver.id || !driver.isActive}
+                        onClick={() => sendWhatsApp(driver)}
+                      >
+                        <MessageCircle className="size-3.5" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer gap-1.5"
+                        disabled={busyId === driver.id}
+                        onClick={() => void toggleActive(driver)}
+                      >
+                        <UserX className="size-3.5" />
+                        {driver.isActive ? "Désactiver" : "Activer"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer gap-1.5 text-muted-foreground"
+                        disabled={busyId === driver.id}
+                        title="Si le téléphone est perdu"
+                        onClick={() => void regenerateLink(driver)}
+                      >
+                        <RefreshCw className="size-3.5" />
+                        Nouveau lien
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

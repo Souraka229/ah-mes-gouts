@@ -88,6 +88,64 @@ export async function setDriverActive(
   }
 }
 
+export async function regenerateDriverToken(
+  driverId: string,
+): Promise<DriverRecord | undefined> {
+  const prisma = getPrisma();
+  try {
+    const row = await prisma.driver.update({
+      where: { id: driverId },
+      data: { accessToken: randomUUID() },
+    });
+    return mapDriver(row);
+  } catch {
+    return undefined;
+  }
+}
+
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function endOfToday(): Date {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+/** Nombre de livraisons assignées au livreur pour aujourd'hui (hors annulées). */
+export async function countDriverDeliveriesToday(
+  driverId: string,
+): Promise<number> {
+  const prisma = getPrisma();
+  return prisma.order.count({
+    where: {
+      driverId,
+      fulfillmentType: "delivery",
+      scheduledSlotStart: {
+        gte: startOfToday(),
+        lte: endOfToday(),
+      },
+      status: { not: "ANNULEE" },
+    },
+  });
+}
+
+export async function listDriversWithTodayCounts(): Promise<
+  Array<DriverRecord & { deliveriesToday: number }>
+> {
+  const drivers = await listDrivers();
+  const counts = await Promise.all(
+    drivers.map((d) => countDriverDeliveriesToday(d.id)),
+  );
+  return drivers.map((d, i) => ({
+    ...d,
+    deliveriesToday: counts[i] ?? 0,
+  }));
+}
+
 export function getDriverPortalPath(accessToken: string): string {
   return `/livreur/${accessToken}`;
 }

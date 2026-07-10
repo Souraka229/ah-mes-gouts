@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type {
+  DeliveryOptions,
   DeliveryScheduleConfig,
   DeliveryZoneConfig,
 } from "@/lib/delivery/types";
@@ -10,11 +11,19 @@ import type {
 type DeliveryConfigResponse = {
   zones: DeliveryZoneConfig[];
   schedules: DeliveryScheduleConfig[];
+  options: DeliveryOptions;
+};
+
+const DEFAULT_OPTIONS: DeliveryOptions = {
+  maxOrdersPerSlot: 5,
+  bookingDaysAhead: 7,
+  pickupAddress: "Gift & ENTREMETS — Cotonou, Bénin",
 };
 
 export function useDeliveryConfig() {
   const [zones, setZones] = useState<DeliveryZoneConfig[]>([]);
   const [schedules, setSchedules] = useState<DeliveryScheduleConfig[]>([]);
+  const [options, setOptions] = useState<DeliveryOptions>(DEFAULT_OPTIONS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +36,7 @@ export function useDeliveryConfig() {
       const data = (await response.json()) as DeliveryConfigResponse;
       setZones(data.zones);
       setSchedules(data.schedules);
+      setOptions(data.options ?? DEFAULT_OPTIONS);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur réseau");
     } finally {
@@ -38,7 +48,7 @@ export function useDeliveryConfig() {
     void refresh();
   }, [refresh]);
 
-  return { zones, schedules, loading, error, refresh };
+  return { zones, schedules, options, loading, error, refresh };
 }
 
 export function getZoneCost(

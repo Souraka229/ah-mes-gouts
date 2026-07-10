@@ -1,29 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Package } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Loader2, Package, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
-import { getSlotsForDate } from "@/lib/delivery/slots";
-import { useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
+import { OrderBoardCard } from "@/components/admin/order-board-card";
+import {
+  BOARD_TAB_LABELS,
+  STATUS_DOT_CLASS,
+  type OrderBoardTab,
+  clientLabel,
+  countByTab,
+  filterOrdersByTab,
+} from "@/lib/admin/order-board";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { formatPrice } from "@/lib/format";
 import {
   ORDER_STATUS_LABELS,
-  ORDER_STATUS_FLOW,
   type OrderStatus,
   type SavedOrder,
 } from "@/types/order";
 import { cn } from "@/lib/utils";
-
-const STATUS_SHORTCUTS: Partial<Record<string, OrderStatus>> = {
-  p: "preparation",
-  r: "prete",
-  l: "en_livraison",
-  v: "livree",
-};
 
 type DriverOption = {
   id: string;
@@ -31,14 +29,23 @@ type DriverOption = {
   isActive: boolean;
 };
 
+const TAB_ORDER: OrderBoardTab[] = ["nouvelles", "preparation", "livraison"];
+
+const LIVRAISON_SORT: Record<string, number> = {
+  prete: 0,
+  en_livraison: 1,
+  livree: 2,
+};
+
 export function AdminOrdersPage() {
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [slotFilter, setSlotFilter] = useState<string | "all">("all");
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
-  const { schedules } = useDeliveryConfig();
+  const [activeTab, setActiveTab] = useState<OrderBoardTab>("nouvelles");
+  const [pendingDriver, setPendingDriver] = useState<Record<string, string>>(
+    {},
+  );
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,43 +88,50 @@ export function AdminOrdersPage() {
     return d;
   }, []);
 
-  const todaySlots = useMemo(() => {
-    const delivery = getSlotsForDate(schedules, "delivery", today);
-    const pickup = getSlotsForDate(schedules, "pickup", today);
-    const merged = [...delivery, ...pickup];
-    const unique = new Map<string, string>();
-    for (const slot of merged) unique.set(slot.slotKey, slot.label);
-    return Array.from(unique.entries()).map(([key, label]) => ({ key, label }));
-  }, [schedules, today]);
-
   const todayOrders = useMemo(
     () =>
-      orders.filter((order) => {
-        if (!order.scheduledSlotStart) return false;
-        const start = new Date(order.scheduledSlotStart);
-        return start.toDateString() === today.toDateString();
-      }),
+      orders
+        .filter((order) => {
+          if (order.status === "annulee") return false;
+          if (!order.scheduledSlotStart) return false;
+          const start = new Date(order.scheduledSlotStart);
+          return start.toDateString() === today.toDateString();
+        })
+        .sort((a, b) => {
+          const ta = a.scheduledSlotStart
+            ? new Date(a.scheduledSlotStart).getTime()
+            : 0;
+          const tb = b.scheduledSlotStart
+            ? new Date(b.scheduledSlotStart).getTime()
+            : 0;
+          return ta - tb;
+        }),
     [orders, today],
   );
 
-  const slotCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const order of todayOrders) {
-      if (!order.scheduledSlotStart) continue;
-      const key = `${order.fulfillmentType ?? order.mode}:${order.scheduledSlotStart}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    return counts;
-  }, [todayOrders]);
+  const tabCounts = useMemo(() => countByTab(todayOrders), [todayOrders]);
 
-  const filteredOrders =
-    slotFilter === "all"
-      ? todayOrders
-      : todayOrders.filter((order) => {
-          if (!order.scheduledSlotStart) return false;
-          const key = `${order.fulfillmentType ?? order.mode}:${order.scheduledSlotStart}`;
-          return key === slotFilter;
-        });
+  const tabOrders = useMemo(() => {
+    const filtered = filterOrdersByTab(todayOrders, activeTab);
+    if (activeTab !== "livraison") return filtered;
+    return [...filtered].sort(
+      (a, b) =>
+        (LIVRAISON_SORT[a.status] ?? 9) - (LIVRAISON_SORT[b.status] ?? 9),
+    );
+  }, [todayOrders, activeTab]);
+
+  const cancelledToday = useMemo(
+    () =>
+      orders.filter((order) => {
+        if (order.status !== "annulee") return false;
+        if (!order.scheduledSlotStart) return false;
+        return (
+          new Date(order.scheduledSlotStart).toDateString() ===
+          today.toDateString()
+        );
+      }),
+    [orders, today],
+  );
 
   const updateStatus = useCallback(
     async (orderId: string, status: OrderStatus, previous: OrderStatus) => {
@@ -133,7 +147,7 @@ export function AdminOrdersPage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
       );
-      toast.success(`Statut → ${ORDER_STATUS_LABELS[status]}`, {
+      toast.success(`→ ${ORDER_STATUS_LABELS[status]}`, {
         action: {
           label: "Annuler",
           onClick: () => {
@@ -147,7 +161,11 @@ export function AdminOrdersPage() {
   );
 
   const assignDriver = useCallback(
-    async (orderId: string, driverId: string | null, previous: string | null) => {
+    async (
+      orderId: string,
+      driverId: string | null,
+      previous: string | null,
+    ) => {
       const res = await fetch(`/api/admin/orders/${orderId}/driver`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -167,208 +185,177 @@ export function AdminOrdersPage() {
         data.order.driverName ??
         "livreur";
       toast.success(driverId ? `Assigné à ${name}` : "Livreur retiré");
-      if (previous && previous !== driverId) {
-        // no undo for driver assign — keep simple
-      }
+      setPendingDriver((prev) => {
+        const copy = { ...prev };
+        delete copy[orderId];
+        return copy;
+      });
+      void previous;
     },
     [drivers],
   );
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) {
-        return;
-      }
-      if (filteredOrders.length === 0) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, filteredOrders.length - 1));
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-      }
-
-      const shortcut = STATUS_SHORTCUTS[e.key.toLowerCase()];
-      if (shortcut) {
-        const order = filteredOrders[selectedIndex];
-        if (order) {
-          e.preventDefault();
-          void updateStatus(order.id, shortcut, order.status);
-        }
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [filteredOrders, selectedIndex, updateStatus]);
+  const scrollToOrder = (orderId: string, tab: OrderBoardTab) => {
+    setActiveTab(tab);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`order-${orderId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <header>
-        <h1 className="font-display text-3xl font-semibold text-primary">
-          Commandes du jour
-        </h1>
-        <p className="mt-2 font-body text-sm text-muted-foreground">
-          {today.toLocaleDateString("fr-FR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
-          {" — "}statuts et livreurs mis à jour en temps réel
-        </p>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary">
+            Commandes
+          </h1>
+          <p className="mt-1 font-body text-sm text-muted-foreground">
+            {today.toLocaleDateString("fr-FR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="cursor-pointer gap-2"
+          onClick={() => void load()}
+        >
+          <RefreshCw className="size-4" aria-hidden />
+          Actualiser
+        </Button>
       </header>
 
-      <section className="rounded-2xl border border-border bg-card p-6">
-        <h2 className="font-display text-xl font-semibold text-primary">
-          Filtre par créneau (aujourd&apos;hui)
-        </h2>
-        <div className="mt-4 flex flex-wrap gap-2">
+      {todayOrders.length > 0 && (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Aujourd&apos;hui
+          </h2>
+          <ul className="mt-3 divide-y divide-border">
+            {todayOrders.map((order) => (
+              <li key={order.id}>
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer items-center gap-3 py-2.5 text-left font-body text-sm hover:bg-muted/40"
+                  onClick={() => {
+                    const tab =
+                      order.status === "recue" ||
+                      order.status === "paiement_confirme"
+                        ? "nouvelles"
+                        : order.status === "preparation"
+                          ? "preparation"
+                          : "livraison";
+                    scrollToOrder(order.id, tab);
+                  }}
+                >
+                  <span
+                    className={cn(
+                      "size-2.5 shrink-0 rounded-full",
+                      STATUS_DOT_CLASS[order.status],
+                    )}
+                    aria-hidden
+                  />
+                  <span className="font-medium text-primary">{order.id}</span>
+                  <span className="truncate text-text">
+                    {clientLabel(order)}
+                  </span>
+                  <span className="ml-auto shrink-0 font-semibold text-text">
+                    {formatPrice(order.total)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div
+        className="flex gap-1 rounded-2xl border border-border bg-muted/30 p-1"
+        role="tablist"
+        aria-label="Vues commandes"
+      >
+        {TAB_ORDER.map((tab) => (
           <button
+            key={tab}
             type="button"
-            onClick={() => setSlotFilter("all")}
+            role="tab"
+            aria-selected={activeTab === tab}
             className={cn(
-              "min-h-11 cursor-pointer rounded-2xl border px-4 py-2 font-body text-sm font-medium",
-              slotFilter === "all"
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-bg hover:border-primary/40",
+              "min-h-11 flex-1 cursor-pointer rounded-xl px-3 py-2 font-body text-sm font-medium transition-colors",
+              activeTab === tab
+                ? "bg-card text-primary shadow-sm"
+                : "text-muted-foreground hover:text-text",
             )}
+            onClick={() => setActiveTab(tab)}
           >
-            Tous ({todayOrders.length})
+            {BOARD_TAB_LABELS[tab]}
+            <span className="ml-1.5 text-xs opacity-70">({tabCounts[tab]})</span>
           </button>
-          {todaySlots.map((slot) => {
-            const count = slotCounts.get(slot.key) ?? 0;
-            return (
-              <button
-                key={slot.key}
-                type="button"
-                onClick={() => setSlotFilter(slot.key)}
-                className={cn(
-                  "min-h-11 cursor-pointer rounded-2xl border px-4 py-2 font-body text-sm font-medium",
-                  slotFilter === slot.key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-bg hover:border-primary/40",
-                )}
-              >
-                {slot.label} ({count})
-              </button>
-            );
-          })}
-        </div>
-      </section>
+        ))}
+      </div>
 
       {loading ? (
         <div className="flex items-center gap-2 font-body text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden />
-          Chargement des commandes...
+          Chargement…
         </div>
-      ) : filteredOrders.length === 0 ? (
+      ) : tabOrders.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
           <Package className="mx-auto size-10 text-muted-foreground/50" />
           <p className="mt-4 font-body text-sm text-muted-foreground">
-            Aucune commande pour ce créneau aujourd&apos;hui. Les nouvelles
-            commandes apparaîtront ici automatiquement.
+            Aucune commande dans « {BOARD_TAB_LABELS[activeTab]} » pour
+            aujourd&apos;hui.
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-4 cursor-pointer"
-            onClick={() => void load()}
-          >
-            Actualiser
-          </Button>
         </div>
       ) : (
-        <div ref={listRef} className="space-y-3">
-          {filteredOrders.map((order, index) => (
-            <article
-              key={order.id}
-              className={cn(
-                "rounded-2xl border bg-card p-5 transition-colors",
-                index === selectedIndex
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-border",
-              )}
-              onClick={() => setSelectedIndex(index)}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="font-display text-lg font-semibold text-primary">
-                    {order.id}
-                  </p>
-                  <p className="mt-1 font-body text-sm text-muted-foreground">
-                    {order.client.firstName} {order.client.lastName} —{" "}
-                    {order.client.phone}
-                  </p>
-                  <p className="mt-2 font-body text-sm text-text">
-                    {formatFulfillmentSummary(order)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <p className="font-body text-sm font-semibold text-text">
-                    {formatPrice(order.total)}
-                  </p>
-                  <select
-                    value={order.status}
-                    title="Changer le statut de la commande"
-                    className="cursor-pointer rounded-xl border border-border bg-bg px-3 py-2 font-body text-sm"
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      const next = e.target.value as OrderStatus;
-                      if (next !== order.status) {
-                        void updateStatus(order.id, next, order.status);
-                      }
-                    }}
-                  >
-                    {ORDER_STATUS_FLOW.map((s) => (
-                      <option key={s} value={s}>
-                        {ORDER_STATUS_LABELS[s]}
-                      </option>
-                    ))}
-                    <option value="annulee">{ORDER_STATUS_LABELS.annulee}</option>
-                  </select>
-                  {(order.status === "prete" || order.driverId) && (
-                    <select
-                      value={order.driverId ?? ""}
-                      title="Assigner un livreur"
-                      className="cursor-pointer rounded-xl border border-border bg-bg px-3 py-2 font-body text-sm"
-                      onClick={(e) => e.stopPropagation()}
-                      disabled={order.status !== "prete" && !order.driverId}
-                      onChange={(e) => {
-                        const next = e.target.value || null;
-                        if (next !== (order.driverId ?? null)) {
-                          void assignDriver(
-                            order.id,
-                            next,
-                            order.driverId ?? null,
-                          );
-                        }
-                      }}
-                    >
-                      <option value="">
-                        {order.driverName
-                          ? `Livreur : ${order.driverName}`
-                          : "— Livreur —"}
-                      </option>
-                      {drivers.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              </div>
-            </article>
+        <div className="space-y-4">
+          {tabOrders.map((order) => (
+            <div key={order.id} id={`order-${order.id}`}>
+              <OrderBoardCard
+                order={order}
+                drivers={drivers}
+                pendingDriverId={pendingDriver[order.id] ?? ""}
+                expanded={expandedId === order.id}
+                onToggleExpand={() =>
+                  setExpandedId((id) => (id === order.id ? null : order.id))
+                }
+                onStatusChange={updateStatus}
+                onAssignDriver={assignDriver}
+                onPendingDriverChange={(orderId, driverId) =>
+                  setPendingDriver((prev) => ({
+                    ...prev,
+                    [orderId]: driverId,
+                  }))
+                }
+              />
+            </div>
           ))}
         </div>
       )}
 
-      {filteredOrders.length > 0 && (
-        <p className="text-center font-body text-xs text-muted-foreground">
-          ↑↓ naviguer · P préparation · R prête · L en livraison · V livrée
-        </p>
+      {cancelledToday.length > 0 && (
+        <section className="rounded-2xl border border-red-200 bg-red-50/50 p-4">
+          <h2 className="font-display text-sm font-semibold text-red-800">
+            Annulées aujourd&apos;hui ({cancelledToday.length})
+          </h2>
+          <ul className="mt-2 space-y-1 font-body text-sm text-red-900/80">
+            {cancelledToday.map((o) => (
+              <li key={o.id}>
+                {o.id} — {clientLabel(o)} — {formatPrice(o.total)}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
+
+      <p className="text-center font-body text-xs text-muted-foreground">
+        🟡 Nouvelle · 🔵 Préparation · 🟣 Prête · 🟠 Livraison · 🟢 Livrée
+      </p>
     </div>
   );
 }

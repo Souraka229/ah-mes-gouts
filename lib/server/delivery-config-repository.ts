@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 
 import type {
   DeliveryConfig,
+  DeliveryOptions,
   DeliveryScheduleConfig,
   DeliveryZoneConfig,
   FulfillmentType,
@@ -10,6 +11,14 @@ import { getPrisma } from "@/lib/prisma";
 
 declare global {
   var __amgDeliveryConfig: DeliveryConfig | undefined;
+}
+
+function defaultOptions(): DeliveryOptions {
+  return {
+    maxOrdersPerSlot: 5,
+    bookingDaysAhead: 7,
+    pickupAddress: "Gift & ENTREMETS — Cotonou, Bénin",
+  };
 }
 
 function nowIso(): string {
@@ -79,6 +88,7 @@ function createDefaultConfig(): DeliveryConfig {
       ...defaultSchedulesForType("delivery"),
       ...defaultSchedulesForType("pickup"),
     ],
+    options: defaultOptions(),
   };
 }
 
@@ -120,11 +130,41 @@ function toScheduleConfig(row: {
   };
 }
 
+async function readOptionsFromDb(): Promise<DeliveryOptions | null> {
+  const prisma = getPrisma();
+  const row = await prisma.deliveryOptions.findUnique({ where: { id: "default" } });
+  if (!row) return null;
+  return {
+    maxOrdersPerSlot: row.maxOrdersPerSlot,
+    bookingDaysAhead: row.bookingDaysAhead,
+    pickupAddress: row.pickupAddress,
+  };
+}
+
+async function writeOptionsToDb(options: DeliveryOptions): Promise<void> {
+  const prisma = getPrisma();
+  await prisma.deliveryOptions.upsert({
+    where: { id: "default" },
+    create: {
+      id: "default",
+      maxOrdersPerSlot: options.maxOrdersPerSlot,
+      bookingDaysAhead: options.bookingDaysAhead,
+      pickupAddress: options.pickupAddress,
+    },
+    update: {
+      maxOrdersPerSlot: options.maxOrdersPerSlot,
+      bookingDaysAhead: options.bookingDaysAhead,
+      pickupAddress: options.pickupAddress,
+    },
+  });
+}
+
 async function readConfigFromDb(): Promise<DeliveryConfig | null> {
   const prisma = getPrisma();
-  const [zones, schedules] = await Promise.all([
+  const [zones, schedules, options] = await Promise.all([
     prisma.deliveryZone.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.deliverySchedule.findMany(),
+    readOptionsFromDb(),
   ]);
 
   if (zones.length === 0 && schedules.length === 0) return null;
@@ -132,6 +172,7 @@ async function readConfigFromDb(): Promise<DeliveryConfig | null> {
   return {
     zones: zones.map(toZoneConfig),
     schedules: schedules.map(toScheduleConfig),
+    options: options ?? defaultOptions(),
   };
 }
 
@@ -169,6 +210,8 @@ async function writeConfigToDb(config: DeliveryConfig): Promise<void> {
       })),
     });
   }
+
+  await writeOptionsToDb(config.options ?? defaultOptions());
 }
 
 export async function getDeliveryConfig(): Promise<DeliveryConfig> {
@@ -190,9 +233,13 @@ export async function getDeliveryConfig(): Promise<DeliveryConfig> {
 export async function saveDeliveryConfig(
   config: DeliveryConfig,
 ): Promise<DeliveryConfig> {
-  globalThis.__amgDeliveryConfig = config;
-  await writeConfigToDb(config);
-  return config;
+  const withOptions: DeliveryConfig = {
+    ...config,
+    options: config.options ?? defaultOptions(),
+  };
+  globalThis.__amgDeliveryConfig = withOptions;
+  await writeConfigToDb(withOptions);
+  return withOptions;
 }
 
 export async function getActiveZones(): Promise<DeliveryZoneConfig[]> {

@@ -4,7 +4,6 @@ import {
   Calendar,
   IceCreamCone,
   Package,
-  Sparkles,
   Truck,
 } from "lucide-react";
 
@@ -151,22 +150,22 @@ export async function AdminDashboard() {
           desc="Prix & dispo"
         />
         <QuickLink
+          href="/admin/livreurs"
+          icon={Truck}
+          title="Livreurs"
+          desc="Lien WhatsApp · affectation"
+        />
+        <QuickLink
           href="/admin/parametres/livraison"
           icon={Truck}
-          title="Livraison"
-          desc="Zones & horaires"
+          title="Créneaux"
+          desc="Horaires & zones"
         />
         <QuickLink
           href="/admin/assistant"
           icon={Bot}
           title="Assistant IA"
           desc="Actions rapides"
-        />
-        <QuickLink
-          href="/admin/donnees"
-          icon={Sparkles}
-          title="Données brutes"
-          desc="JSON serveur"
         />
       </div>
 

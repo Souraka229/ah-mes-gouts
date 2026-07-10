@@ -16,6 +16,7 @@ export async function GET() {
     {
       zones: activeZones,
       schedules: config.schedules,
+      options: config.options,
     },
     {
       headers: {

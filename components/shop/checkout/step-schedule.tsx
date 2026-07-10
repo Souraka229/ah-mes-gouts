@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { PICKUP_ADDRESS } from "@/lib/delivery/constants";
 import {
   formatSlotDate,
   getSelectableDates,
@@ -22,7 +21,7 @@ export function StepSchedule() {
   const setScheduledSlot = useCheckoutStore((state) => state.setScheduledSlot);
   const setStep = useCheckoutStore((state) => state.setStep);
 
-  const { schedules, loading } = useDeliveryConfig();
+  const { schedules, options, loading } = useDeliveryConfig();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slotError, setSlotError] = useState<string | null>(null);
 
@@ -30,8 +29,16 @@ export function StepSchedule() {
   const now = useMemo(() => new Date(), []);
 
   const selectableDates = useMemo(
-    () => (mode ? getSelectableDates(schedules, fulfillmentType, now) : []),
-    [schedules, fulfillmentType, mode, now],
+    () =>
+      mode
+        ? getSelectableDates(
+            schedules,
+            fulfillmentType,
+            now,
+            options.bookingDaysAhead,
+          )
+        : [],
+    [schedules, fulfillmentType, mode, now, options.bookingDaysAhead],
   );
 
   useEffect(() => {
@@ -80,7 +87,7 @@ export function StepSchedule() {
           <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
           <div>
             <p className="font-medium text-primary">Adresse de retrait</p>
-            <p className="mt-1 text-muted-foreground">{PICKUP_ADDRESS}</p>
+            <p className="mt-1 text-muted-foreground">{options.pickupAddress}</p>
           </div>
         </div>
       )}
@@ -91,7 +98,7 @@ export function StepSchedule() {
           Date
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {Array.from({ length: 7 }, (_, offset) => {
+          {Array.from({ length: options.bookingDaysAhead }, (_, offset) => {
             const date = new Date(now);
             date.setDate(now.getDate() + offset);
             date.setHours(0, 0, 0, 0);

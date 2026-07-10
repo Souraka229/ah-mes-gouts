@@ -108,7 +108,7 @@ export async function POST(request: Request) {
 
     const slotKey = buildSlotKey(fulfillmentType, slotStart);
 
-    if (!isSlotAvailable(slotKey)) {
+    if (!(await isSlotAvailable(slotKey))) {
       const nextSlot = await findNextAvailableSlot(fulfillmentType, slotStart);
       return NextResponse.json(
         {
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       };
     }
 
-    if (!reserveSlot(slotKey)) {
+    if (!(await reserveSlot(slotKey))) {
       const nextSlot = await findNextAvailableSlot(fulfillmentType, slotStart);
       return NextResponse.json(
         {

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import {
   createDriver,
-  listDrivers,
+  listDriversWithTodayCounts,
 } from "@/lib/server/driver-repository";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export async function GET() {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const drivers = await listDrivers();
+  const drivers = await listDriversWithTodayCounts();
   return NextResponse.json({ drivers });
 }
 
@@ -40,7 +40,10 @@ export async function POST(request: Request) {
 
   try {
     const driver = await createDriver({ name, phone });
-    return NextResponse.json({ driver }, { status: 201 });
+    return NextResponse.json(
+      { driver: { ...driver, deliveriesToday: 0 } },
+      { status: 201 },
+    );
   } catch {
     return NextResponse.json(
       { error: "Impossible de créer le livreur (téléphone déjà utilisé ?)." },

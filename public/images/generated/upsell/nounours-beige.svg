@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#FAF7F5"/>
+  <circle cx="400" cy="400" r="280" fill="#EDE6E0" stroke="#C9A96E" stroke-width="2" opacity="0.9"/>
+  <ellipse cx="400" cy="420" rx="120" ry="130" fill="#D9CEC6"/><circle cx="340" cy="360" r="45" fill="#D9CEC6"/><circle cx="460" cy="360" r="45" fill="#D9CEC6"/>
+  <text x="400" y="620" text-anchor="middle" font-family="Georgia,serif" font-size="80" fill="#5C3D4A">🧸</text>
+  <text x="400" y="700" text-anchor="middle" font-family="system-ui,sans-serif" font-size="22" font-weight="600" fill="#5C3D4A">Nounours</text>
+</svg>

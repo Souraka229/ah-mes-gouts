@@ -1,0 +1,199 @@
+// Schéma Prisma — Ah Mes Goûts (backend NestJS à brancher)
+// Les champs expéditeur (client_*) restent toujours en base pour l'admin,
+// même si sender_visible = false (anonymat = destinataire uniquement).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrderStatus {
+  RECUE
+  PAIEMENT_CONFIRME
+  PREPARATION
+  PRETE
+  EN_LIVRAISON
+  LIVREE
+  ANNULEE
+}
+
+enum ReceptionMode {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  MTN_MOMO
+  MOOV_MONEY
+  CELTIIS_CASH
+  CARD
+}
+
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  name      String
+  cost      Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeliverySchedule {
+  id           String  @id @default(cuid())
+  dayOfWeek    Int
+  startTime    String
+  endTime      String
+  slotDuration Int     @default(30)
+  type         String
+  isActive     Boolean @default(true)
+}
+
+model Driver {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String   @unique
+  accessToken String   @unique @default(cuid())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  status        OrderStatus   @default(RECUE)
+  mode          ReceptionMode
+  zoneId        String?
+  zoneName      String?
+  deliveryZoneId       String?
+  scheduledSlotStart   DateTime?
+  scheduledSlotEnd     DateTime?
+  fulfillmentType      String    @default("delivery")
+  deliveryFee   Int           @default(0)
+  subtotal      Int
+  total         Int
+  paymentMethod PaymentMethod
+
+  driverId          String?
+  driver            Driver?   @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  driverStartedAt   DateTime?
+  driverDeliveredAt DateTime?
+
+  // Expéditeur / facturation (toujours stocké — visible admin uniquement si cadeau anonyme)
+  clientFirstName String
+  clientLastName  String
+  clientPhone     String
+  clientAddress   String?
+  clientLandmark  String?
+  clientMessage   String?
+
+  // Commande cadeau
+  isGift          Boolean @default(false)
+  recipientName   String?
+  recipientPhone  String?
+  recipientAddress String?
+  recipientLandmark String?
+  giftMessage     String? @db.VarChar(280)
+  senderVisible   Boolean @default(true)
+
+  // Anti-fraude (IP hashée, jamais en clair)
+  clientIpHash String?
+
+  items OrderItem[]
+
+  @@index([clientPhone])
+  @@index([createdAt])
+  @@index([driverId])
+  @@index([status])
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  orderId  String
+  order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name     String
+  quantity Int
+  unitPrice Int
+  supplements String[] @default([])
+}
+
+enum MenuStatus {
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+}
+
+model Product {
+  id              String   @id
+  slug            String   @unique
+  name            String
+  description     String   @default("")
+  price           Int
+  imageUrl        String
+  imageUrls       String[] @default([])
+  keyword         String?
+  stockRemaining  Int
+  stockMinimum    Int      @default(5)
+  isNew           Boolean  @default(false)
+  isPromotion     Boolean  @default(false)
+  promotionPrice  Int?
+  isMenuDuJour    Boolean  @default(false)
+  isPopular       Boolean  @default(false)
+  isGiftCard      Boolean  @default(false)
+  giftCardMessage String?
+  category        String   @default("Entremets")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Menu {
+  id           String     @id
+  date         DateTime
+  activateAt   DateTime
+  status       MenuStatus
+  productIds   String[]
+  displayOrder Int[]
+  createdAt    DateTime   @default(now())
+
+  @@index([status])
+  @@index([activateAt])
+}
+
+model SiteContentStore {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettingsStore {
+  id        String   @id @default("default")
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model AdminActionLog {
+  id        String   @id
+  createdAt DateTime @default(now())
+  adminName String
+  source    String
+  action    String
+  summary   String
+  details   Json?
+
+  @@index([createdAt])
+}
+
+/// Flux minimal pour Supabase Realtime (statut public sans PII)
+model OrderStatusFeed {
+  id        String      @id
+  status    OrderStatus
+  updatedAt DateTime    @updatedAt
+}

@@ -1,0 +1,91 @@
+---
+description: Règles projet Ah Mes Goûts — e-commerce premium glaces (Bénin)
+alwaysApply: true
+---
+
+# Ah Mes Goûts — Règles projet
+
+## Contexte
+
+Tu es l'architecte technique et lead frontend d'« Ah Mes Goûts », un site e-commerce premium de commande de glaces en ligne (Bénin/Cotonou, marché francophone).
+
+Le client veut une expérience HAUT DE GAMME inspirée des pâtisseries et glaciers de luxe, pas un template e-commerce générique. Chaque écran doit donner envie, créer du désir visuel pour le produit (la glace), pas juste lister des prix.
+
+**Objectif business** : remplacer entièrement les commandes WhatsApp par un parcours automatisé : catalogue → personnalisation → panier → livraison/retrait → upsell → paiement Mobile Money/carte → suivi de commande temps réel.
+
+Le propriétaire est aussi fondateur de RESTAFY (SaaS de gestion restaurant). Le code doit être propre et modulaire pour permettre une intégration future avec RESTAFY si besoin (pas une dépendance immédiate, juste ne pas fermer la porte — éviter le couplage fort à des services tiers non remplaçables).
+
+## Stack technique (ne pas dévier sans demander)
+
+- **Front-end** : Next.js 15 (App Router) + React 19 + TypeScript strict
+- **Styling** : Tailwind CSS v4 (config via `@theme` dans `globals.css`, PAS `tailwind.config.js`)
+- **Animations** : Framer Motion (`motion/react`)
+- **Back-end** : NestJS (modulaire : orders, products, stock, payments, admin)
+- **ORM** : Prisma + PostgreSQL
+- **Stockage** : Cloudinary pour les images produits
+- **Auth** : JWT (clients) + rôles Admin/Employé
+- **Paiements** : MTN MoMo, Moov Money, Celtiis Cash (via agrégateur type GeniusPay/FeexPay/KKiaPay), + carte bancaire (Visa/Mastercard)
+- **Déploiement** : Vercel (front) + Railway ou VPS (back) + Postgres managé
+- **Icônes** : Lucide React UNIQUEMENT (jamais d'emoji comme icône d'interface)
+- **Fonts** : `next/font/google` (zero layout shift)
+
+## Design system — non négociable
+
+| Token | Valeur | Usage |
+|-------|--------|-------|
+| Background | `#FAF7F5` | Blanc crème |
+| Primary | `#3B1F4D` | Violet profond |
+| Secondary | `#F3C9CE` | Rose poudré |
+| Accent/CTA | `#C9A96E` | Doré discret — boutons d'action clé uniquement |
+| Text | `#241726` | Quasi-noir violacé, jamais noir pur |
+| Success | `#6B8F71` | Vert sauge — commande confirmée |
+
+**Typographie** : Display = Cormorant Garamond ou Fraunces ; Body/UI = Plus Jakarta Sans ou Inter. Max 2 familles.
+
+**Style** : Hero-Centric + Exaggerated Minimalism. La photo produit = star absolue.
+
+**Effets** : hover cards `scale(1.02-1.04)` + ombre 200-250ms ; drawer panier glassmorphism léger ; transitions Framer Motion ; `prefers-reduced-motion` respecté.
+
+**À éviter** : emoji comme icônes UI, dark mode, grille Shopify générique, néon, dégradés AI purple, >3 couleurs visibles par écran, couleurs hardcodées.
+
+**Checklist livraison** : contraste 4.5:1, `cursor-pointer` sur cliquables, focus visible, responsive 375/768/1024/1440px, touch targets ≥44px, loading state si >300ms.
+
+## Règles métier
+
+**Stock** : diminue uniquement après paiement validé. Stock = 0 → produit « ÉPUISÉ » (retiré du catalogue). Stock < minimum → alerte admin.
+
+**Commande** (machine à états stricte) : Reçue → Paiement confirmé → Préparation → Prête → En livraison → Livrée (+ Annulée depuis Reçue/Paiement confirmé uniquement).
+
+**Livraison** : Livraison ou À emporter. Frais par zone en DB (pas hardcodé front). Champs : nom, téléphone, adresse, repère, message optionnel.
+
+**Client** : infos mémorisées en LocalStorage (pas de compte obligatoire).
+
+**Upsell** : avant paiement, ajout 1 clic, skip facile.
+
+**Paiement** (idempotent) : Paiement validé → Commande créée → Stock mis à jour → Notification admin → Confirmation client.
+
+**Admin** : rôles Administrateur/Employé différenciés, journal des actions.
+
+## Conventions de code
+
+- TypeScript strict, pas de `any` sans justification commentée
+- Un composant = un fichier, PascalCase
+- Server Components par défaut, `"use client"` seulement si interactivité réelle
+- Pas de logique métier dans les composants UI — hooks/services
+- Jamais de clé API exposée côté client
+- Validation Zod front ET back
+- Montants en FCFA, entiers (pas de float pour l'argent)
+
+## Images produit
+
+Phase dev : placeholders Unsplash cohérents. Phase prod : vraies photos ou génération IA dédiée (Ideogram, Recraft, Leonardo). Stockage Cloudinary avec resize AVIF/WebP + lazy load. Pipeline upload admin obligatoire.
+
+## Assets paiement
+
+Logos de dev dans `public/images/payments/` : `payment-mtn-momo.png`, `payment-moov-money.png`, `payment-celtiis-cash.png`, `payment-card-visa-mastercard.png`. En production, remplacer par les logos officiels des opérateurs/agrégateurs.
+
+## Références qualité
+
+- shadcn/ui, aceternity-ui, magicui — patterns premium
+- vercel/commerce — architecture e-commerce Next.js
+- Awwwards Food & Beverage, Mobbin checkout mobile

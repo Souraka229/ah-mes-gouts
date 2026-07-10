@@ -27,9 +27,16 @@ type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+export const revalidate = 300;
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  const catalog = await getFullCatalog();
-  return catalog.map((product) => ({ slug: product.slug }));
+  try {
+    const catalog = await getFullCatalog();
+    return catalog.map((product) => ({ slug: product.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({

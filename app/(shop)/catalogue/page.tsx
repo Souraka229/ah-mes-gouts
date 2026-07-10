@@ -18,6 +18,8 @@ const breadcrumbs = [
   { name: "Catalogue", path: "/catalogue" },
 ];
 
+export const revalidate = 300;
+
 export async function generateMetadata({
   searchParams,
 }: CataloguePageProps): Promise<Metadata> {

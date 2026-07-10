@@ -8,6 +8,9 @@ import { SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { buildIceCreamShopSchema } from "@/lib/seo/schemas";
 
+/** Cache ISR — page d'accueil régénérée toutes les 2 min max. */
+export const revalidate = 120;
+
 export const metadata: Metadata = createPageMetadata({
   title: "Glaces livraison Cotonou — Glacier premium Bénin",
   description:

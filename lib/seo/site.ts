@@ -11,7 +11,7 @@ export const SITE_NAME_WITH_CREDIT = `${SITE_NAME} By ${ORIGIN_BRAND}`;
 
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-  "https://ah-mes-gouts.vercel.app";
+  "https://ahmesgouts.bj";
 
 export const SITE_LOCALE = "fr_BJ";
 

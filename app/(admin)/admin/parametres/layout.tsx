@@ -6,7 +6,6 @@ import {
   Bell,
   Bot,
   Calendar,
-  FileText,
   IceCreamCone,
   LayoutTemplate,
   Palette,
@@ -49,7 +48,6 @@ const SETTINGS_NAV = [
     icon: Bell,
   },
   { href: "/admin/produits", label: "Catalogue produits", icon: IceCreamCone },
-  { href: "/demo/bande-typo", label: "Démo bande typo", icon: FileText, external: true },
 ];
 
 export default function ParametresLayout({

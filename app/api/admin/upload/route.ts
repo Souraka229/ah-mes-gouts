@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { isAdministratorAsync } from "@/lib/server/admin-role";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import { uploadSiteImage } from "@/lib/server/image-upload";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  if (!(await isAdminAuthorizedAsync()) || !await isAdministratorAsync()) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+  if (!(await isAdminAuthorizedAsync())) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   try {

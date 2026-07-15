@@ -200,31 +200,26 @@ function toProductRow(product: AdminCatalogProduct) {
 
 
 async function readCatalogFromDb(): Promise<AdminCatalogProduct[] | null> {
-
-  const prisma = getPrisma();
-
-  const rows = await prisma.product.findMany({ orderBy: { name: "asc" } });
-
-  if (rows.length === 0) return null;
-
-  return rows.map(toCatalogProduct);
-
+  try {
+    const prisma = getPrisma();
+    const rows = await prisma.product.findMany({ orderBy: { name: "asc" } });
+    if (rows.length === 0) return null;
+    return rows.map(toCatalogProduct);
+  } catch {
+    return null;
+  }
 }
 
-
-
 async function writeCatalogToDb(catalog: AdminCatalogProduct[]): Promise<void> {
-
-  const prisma = getPrisma();
-
-  await prisma.$transaction([
-
-    prisma.product.deleteMany(),
-
-    prisma.product.createMany({ data: catalog.map(toProductRow) }),
-
-  ]);
-
+  try {
+    const prisma = getPrisma();
+    await prisma.$transaction([
+      prisma.product.deleteMany(),
+      prisma.product.createMany({ data: catalog.map(toProductRow) }),
+    ]);
+  } catch {
+    // Mode dégradé sans Postgres
+  }
 }
 
 
@@ -390,67 +385,57 @@ export type CatalogProductPatch = Partial<
 
 
 export async function createCatalogProduct(input: {
-
   name: string;
-
   price: number;
-
   category: string;
-
   description?: string;
-
   stock?: number;
-
-  supplements?: string[];
-
+  stockMinimum?: number;
+  keyword?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  slug?: string;
 }): Promise<AdminCatalogProduct> {
+  const catalog = await getAdminCatalog();
+  const baseSlug = (input.slug?.trim() || slugify(input.name)) || "produit";
+  let slug = baseSlug;
+  let n = 2;
+  while (catalog.some((p) => p.slug === slug)) {
+    slug = `${baseSlug}-${n}`;
+    n += 1;
+  }
 
-  const imageUrl = "/images/produits/mangue-passion.webp";
+  const images = normalizeProductImages({
+    imageUrl: input.imageUrl,
+    imageUrls: input.imageUrls,
+  });
+  const imageUrl =
+    images.imageUrl || "/images/produits/mangue-passion.webp";
+  const imageUrls = images.imageUrls.length > 0 ? images.imageUrls : [imageUrl];
 
   const product: AdminCatalogProduct = {
-
     id: randomUUID(),
-
-    slug: slugify(input.name),
-
-    name: input.name,
-
-    description: input.description ?? "",
-
-    price: input.price,
-
+    slug,
+    name: input.name.trim(),
+    description: input.description?.trim() ?? "",
+    price: Math.round(input.price),
     imageUrl,
-
-    imageUrls: [imageUrl],
-
+    imageUrls,
+    keyword: input.keyword?.trim() || undefined,
     stockRemaining: input.stock ?? 10,
-
-    stockMinimum: 5,
-
+    stockMinimum: input.stockMinimum ?? 5,
     isNew: true,
-
     isPromotion: false,
-
     isMenuDuJour: false,
-
     isPopular: false,
-
     updatedAt: new Date().toISOString(),
-
     category: input.category,
-
   };
 
-
-
   const prisma = getPrisma();
-
   await prisma.product.create({ data: toProductRow(product) });
-
   globalThis.__amgAdminCatalog = undefined;
-
   return product;
-
 }
 
 

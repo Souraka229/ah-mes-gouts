@@ -164,7 +164,7 @@ export function CartDrawer() {
                 <dt>Livraison</dt>
                 <dd>
                   {totals.delivery === 0
-                    ? "Calculée à l'étape suivante"
+                    ? "Selon le mode choisi"
                     : formatPrice(totals.delivery)}
                 </dd>
               </div>
@@ -199,9 +199,14 @@ export function CartDrawer() {
 
 type CartIconButtonProps = {
   className?: string;
+  /** Sur hero sombre : pastille glass, pas disque blanc opaque */
+  variant?: "default" | "onDark";
 };
 
-export function CartIconButton({ className }: CartIconButtonProps) {
+export function CartIconButton({
+  className,
+  variant = "default",
+}: CartIconButtonProps) {
   const itemCount = useCartStore((state) =>
     state.items.reduce((sum, item) => sum + item.quantity, 0),
   );
@@ -210,6 +215,7 @@ export function CartIconButton({ className }: CartIconButtonProps) {
   const acknowledgeCartPulse = useCartStore(
     (state) => state.acknowledgeCartPulse,
   );
+  const onDark = variant === "onDark";
 
   return (
     <motion.button
@@ -225,20 +231,22 @@ export function CartIconButton({ className }: CartIconButtonProps) {
         if (cartPulse) acknowledgeCartPulse();
       }}
       className={cn(
-        "relative flex size-11 cursor-pointer items-center justify-center rounded-full",
-        "border border-border bg-card text-primary transition-colors duration-200",
-        "hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+        "relative flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors duration-200",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+        onDark
+          ? "border border-white/25 bg-white/10 text-bg backdrop-blur-sm hover:bg-white/18 focus-visible:outline-accent"
+          : "border border-border bg-card text-primary hover:bg-muted focus-visible:outline-primary",
         className,
       )}
       aria-label={`Panier, ${itemCount} article${itemCount > 1 ? "s" : ""}`}
     >
-      <ShoppingBag className="size-5" aria-hidden />
+      <ShoppingBag className="size-[1.15rem]" strokeWidth={1.75} aria-hidden />
       {itemCount > 0 && (
         <motion.span
           key={itemCount}
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-accent font-body text-[10px] font-bold text-text"
+          className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent font-body text-[10px] font-bold text-text shadow-[0_1px_4px_rgba(0,0,0,0.2)]"
         >
           {itemCount > 9 ? "9+" : itemCount}
         </motion.span>

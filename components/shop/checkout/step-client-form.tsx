@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { GiftModeSelector } from "@/components/shop/checkout/gift-mode-selector";
+import { CheckoutBusinessNotices } from "@/components/shop/checkout/checkout-business-notices";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import {
   saveClient,
 } from "@/lib/client-storage";
 import { getNextStep, useCheckoutStore } from "@/lib/checkout-store";
+import { linkDeviceToPhone, trackActivity } from "@/lib/crm/track";
 import {
   clientInfoSchema,
   giftDetailsSchema,
@@ -63,6 +65,14 @@ export function StepClientForm() {
     setErrors((current) => ({ ...current, [field]: "" }));
   };
 
+  const advanceAfterClient = (saved: ClientInfo) => {
+    saveClient(saved);
+    linkDeviceToPhone(saved.phone);
+    trackActivity({ type: "checkout_start" });
+    const next = getNextStep("client", mode);
+    if (next) setStep(next);
+  };
+
   const handleContinue = () => {
     if (isGift) {
       const senderResult = senderInfoSchema.safeParse({
@@ -74,7 +84,7 @@ export function StepClientForm() {
       const giftPayload = {
         ...gift,
         recipientAddress:
-          mode === "delivery" ? gift.recipientAddress : gift.recipientAddress || "Retrait boutique",
+          mode === "delivery" ? gift.recipientAddress : gift.recipientAddress || "En boutique",
         recipientLandmark:
           mode === "delivery" ? gift.recipientLandmark : gift.recipientLandmark || "—",
       };
@@ -110,19 +120,16 @@ export function StepClientForm() {
         return;
       }
 
-      saveClient({
+      advanceAfterClient({
         ...client,
         address: "",
         landmark: "",
         message: "",
       });
-
-      const next = getNextStep("client", mode);
-      if (next) setStep(next);
       return;
     }
 
-    if (mode === "pickup") {
+    if (mode !== "delivery") {
       const pickupSchema = clientInfoSchema.pick({
         firstName: true,
         lastName: true,
@@ -139,9 +146,7 @@ export function StepClientForm() {
         setErrors(fieldErrors);
         return;
       }
-      saveClient({ ...client, address: "", landmark: "" });
-      const next = getNextStep("client", mode);
-      if (next) setStep(next);
+      advanceAfterClient({ ...client, address: "", landmark: "" });
       return;
     }
 
@@ -157,6 +162,8 @@ export function StepClientForm() {
     }
 
     saveClient(result.data);
+    linkDeviceToPhone(result.data.phone);
+    trackActivity({ type: "checkout_start" });
     const next = getNextStep("client", mode);
     if (next) setStep(next);
   };
@@ -174,9 +181,13 @@ export function StepClientForm() {
             ? "Préparez votre surprise — le destinataire ne verra que ce que vous choisissez de partager."
             : mode === "delivery"
               ? "Où devons-nous livrer votre commande ?"
-              : "Comment pouvons-nous vous joindre pour le retrait ?"}
+              : mode === "dinein"
+                ? "Comment pouvons-nous vous joindre pour votre venue en boutique ?"
+                : "Comment pouvons-nous vous joindre pour le retrait en boutique ?"}
         </p>
       </div>
+
+      <CheckoutBusinessNotices variant="full" />
 
       <GiftModeSelector isGift={isGift} onChange={setIsGift} />
 

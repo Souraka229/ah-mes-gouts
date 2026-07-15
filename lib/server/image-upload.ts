@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import { mkdirSync, writeFileSync } from "fs";
+import path from "path";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -13,8 +15,18 @@ const ALLOWED_TYPES = new Set([
 
 export type UploadResult = {
   url: string;
-  provider: "supabase";
+  provider: "supabase" | "local";
 };
+
+async function uploadLocal(file: File): Promise<UploadResult> {
+  const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "bin";
+  const dir = path.join(process.cwd(), "public", "images", "uploads");
+  mkdirSync(dir, { recursive: true });
+  const filename = `${randomUUID()}.${ext}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  writeFileSync(path.join(dir, filename), buffer);
+  return { url: `/images/uploads/${filename}`, provider: "local" };
+}
 
 export async function uploadSiteImage(file: File): Promise<UploadResult> {
   if (!ALLOWED_TYPES.has(file.type)) {
@@ -26,9 +38,7 @@ export async function uploadSiteImage(file: File): Promise<UploadResult> {
 
   const supabase = getSupabaseServerClient();
   if (!supabase) {
-    throw new Error(
-      "Supabase non configuré — ajoutez SUPABASE_SERVICE_ROLE_KEY dans les variables d'environnement.",
-    );
+    return uploadLocal(file);
   }
 
   const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "bin";
@@ -42,7 +52,7 @@ export async function uploadSiteImage(file: File): Promise<UploadResult> {
   });
 
   if (error) {
-    throw new Error(`Échec de l'upload Supabase : ${error.message}`);
+    return uploadLocal(file);
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(objectPath);

@@ -4,17 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  Bot,
   Calendar,
-  Database,
   IceCreamCone,
   LayoutDashboard,
-  LayoutTemplate,
+  LogOut,
   Menu,
   Package,
   Settings,
   Truck,
   UserRound,
+  Users,
   X,
 } from "lucide-react";
 
@@ -24,40 +23,24 @@ import { cn } from "@/lib/utils";
 type NavItem = {
   href: string;
   label: string;
-  icon: typeof LayoutDashboard;
+  icon: typeof Package;
   adminOnly?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard },
-  { href: "/admin/commandes", label: "Commandes du jour", icon: Package },
-  { href: "/admin/livreurs", label: "Livreurs", icon: UserRound },
+  { href: "/admin", label: "Cockpit", icon: LayoutDashboard },
+  { href: "/admin/commandes", label: "Commandes", icon: Package },
+  { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/menus", label: "Menu du jour", icon: Calendar },
   { href: "/admin/produits", label: "Produits", icon: IceCreamCone },
-  {
-    href: "/admin/site-builder",
-    label: "Éditeur de site",
-    icon: LayoutTemplate,
-    adminOnly: true,
-  },
+  { href: "/admin/livreurs", label: "Livreurs", icon: UserRound },
+  { href: "/admin/parametres/livraison", label: "Créneaux", icon: Truck },
   {
     href: "/admin/parametres",
     label: "Paramètres",
     icon: Settings,
     adminOnly: true,
   },
-  {
-    href: "/admin/parametres/livraison",
-    label: "Créneaux livraison",
-    icon: Truck,
-  },
-  {
-    href: "/admin/assistant",
-    label: "Assistant IA",
-    icon: Bot,
-    adminOnly: true,
-  },
-  { href: "/admin/donnees", label: "Données", icon: Database },
 ];
 
 type AdminMe = {
@@ -65,6 +48,40 @@ type AdminMe = {
   role: string;
   isAdministrator: boolean;
 };
+
+function NavLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavigate?: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={cn(
+        "relative flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 font-body text-sm transition-colors duration-150",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        active
+          ? "bg-white/15 font-semibold text-white"
+          : "text-primary-foreground/70 hover:bg-white/[0.08] hover:text-white",
+      )}
+    >
+      {active && (
+        <span
+          className="absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-full bg-accent"
+          aria-hidden
+        />
+      )}
+      <Icon className="size-4 shrink-0 opacity-90" aria-hidden />
+      {item.label}
+    </Link>
+  );
+}
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -82,140 +99,149 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     (item) => !item.adminOnly || me?.isAdministrator !== false,
   );
 
-  const isActive = (href: string) =>
-    href === "/admin"
-      ? pathname === "/admin"
-      : pathname.startsWith(href);
+  const isActive = (href: string) => {
+    if (href === "/admin") return pathname === "/admin";
+    if (href === "/admin/parametres") {
+      return (
+        pathname.startsWith("/admin/parametres") &&
+        !pathname.startsWith("/admin/parametres/livraison")
+      );
+    }
+    return pathname.startsWith(href);
+  };
+
+  const logout = () => {
+    void fetch("/api/admin/auth", { method: "DELETE" }).then(() => {
+      window.location.href = "/";
+    });
+  };
+
+  const roleLabel =
+    me?.role === "administrateur"
+      ? "Administrateur"
+      : me?.role === "employe"
+        ? "Employé"
+        : "…";
 
   return (
-    <div className="flex min-h-screen bg-[#f4f1ee] font-body text-text">
-      {/* Sidebar desktop */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-primary/15 bg-primary text-primary-foreground lg:flex">
+    <div className="flex min-h-screen bg-bg font-body text-text">
+      <aside className="hidden w-[248px] shrink-0 flex-col bg-primary text-primary-foreground lg:flex">
         <div className="border-b border-white/10 px-5 py-6">
           <BrandLogo variant="onDark" />
-          <p className="mt-2 font-body text-xs text-primary-foreground/70">
+          <p className="mt-3 font-body text-[10px] font-semibold tracking-[0.28em] text-primary-foreground/50 uppercase">
             Back-office
           </p>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {visibleNav.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 font-body text-sm transition-colors",
-                  active
-                    ? "bg-white/15 font-medium"
-                    : "text-primary-foreground/80 hover:bg-white/10",
-                )}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                {item.label}
-              </Link>
-            );
-          })}
+
+        <nav className="flex-1 space-y-0.5 p-3" aria-label="Navigation admin">
+          {visibleNav.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(item.href)}
+            />
+          ))}
         </nav>
-        <div className="border-t border-white/10 p-4 font-body text-xs text-primary-foreground/60">
-          Plateforme admin — distincte du site client
+
+        <div className="space-y-3 border-t border-white/10 p-4">
+          <div>
+            <p className="font-body text-sm font-medium text-white">
+              {me?.adminName ?? "…"}
+            </p>
+            <p className="mt-1 inline-flex rounded-full bg-white/10 px-2 py-0.5 font-body text-[10px] font-semibold tracking-wide text-primary-foreground/80 uppercase">
+              {roleLabel}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 font-body text-xs text-primary-foreground/65 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <LogOut className="size-3.5" aria-hidden />
+            Déconnexion
+          </button>
         </div>
       </aside>
 
-      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/45"
             aria-label="Fermer le menu"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative flex h-full w-72 flex-col bg-primary text-primary-foreground shadow-xl">
+          <aside className="relative flex h-full w-[280px] flex-col bg-primary text-primary-foreground shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-              <p className="font-display font-semibold">Back-office</p>
+              <p className="font-display text-lg font-semibold">Cockpit</p>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg p-1 hover:bg-white/10"
+                className="rounded-lg p-2 hover:bg-white/10"
+                aria-label="Fermer"
               >
                 <X className="size-5" aria-hidden />
               </button>
             </div>
-            <nav className="space-y-1 p-3">
-              {visibleNav.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-white/10"
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    {item.label}
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 space-y-0.5 p-3">
+              {visibleNav.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(item.href)}
+                  onNavigate={() => setMobileOpen(false)}
+                />
+              ))}
             </nav>
+            <div className="border-t border-white/10 p-4">
+              <button
+                type="button"
+                onClick={logout}
+                className="inline-flex min-h-10 items-center gap-2 text-sm text-primary-foreground/80"
+              >
+                <LogOut className="size-4" aria-hidden />
+                Déconnexion
+              </button>
+            </div>
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/70 bg-bg/90 px-4 py-3 backdrop-blur-md sm:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              className="hidden cursor-pointer items-center gap-2 rounded-lg border border-border px-2 py-1.5 font-body text-xs text-muted-foreground hover:bg-bg sm:flex"
-              onClick={() =>
-                window.dispatchEvent(
-                  new KeyboardEvent("keydown", {
-                    key: "k",
-                    ctrlKey: true,
-                  }),
-                )
-              }
-              title="Recherche rapide"
-            >
-              <span>Rechercher</span>
-              <kbd className="rounded border border-border px-1 font-mono text-[10px]">
-                ⌘K
-              </kbd>
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-border p-2 lg:hidden"
+              className="rounded-xl border border-border bg-white p-2.5 lg:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Menu"
             >
               <Menu className="size-5" aria-hidden />
             </button>
-            <div className="flex items-center gap-2">
-              <p className="font-body text-xs font-medium tracking-widest text-muted-foreground uppercase">
-                Administration
+            <div>
+              <p className="font-body text-[10px] font-semibold tracking-[0.24em] text-muted-foreground uppercase">
+                Régie
               </p>
-              <BrandLogo variant="onDark" compact className="lg:hidden" />
+              <p className="font-display text-base font-semibold text-primary lg:hidden">
+                {me?.adminName ?? "…"}
+              </p>
             </div>
           </div>
-          <div className="text-right font-body text-xs text-muted-foreground">
-            <p className="font-medium text-text">
-              {me?.adminName ?? "…"}
-            </p>
-            <p className="capitalize">{me?.role ?? "chargement"}</p>
-            <button
-              type="button"
-              className="mt-1 cursor-pointer text-[11px] text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
-              onClick={() => {
-                void fetch("/api/admin/auth", { method: "DELETE" }).then(() => {
-                  window.location.href = "/";
-                });
-              }}
-            >
-              Déconnexion
-            </button>
-          </div>
+          <BrandLogo compact className="lg:hidden" />
+          <button
+            type="button"
+            className="hidden min-h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 font-body text-xs text-muted-foreground hover:border-primary/30 hover:text-primary sm:inline-flex"
+            onClick={() =>
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
+              )
+            }
+          >
+            Recherche
+            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">
+              ⌘K
+            </kbd>
+          </button>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>

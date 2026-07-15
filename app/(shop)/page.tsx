@@ -12,9 +12,9 @@ import { buildIceCreamShopSchema } from "@/lib/seo/schemas";
 export const revalidate = 120;
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Glaces livraison Cotonou — Glacier premium Bénin",
+  title: "Glaces artisanales Cotonou — Sur place, à emporter ou livraison",
   description:
-    `Commandez vos glaces artisanales en ligne à Cotonou. Livraison rapide, créations premium, paiement MoMo et carte. ${SITE_NAME_WITH_CREDIT}.`,
+    `Commandez vos glaces artisanales en ligne à Cotonou. Sur place, à emporter ou livraison. Paiement MoMo et carte. ${SITE_NAME_WITH_CREDIT}.`,
   path: "/",
   ogImage: getProductImageUrl("mango-passion"),
 });

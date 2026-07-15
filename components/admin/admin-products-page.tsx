@@ -1,21 +1,48 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
-import { IceCreamCone, Loader2 } from "lucide-react";
+import {
+  IceCreamCone,
+  Loader2,
+  Plus,
+  Upload,
+  X,
+  Download,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import { PRODUCT_CATEGORIES } from "@/lib/admin/categories";
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/format";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
 type AdminProduct = Product & { category?: string };
 
+const emptyForm = {
+  name: "",
+  price: "5000",
+  category: "Entremets",
+  description: "",
+  keyword: "",
+  stock: "10",
+  imageUrl: "",
+};
+
 export function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,16 +120,275 @@ export function AdminProductsPage() {
     );
   };
 
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
+      setForm((f) => ({ ...f, imageUrl: data.url! }));
+      toast.success("Image ajoutée");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload échoué");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const createProduct = async () => {
+    const price = Number(form.price);
+    const stock = Number(form.stock);
+    if (!form.name.trim()) {
+      toast.error("Nom requis");
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error("Prix invalide");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          price: Math.round(price),
+          category: form.category,
+          description: form.description.trim(),
+          keyword: form.keyword.trim() || undefined,
+          stock: Number.isFinite(stock) ? Math.round(stock) : 10,
+          imageUrl: form.imageUrl || undefined,
+          imageUrls: form.imageUrl ? [form.imageUrl] : undefined,
+        }),
+      });
+      const data = (await res.json()) as {
+        product?: AdminProduct;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Création impossible");
+      setProducts((prev) => [data.product!, ...prev]);
+      setForm(emptyForm);
+      setShowForm(false);
+      toast.success(`${data.product!.name} ajouté`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Création impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const importGift = async () => {
+    setImporting(true);
+    try {
+      const res = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ importGift: true }),
+      });
+      const data = (await res.json()) as {
+        created?: number;
+        skipped?: number;
+        products?: AdminProduct[];
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? "Import impossible");
+      toast.success(
+        `${data.created ?? 0} produits importés` +
+          (data.skipped ? ` · ${data.skipped} déjà présents` : ""),
+      );
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import impossible");
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <header>
-        <h1 className="font-display text-3xl font-semibold text-primary">
-          Produits
-        </h1>
-        <p className="mt-2 font-body text-sm text-muted-foreground">
-          Disponibilité et prix en un clic — pas besoin d&apos;ouvrir chaque fiche.
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary">
+            Produits
+          </h1>
+          <p className="mt-2 font-body text-sm text-muted-foreground">
+            Ajoute, importe tes photos Gift, gère prix et disponibilité.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="cursor-pointer"
+            disabled={importing}
+            onClick={() => void importGift()}
+          >
+            {importing ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            Importer photos Gift
+          </Button>
+          <Button
+            type="button"
+            className="cursor-pointer bg-accent text-text hover:bg-accent/90"
+            onClick={() => setShowForm((v) => !v)}
+          >
+            {showForm ? <X className="size-4" /> : <Plus className="size-4" />}
+            {showForm ? "Fermer" : "Ajouter un produit"}
+          </Button>
+        </div>
       </header>
+
+      {showForm && (
+        <section className="rounded-[24px] border border-border bg-white p-5 shadow-[0_12px_40px_rgba(59,31,77,0.04)] sm:p-6">
+          <h2 className="font-display text-xl font-semibold text-primary">
+            Nouveau produit
+          </h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nom</Label>
+              <Input
+                id="name"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Ex: Tiramisu Caramel"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price">Prix (FCFA)</Label>
+              <Input
+                id="price"
+                type="number"
+                min={100}
+                step={100}
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Catégorie</Label>
+              <select
+                id="category"
+                value={form.category}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, category: e.target.value }))
+                }
+                className="flex h-10 w-full rounded-lg border border-border bg-white px-3 font-body text-sm"
+              >
+                {PRODUCT_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stock">Stock</Label>
+              <Input
+                id="stock"
+                type="number"
+                min={0}
+                value={form.stock}
+                onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="keyword">Mot-clé (carte)</Label>
+              <Input
+                id="keyword"
+                value={form.keyword}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, keyword: e.target.value }))
+                }
+                placeholder="Ex: Signature, Fruité…"
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                rows={3}
+                value={form.description}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+                className="w-full rounded-lg border border-border px-3 py-2 font-body text-sm"
+                placeholder="Courte description gourmande…"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Image</Label>
+              <div className="mt-2 flex flex-wrap items-center gap-4">
+                {form.imageUrl ? (
+                  <div className="relative size-24 overflow-hidden rounded-xl border border-border bg-bg">
+                    <Image
+                      src={form.imageUrl}
+                      alt="Aperçu"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="flex size-24 items-center justify-center rounded-xl border border-dashed border-border bg-bg text-muted-foreground">
+                    <IceCreamCone className="size-8 opacity-40" />
+                  </div>
+                )}
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-border bg-bg px-4 py-2 font-body text-sm font-medium hover:border-primary/30">
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  Choisir une photo
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadImage(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => {
+                setShowForm(false);
+                setForm(emptyForm);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              className="cursor-pointer bg-primary text-primary-foreground"
+              disabled={saving}
+              onClick={() => void createProduct()}
+            >
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+              Créer le produit
+            </Button>
+          </div>
+        </section>
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -110,25 +396,35 @@ export function AdminProductsPage() {
           Chargement…
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-          <IceCreamCone className="mx-auto size-10 text-muted-foreground/50" />
-          <p className="mt-4 font-body text-sm text-muted-foreground">
-            Aucun produit dans le catalogue. Rechargez les données démo ou
-            créez-en via l&apos;assistant IA.
-          </p>
-          <Button
-            type="button"
-            className="mt-4 cursor-pointer"
-            render={<a href="/admin/assistant" />}
-          >
-            Créer un produit
-          </Button>
-        </div>
+        <AdminEmptyState
+          variant="products"
+          title="Catalogue vide"
+          description="Ajoute un entremets ou importe les photos Gift pour démarrer."
+          action={
+            <>
+              <Button
+                type="button"
+                className="cursor-pointer"
+                onClick={() => setShowForm(true)}
+              >
+                Ajouter un produit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="cursor-pointer"
+                onClick={() => void importGift()}
+              >
+                Importer photos Gift
+              </Button>
+            </>
+          }
+        />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-white">
-          <table className="w-full min-w-[640px] font-body text-sm">
+          <table className="w-full min-w-[720px] font-body text-sm">
             <thead>
-              <tr className="border-b border-border bg-bg text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-border bg-bg text-left text-xs tracking-wide text-muted-foreground uppercase">
                 <th className="px-4 py-3">Produit</th>
                 <th className="px-4 py-3">Prix</th>
                 <th className="px-4 py-3">Stock</th>
@@ -143,11 +439,28 @@ export function AdminProductsPage() {
                     key={product.id}
                     className="border-b border-border/60 last:border-0"
                   >
-                    <td className="px-4 py-3 font-medium text-text">
-                      {product.name}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {product.category}
-                      </span>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-bg">
+                          {product.imageUrl ? (
+                            <Image
+                              src={product.imageUrl}
+                              alt=""
+                              fill
+                              className="object-contain"
+                              sizes="48px"
+                              unoptimized={product.imageUrl.startsWith("/")}
+                            />
+                          ) : null}
+                        </div>
+                        <div>
+                          <p className="font-medium text-text">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {product.category}
+                            {product.keyword ? ` · ${product.keyword}` : ""}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       {editingPrice === product.id ? (

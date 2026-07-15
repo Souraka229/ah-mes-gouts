@@ -151,7 +151,7 @@ export function OrderBoardCard({
             Total : {formatPrice(order.total)}
           </p>
           <p className="mt-1 font-body text-sm text-muted-foreground">
-            {isDelivery ? "Livraison" : "Retrait"} :{" "}
+            {isDelivery ? "Livraison" : "Boutique"} :{" "}
             {formatFulfillmentPlace(order)}
           </p>
           <p className="font-body text-sm text-muted-foreground">

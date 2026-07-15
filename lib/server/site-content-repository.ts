@@ -22,20 +22,30 @@ declare global {
 }
 
 async function readFromDb(): Promise<SiteContentStore | null> {
-  const prisma = getPrisma();
-  const row = await prisma.siteContentStore.findUnique({ where: { id: STORE_ID } });
-  if (!row) return null;
-  return row.data as unknown as SiteContentStore;
+  try {
+    const prisma = getPrisma();
+    const row = await prisma.siteContentStore.findUnique({
+      where: { id: STORE_ID },
+    });
+    if (!row) return null;
+    return row.data as unknown as SiteContentStore;
+  } catch {
+    return null;
+  }
 }
 
 async function writeToDb(store: SiteContentStore): Promise<void> {
-  const prisma = getPrisma();
-  const data = store as unknown as Prisma.InputJsonValue;
-  await prisma.siteContentStore.upsert({
-    where: { id: STORE_ID },
-    create: { id: STORE_ID, data },
-    update: { data },
-  });
+  try {
+    const prisma = getPrisma();
+    const data = store as unknown as Prisma.InputJsonValue;
+    await prisma.siteContentStore.upsert({
+      where: { id: STORE_ID },
+      create: { id: STORE_ID, data },
+      update: { data },
+    });
+  } catch {
+    // Mode dégradé sans Postgres — store mémoire uniquement
+  }
 }
 
 export async function getSiteContentStore(): Promise<SiteContentStore> {

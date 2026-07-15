@@ -9,10 +9,6 @@ import type {
 } from "@/lib/delivery/types";
 import { getPrisma } from "@/lib/prisma";
 
-declare global {
-  var __amgDeliveryConfig: DeliveryConfig | undefined;
-}
-
 function defaultOptions(): DeliveryOptions {
   return {
     maxOrdersPerSlot: 5,
@@ -29,52 +25,53 @@ function defaultSchedulesForType(type: FulfillmentType): DeliveryScheduleConfig[
   return Array.from({ length: 7 }, (_, dayOfWeek) => ({
     id: randomUUID(),
     dayOfWeek,
-    startTime: "10:00",
-    endTime: "21:00",
+    startTime: "13:00",
+    endTime: "19:00",
     slotDuration: 30,
     type,
-    isActive: dayOfWeek !== 0,
+    isActive: true,
   }));
 }
 
 function createDefaultConfig(): DeliveryConfig {
   const timestamp = nowIso();
+  /** Aligné sur affiches ops zone-a…zone-e (prix officiels). */
   const zones: DeliveryZoneConfig[] = [
     {
-      id: randomUUID(),
-      name: "Fidjrossè & bord de mer",
+      id: "zone-e",
+      name: "Destinations E",
       cost: 500,
       isActive: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
     {
-      id: randomUUID(),
-      name: "Agla & Godomey",
+      id: "zone-d",
+      name: "Destinations D",
       cost: 700,
       isActive: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
     {
-      id: randomUUID(),
-      name: "Guinkomey & Tokpa",
+      id: "zone-c",
+      name: "Destinations C",
       cost: 800,
       isActive: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
     {
-      id: randomUUID(),
-      name: "Cadjehoun & Haie Vive",
+      id: "zone-b",
+      name: "Destinations B",
       cost: 1000,
       isActive: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
     {
-      id: randomUUID(),
-      name: "Abomey-Calavi & périphérie",
+      id: "zone-a",
+      name: "Destinations A",
       cost: 1500,
       isActive: true,
       createdAt: timestamp,
@@ -215,10 +212,8 @@ async function writeConfigToDb(config: DeliveryConfig): Promise<void> {
 }
 
 export async function getDeliveryConfig(): Promise<DeliveryConfig> {
-  if (globalThis.__amgDeliveryConfig) {
-    return globalThis.__amgDeliveryConfig;
-  }
-
+  // Toujours lire la DB : un cache process-local sur Vercel masquait les syncs
+  // zones (affiches A–E) et pouvait réécrire d’anciennes zones en admin.
   const fromDb = await readConfigFromDb();
   const config = fromDb ?? createDefaultConfig();
 
@@ -226,7 +221,6 @@ export async function getDeliveryConfig(): Promise<DeliveryConfig> {
     await writeConfigToDb(config);
   }
 
-  globalThis.__amgDeliveryConfig = config;
   return config;
 }
 
@@ -237,7 +231,6 @@ export async function saveDeliveryConfig(
     ...config,
     options: config.options ?? defaultOptions(),
   };
-  globalThis.__amgDeliveryConfig = withOptions;
   await writeConfigToDb(withOptions);
   return withOptions;
 }

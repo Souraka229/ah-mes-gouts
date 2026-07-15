@@ -6,6 +6,11 @@ import {
   getAdminContextAsync,
 } from "@/lib/server/admin-auth";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
+import {
+  formatSecurityAlert,
+  notifyTelegramSafe,
+} from "@/lib/notifications/telegram";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +28,28 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { allowed, retryAfterSec } = checkRateLimit(
+    `admin:auth:${ip}`,
+    8,
+    15 * 60_000,
+  );
+
+  if (!allowed) {
+    notifyTelegramSafe(
+      formatSecurityAlert(
+        `Trop de tentatives de connexion admin (IP hashée côté serveur). Bloqué ${retryAfterSec}s.`,
+      ),
+    );
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez plus tard." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSec) },
+      },
+    );
+  }
+
   let body: { token?: string };
   try {
     body = (await request.json()) as { token?: string };
@@ -33,6 +60,14 @@ export async function POST(request: Request) {
   const token = body.token?.trim();
   const entry = findAdminTokenEntry(token);
   if (!entry) {
+    const fails = checkRateLimit(`admin:auth:fail:${ip}`, 5, 15 * 60_000);
+    if (!fails.allowed) {
+      notifyTelegramSafe(
+        formatSecurityAlert(
+          "Plusieurs tokens admin invalides — possible tentative d'intrusion.",
+        ),
+      );
+    }
     return NextResponse.json({ error: "Token invalide." }, { status: 401 });
   }
 

@@ -4,6 +4,11 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { GoogleMapsEmbed } from "@/components/shop/google-maps-embed";
 import { JsonLd } from "@/components/seo/json-ld";
+import {
+  BOUTIQUE_LOCATION,
+  ORDER_PHONE,
+  WHATSAPP_PICKUP,
+} from "@/lib/business-info";
 import { BUSINESS, SITE_NAME, SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import { buildBreadcrumbSchema } from "@/lib/seo/schemas";
 import { createPageMetadata } from "@/lib/seo/metadata";
@@ -12,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = createPageMetadata({
   title: `Contact — ${SITE_NAME} Cotonou`,
-  description: `Contactez ${SITE_NAME_WITH_CREDIT} à Cotonou. Téléphone, Instagram, itinéraire et carte de la boutique.`,
+  description: `Contactez ${SITE_NAME_WITH_CREDIT} à Fidjrosse, Cotonou. Téléphone, WhatsApp, itinéraire.`,
   path: "/contact",
 });
 
@@ -33,28 +38,61 @@ export default function ContactPage() {
           Nous contacter
         </h1>
         <p className="mt-4 font-body text-lg text-muted-foreground">
-          Glaces artisanales à Cotonou — commande en ligne, retrait ou livraison.
+          En boutique · Sur place — {BOUTIQUE_LOCATION.full}. Horaires 13h – 19h.
         </p>
 
         <dl className="mt-8 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-border bg-card p-5">
-            <dt className="font-body text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <dt className="font-body text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               Téléphone
             </dt>
             <dd className="mt-2 font-display text-xl text-primary">
-              <a href={`tel:${BUSINESS.phone}`} className="hover:underline">
-                +229 97 31 07 42
+              <a href={`tel:${ORDER_PHONE.tel}`} className="hover:underline">
+                {ORDER_PHONE.display}
               </a>
             </dd>
           </div>
           <div className="rounded-2xl border border-border bg-card p-5">
-            <dt className="font-body text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <dt className="font-body text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              WhatsApp retrait
+            </dt>
+            <dd className="mt-2 font-display text-xl text-primary">
+              <a
+                href={WHATSAPP_PICKUP.waMe}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
+              >
+                {WHATSAPP_PICKUP.display}
+              </a>
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <dt className="font-body text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              Adresse
+            </dt>
+            <dd className="mt-2 font-body text-primary">
+              {BOUTIQUE_LOCATION.full}
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5">
+            <dt className="font-body text-xs font-semibold tracking-widest text-muted-foreground uppercase">
               E-mail
             </dt>
             <dd className="mt-2 font-body text-primary">
               <a href={`mailto:${BUSINESS.email}`} className="hover:underline">
                 {BUSINESS.email}
               </a>
+            </dd>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 sm:col-span-2">
+            <dt className="font-body text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+              Infos
+            </dt>
+            <dd className="mt-2 font-body text-primary">
+              <Link href="/infos" className="hover:underline">
+                Règles, horaires & pénalités →
+              </Link>
             </dd>
           </div>
         </dl>

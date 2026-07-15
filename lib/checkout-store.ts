@@ -89,7 +89,7 @@ export const useCheckoutStore = create<CheckoutState>()(
       setMode: (mode) =>
         set({
           mode,
-          zoneId: mode === "pickup" ? null : get().zoneId,
+          zoneId: mode === "delivery" ? get().zoneId : null,
           scheduledSlot: null,
         }),
       setZoneId: (zoneId) => set({ zoneId, scheduledSlot: null }),

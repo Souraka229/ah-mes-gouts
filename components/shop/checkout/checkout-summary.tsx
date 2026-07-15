@@ -9,7 +9,7 @@ import {
 } from "@/lib/hooks/use-delivery-config";
 import { useCartTotals } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
-import type { ReceptionMode } from "@/types/order";
+import { RECEPTION_MODE_LABELS, type ReceptionMode } from "@/types/order";
 
 export function CheckoutSummary() {
   const mode = useCheckoutStore((state) => state.mode);
@@ -43,17 +43,15 @@ export function CheckoutSummary() {
           <dd>{formatPrice(cartTotals.subtotal)}</dd>
         </div>
         <div className="flex justify-between text-muted-foreground">
-          <dt>Livraison</dt>
-          <dd>
-            {mode === null
-              ? "—"
-              : mode === "pickup"
-                ? "À emporter (gratuit)"
-                : zoneId
-                  ? formatPrice(deliveryFee)
-                  : "Zone à sélectionner"}
-          </dd>
+          <dt>Mode</dt>
+          <dd>{mode === null ? "—" : RECEPTION_MODE_LABELS[mode]}</dd>
         </div>
+        {mode === "delivery" && (
+          <div className="flex justify-between text-muted-foreground">
+            <dt>Frais de livraison</dt>
+            <dd>{zoneId ? formatPrice(deliveryFee) : "Localité à choisir"}</dd>
+          </div>
+        )}
         {zoneName && mode === "delivery" && (
           <p className="text-xs text-muted-foreground">{zoneName}</p>
         )}

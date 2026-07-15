@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { getCartTotals, mergeCartLine } from "@/lib/cart-utils";
+import { trackActivity } from "@/lib/crm/track";
 import type { AddToCartPayload, CartLineItem } from "@/types/cart";
 
 const CART_STORAGE_KEY = "ah-mes-gouts-cart";
@@ -32,11 +33,19 @@ export const useCartStore = create<CartState>()(
       closeCart: () => set({ isOpen: false }),
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
 
-      addItem: (payload) =>
+      addItem: (payload) => {
         set((state) => ({
           items: mergeCartLine(state.items, payload),
           cartPulse: true,
-        })),
+        }));
+        trackActivity({
+          type: "add_to_cart",
+          productId: payload.productId,
+          productSlug: payload.slug,
+          productName: payload.name,
+          metadata: { quantity: payload.quantity },
+        });
+      },
 
       updateQuantity: (lineId, quantity) =>
         set((state) => ({

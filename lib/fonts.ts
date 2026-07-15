@@ -1,9 +1,13 @@
-import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 
-export const fontDisplay = Cormorant_Garamond({
+/**
+ * Display : Fraunces (variable) — sa plage opsz/wght porte à elle seule le
+ * contraste graisse/italique de la direction « écrin de nuit ».
+ */
+export const fontDisplay = Fraunces({
   variable: "--font-family-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
   preload: true,
 });

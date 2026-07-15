@@ -36,11 +36,13 @@ const STATUS_FROM_PRISMA: Record<PrismaOrderStatus, OrderStatus> = {
 const MODE_TO_PRISMA: Record<ReceptionMode, PrismaReceptionMode> = {
   delivery: "DELIVERY",
   pickup: "PICKUP",
+  dinein: "DINEIN",
 };
 
 const MODE_FROM_PRISMA: Record<PrismaReceptionMode, ReceptionMode> = {
   DELIVERY: "delivery",
   PICKUP: "pickup",
+  DINEIN: "dinein",
 };
 
 const PAYMENT_TO_PRISMA: Record<PaymentMethod, PrismaPaymentMethod> = {
@@ -140,8 +142,14 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
 
 export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
   const mode = fromPrismaReceptionMode(row.mode);
-  const fulfillmentType =
-    row.fulfillmentType === "pickup" ? "pickup" : "delivery";
+  const fulfillmentType: ReceptionMode =
+    row.fulfillmentType === "pickup"
+      ? "pickup"
+      : row.fulfillmentType === "dinein"
+        ? "dinein"
+        : row.fulfillmentType === "delivery"
+          ? "delivery"
+          : mode;
 
   return {
     id: row.id,

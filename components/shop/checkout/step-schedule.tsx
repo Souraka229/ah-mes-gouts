@@ -25,7 +25,8 @@ export function StepSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [slotError, setSlotError] = useState<string | null>(null);
 
-  const fulfillmentType = mode ?? "delivery";
+  // « Sur place » et « À emporter » partagent les horaires boutique (pickup).
+  const fulfillmentType = mode === "delivery" ? "delivery" : "pickup";
   const now = useMemo(() => new Date(), []);
 
   const selectableDates = useMemo(
@@ -78,15 +79,17 @@ export function StepSchedule() {
         <p className="mt-2 font-body text-muted-foreground">
           {mode === "delivery"
             ? "Sélectionnez la date et l'heure de livraison souhaitées."
-            : "Sélectionnez la date et l'heure de retrait en boutique."}
+            : mode === "dinein"
+              ? "Sélectionnez la date et l'heure de votre venue pour déguster sur place."
+              : "Sélectionnez la date et l'heure de retrait de votre commande."}
         </p>
       </div>
 
-      {mode === "pickup" && (
+      {mode !== "delivery" && (
         <div className="flex items-start gap-3 rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
           <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
           <div>
-            <p className="font-medium text-primary">Adresse de retrait</p>
+            <p className="font-medium text-primary">Adresse de la boutique</p>
             <p className="mt-1 text-muted-foreground">{options.pickupAddress}</p>
           </div>
         </div>

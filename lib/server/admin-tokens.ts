@@ -5,6 +5,10 @@ export type AdminTokenEntry = {
   token: string;
   role: AdminRole;
   name: string;
+  /** ISO — si dépassé, le token est refusé */
+  expiresAt?: string;
+  /** ISO — révocation individuelle sans toucher aux autres */
+  revokedAt?: string;
 };
 
 export function parseAdminAccessTokens(): AdminTokenEntry[] {
@@ -27,9 +31,27 @@ export function parseAdminAccessTokens(): AdminTokenEntry[] {
   }
 }
 
+function isTokenUsable(entry: AdminTokenEntry, now = new Date()): boolean {
+  if (entry.revokedAt) {
+    const revoked = new Date(entry.revokedAt);
+    if (!Number.isNaN(revoked.getTime()) && revoked.getTime() <= now.getTime()) {
+      return false;
+    }
+  }
+  if (entry.expiresAt) {
+    const expires = new Date(entry.expiresAt);
+    if (!Number.isNaN(expires.getTime()) && expires.getTime() <= now.getTime()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function findAdminTokenEntry(
   token: string | undefined,
 ): AdminTokenEntry | undefined {
   if (!token?.trim()) return undefined;
-  return parseAdminAccessTokens().find((entry) => entry.token === token);
+  const entry = parseAdminAccessTokens().find((e) => e.token === token);
+  if (!entry || !isTokenUsable(entry)) return undefined;
+  return entry;
 }

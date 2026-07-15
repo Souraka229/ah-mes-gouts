@@ -4,11 +4,8 @@ import type { NextRequest } from "next/server";
 import {
   getAdminContextFromRequest,
   isAdminAuthorizedFromRequest,
-} from "@/lib/server/admin-auth";
-import {
-  getAdminRoleFromRequest,
   isAdministratorFromRequest,
-} from "@/lib/server/admin-role";
+} from "@/lib/server/admin-auth-edge";
 
 /** Admin : lien magique (?token=) ou dev local ADMIN_DEV_OPEN=true. */
 export function middleware(request: NextRequest) {
@@ -26,7 +23,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/?admin=locked", request.url));
   }
 
-  if (pathname.startsWith("/admin/assistant") && !isAdministratorFromRequest(request)) {
+  if (
+    pathname.startsWith("/admin/assistant") &&
+    !isAdministratorFromRequest(request)
+  ) {
     return NextResponse.redirect(
       new URL("/admin?assistant=forbidden", request.url),
     );
@@ -45,11 +45,15 @@ export function middleware(request: NextRequest) {
     adminOnlyPrefixes.some((p) => pathname.startsWith(p)) &&
     !isAdministratorFromRequest(request)
   ) {
-    return NextResponse.redirect(new URL("/admin?forbidden=admin", request.url));
+    return NextResponse.redirect(
+      new URL("/admin?forbidden=admin", request.url),
+    );
   }
 
   if (pathname === "/admin/parametres" && !isAdministratorFromRequest(request)) {
-    return NextResponse.redirect(new URL("/admin/parametres/livraison", request.url));
+    return NextResponse.redirect(
+      new URL("/admin/parametres/livraison", request.url),
+    );
   }
 
   const context = getAdminContextFromRequest(request);

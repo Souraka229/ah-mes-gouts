@@ -9,6 +9,8 @@ export type Product = {
   imageUrls?: string[];
   /** Mot-clé affiché sur la carte menu (ex: Solaire, Floral) */
   keyword?: string;
+  /** Format entremets : en cœur ou en carré */
+  shape?: "coeur" | "carre";
   stockRemaining: number;
   stockMinimum: number;
   isNew: boolean;

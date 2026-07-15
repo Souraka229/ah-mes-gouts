@@ -25,6 +25,7 @@ enum OrderStatus {
 enum ReceptionMode {
   DELIVERY
   PICKUP
+  DINEIN
 }
 
 enum PaymentMethod {
@@ -73,6 +74,80 @@ model Driver {
   orders Order[]
 }
 
+/// Client CRM — pivot = téléphone normalisé (pas l'IP, pas le device).
+model Customer {
+  id           String    @id @default(cuid())
+  phone        String    @unique
+  firstName    String    @default("")
+  lastName     String    @default("")
+  firstOrderAt DateTime?
+  lastOrderAt  DateTime?
+  ordersCount  Int       @default(0)
+  totalSpent   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  devices    CustomerDevice[]
+  activities CustomerActivity[]
+  orders     Order[]
+
+  @@index([lastOrderAt])
+  @@index([totalSpent])
+  @@index([ordersCount])
+}
+
+/// Appareil navigateur (LocalStorage) — peut être lié à un Customer.
+model CustomerDevice {
+  id         String    @id @default(cuid())
+  deviceKey  String    @unique
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  activities CustomerActivity[]
+
+  @@index([customerId])
+}
+
+enum CustomerActivityType {
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_START
+  ORDER_PLACED
+}
+
+model CustomerActivity {
+  id          String               @id @default(cuid())
+  deviceId    String
+  device      CustomerDevice       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  customerId  String?
+  customer    Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  type        CustomerActivityType
+  productId   String?
+  productSlug String?
+  productName String?
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([deviceId, createdAt])
+  @@index([type, createdAt])
+}
+
+/// Code à usage unique pour récupérer l'historique sur un nouvel appareil.
+model CustomerOtp {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
 model Order {
   id        String   @id
   createdAt DateTime @default(now())
@@ -90,6 +165,9 @@ model Order {
   subtotal      Int
   total         Int
   paymentMethod PaymentMethod
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   driverId          String?
   driver            Driver?   @relation(fields: [driverId], references: [id], onDelete: SetNull)
@@ -119,6 +197,7 @@ model Order {
   items OrderItem[]
 
   @@index([clientPhone])
+  @@index([customerId])
   @@index([createdAt])
   @@index([driverId])
   @@index([status])
@@ -205,4 +284,27 @@ model OrderStatusFeed {
   id        String      @id
   status    OrderStatus
   updatedAt DateTime    @updatedAt
+}
+
+/// Visiteur unique par jour (cookie amg_vid → hash) — analytics boutique
+model SiteVisitorDay {
+  id          String   @id @default(cuid())
+  day         String
+  visitorHash String
+  pageViews   Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([day, visitorHash])
+  @@index([day])
+}
+
+/// Destinataires Telegram (cheffe + équipe) — non bloquant si indisponible
+model TelegramSubscriber {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  label     String   @default("")
+  isActive  Boolean  @default(true)
+  linkedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

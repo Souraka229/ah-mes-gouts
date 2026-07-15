@@ -3,28 +3,24 @@ import type { NextRequest } from "next/server";
 
 import {
   getAdminContextAsync,
-  getAdminContextFromRequest,
   isAdminAuthorized,
 } from "@/lib/server/admin-auth";
+import {
+  getAdminContextFromRequest,
+} from "@/lib/server/admin-auth-edge";
+
+export {
+  getAdminRoleFromRequest,
+  isAdministratorFromRequest,
+} from "@/lib/server/admin-auth-edge";
 
 export async function getAdminRoleAsync(): Promise<AdminRole | null> {
   const context = await getAdminContextAsync();
   return context?.role ?? null;
 }
 
-export function getAdminRoleFromRequest(
-  request: NextRequest,
-): AdminRole | null {
-  const context = getAdminContextFromRequest(request);
-  return context?.role ?? null;
-}
-
 export async function isAdministratorAsync(): Promise<boolean> {
   return (await getAdminRoleAsync()) === "administrateur";
-}
-
-export function isAdministratorFromRequest(request: NextRequest): boolean {
-  return getAdminRoleFromRequest(request) === "administrateur";
 }
 
 export async function getAdminDisplayNameAsync(): Promise<string> {
@@ -46,4 +42,9 @@ export function isAdministrator(): boolean {
 /** Compat dev local — ne pas utiliser pour l'auth token. */
 export function getAdminDisplayName(): string {
   return process.env.ADMIN_DEV_NAME ?? "Administrateur";
+}
+
+/** Re-export pour pages server utilisant request. */
+export function getAdminContextForRequest(request: NextRequest) {
+  return getAdminContextFromRequest(request);
 }

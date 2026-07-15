@@ -1,4 +1,5 @@
-export const PICKUP_ADDRESS = "Gift & ENTREMETS — Cotonou, Bénin";
+export const PICKUP_ADDRESS =
+  "Gift & ENTREMETS — Fidjrosse fin pavée, face à Yatt & Co, Cotonou";
 
 /** Capacité par créneau (commandes simultanées). */
 export const MAX_ORDERS_PER_SLOT = 5;

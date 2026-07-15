@@ -38,24 +38,24 @@ export type HomePageContent = {
 
 const DEFAULTS = {
   hero: {
-    titleLine1: "L'instant qui",
-    titleLine2: "fond",
-    sublinePrefix: "Glaces & entremets artisanaux —",
-    sublineHighlight: "Cotonou",
+    titleLine1: SITE_NAME,
+    titleLine2: "",
+    sublinePrefix: "Entremets & fleurs artisanaux —",
+    sublineHighlight: "Fidjrosse, Cotonou",
     imageUrl: LANDING_IMAGES.hero,
-    ctaLabel: "La carte",
+    ctaLabel: "Découvrir la carte",
     ctaHref: "/catalogue",
-    menuBadgeLabel: "Menu du jour actif",
+    menuBadgeLabel: "Menu du jour",
   },
   giftTeaser: {
     title: "Et si c'était un cadeau ?",
     itemSlugs: ["nounours-beige", "bouquet-roses", "carte-cadeau"],
   },
   productGrid: {
-    eyebrow: "Menu du jour",
-    titleLine1: "Les créations",
+    eyebrow: "La carte",
+    titleLine1: "Créations",
     titleLine2: "du moment",
-    packsSectionTitle: "Nos formules gourmandes",
+    packsSectionTitle: "Formules",
   },
   storytelling: {
     title: `Pourquoi ${SITE_NAME}`,
@@ -68,12 +68,12 @@ const DEFAULTS = {
     rotateMessages: [
       LANDING_COPY.typoBand,
       "Des textures qui restent quand tout le reste a fondu",
-      "Cotonou, une glace à la fois",
+      "Cotonou, une création à la fois",
     ],
   },
   signatureMoment: { text: LANDING_COPY.signatureMoment },
   footer: {
-    phone: "+229 97 31 07 42",
+    phone: "+229 01 97 31 07 42",
     instagramHandle: "@ahmesgouts",
   },
 };

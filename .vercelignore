@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.vercel
+.env*
+!.env.example
+*.md
+.cursor
+coverage
+.turbo
+data/*.json
+!.gitkeep

@@ -20,6 +20,7 @@ import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { cn } from "@/lib/utils";
 import type { CheckoutStep } from "@/types/order";
+import type { Product } from "@/types/product";
 
 const stepComponents: Record<CheckoutStep, React.ComponentType> = {
   mode: StepMode,
@@ -30,14 +31,18 @@ const stepComponents: Record<CheckoutStep, React.ComponentType> = {
   payment: StepPayment,
 };
 
-export function CheckoutWizard() {
+type CheckoutWizardProps = {
+  upsellCandidates?: Product[];
+};
+
+export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
   const step = useCheckoutStore((state) => state.step);
   const mode = useCheckoutStore((state) => state.mode);
   const goBack = useCheckoutStore((state) => state.goBack);
   const cartItems = useCartStore((state) => state.items);
 
   useEffect(() => {
-    if (step === "zone" && mode === "pickup") {
+    if (step === "zone" && mode && mode !== "delivery") {
       useCheckoutStore.getState().setStep("schedule");
     }
   }, [step, mode]);
@@ -90,7 +95,11 @@ export function CheckoutWizard() {
             exit={{ opacity: 0, x: -24 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
           >
-            <StepComponent />
+            {step === "upsell" ? (
+              <StepUpsell candidates={upsellCandidates} />
+            ) : (
+              <StepComponent />
+            )}
           </motion.div>
         </AnimatePresence>
 

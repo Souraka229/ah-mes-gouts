@@ -1,13 +1,19 @@
 import {
   GIFT_CARD_SLUG,
 } from "@/lib/constants/products";
+import { PRODUCT_SHAPE_BY_SLUG } from "@/lib/business-info";
 import { getProductImageUrl } from "@/lib/product-images";
 import type { Product } from "@/types/product";
 
 type ProductSeed = Omit<Product, "updatedAt">;
 
+function withShape(seed: ProductSeed): ProductSeed {
+  const shape = PRODUCT_SHAPE_BY_SLUG[seed.slug];
+  return shape ? { ...seed, shape } : seed;
+}
+
 const PRODUCT_SEEDS: ProductSeed[] = [
-  {
+  withShape({
     id: "1",
     slug: "vanilla-caramel",
     name: "Vanilla Caramel",
@@ -22,8 +28,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     promotionPrice: 4500,
     isMenuDuJour: false,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "2",
     slug: "mango-passion",
     name: "Mango Passion",
@@ -37,8 +43,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: true,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "3",
     slug: "goyave-vanille",
     name: "Goyave Vanille",
@@ -52,8 +58,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: true,
     isPopular: false,
-  },
-  {
+  }),
+  withShape({
     id: "4",
     slug: "caramel-cappuccino",
     name: "Caramel Cappuccino",
@@ -67,8 +73,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: false,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "5",
     slug: "tiramisu",
     name: "Tiramisu Caramel",
@@ -82,8 +88,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: false,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "6",
     slug: "foret-blanche",
     name: "Forêt Blanche",
@@ -98,8 +104,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     promotionPrice: 4200,
     isMenuDuJour: false,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "7",
     slug: "nutella-caramel",
     name: "Nutella Baileys Speculos",
@@ -113,8 +119,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: true,
     isPopular: true,
-  },
-  {
+  }),
+  withShape({
     id: "8",
     slug: "caramel-baileys",
     name: "Oreos Caramel Baileys",
@@ -128,8 +134,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: true,
     isPopular: false,
-  },
-  {
+  }),
+  withShape({
     id: "9",
     slug: "speculoos",
     name: "Speculoos",
@@ -143,8 +149,8 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: false,
     isPopular: false,
-  },
-  {
+  }),
+  withShape({
     id: "10",
     slug: "mousse-chocolat",
     name: "Forêt Noire",
@@ -158,7 +164,7 @@ const PRODUCT_SEEDS: ProductSeed[] = [
     isPromotion: false,
     isMenuDuJour: false,
     isPopular: true,
-  },
+  }),
   {
     id: "11",
     slug: "carte-cadeau",

@@ -20,7 +20,7 @@ export const BUSINESS = {
   legalName: SITE_NAME_WITH_CREDIT,
   phone: "+22997310742",
   email: "contact@ahmesgouts.bj",
-  streetAddress: "Cotonou",
+  streetAddress: "Fidjrosse fin pavée, face à Yatt & Co",
   addressLocality: "Cotonou",
   addressRegion: "Littoral",
   addressCountry: "BJ",
@@ -28,11 +28,7 @@ export const BUSINESS = {
     latitude: 6.3654,
     longitude: 2.4183,
   },
-  openingHours: [
-    "Mo-Fr 10:00-20:00",
-    "Sa 11:00-22:00",
-    "Su 12:00-18:00",
-  ],
+  openingHours: ["Mo-Su 13:00-19:00"],
   paymentAccepted: [
     "MTN MoMo",
     "Moov Money",

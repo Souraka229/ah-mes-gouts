@@ -8,223 +8,350 @@ import {
   useReducedMotion,
   useScroll,
   useTransform,
+  type TargetAndTransition,
 } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
 
-import { LandingMenuBadge } from "@/components/shop/landing/landing-menu-badge";
-import { MENU_DU_JOUR_CATALOGUE_HREF } from "@/lib/landing-data";
-import { SITE_NAME, SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
+import { BOUTIQUE_HOURS, BOUTIQUE_LOCATION, SLOGAN } from "@/lib/business-info";
+import { ORIGIN_BRAND, SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import type { HeroSectionContent } from "@/types/site-content";
 
-const HERO_IMAGE_ROTATION = -7;
-const CTA_SIZE_PX = 90;
-const CTA_LEFT_OFFSET_PX = -(CTA_SIZE_PX * 0.75);
+/** Easing « révélation sous la lumière » — sortie lente, cérémonieuse. */
+const EXPO: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const CTA_GOLD_SHADOW =
-  "0 10px 32px rgba(201, 169, 110, 0.38), 0 3px 12px rgba(201, 169, 110, 0.22)";
+type HeroTone = "violet" | "nuit";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 14 },
-  visible: (delay: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay,
-      duration: 0.55,
-      ease: [0.22, 1, 0.36, 1] as const,
-    },
-  }),
-};
+/**
+ * Alternance dictée par le produit : le fond immersif prend la teinte froide
+ * (bleu nuit) pour les pièces sombres/glacées, sinon le violet (âme de marque).
+ */
+const NUIT_IMAGE_HINTS = ["foret-noire", "speculos", "chocolat-menthe", "oreos"];
 
-function HeroBackground() {
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 z-0"
-      style={{
-        background:
-          "radial-gradient(circle at 20% 30%, rgba(243, 201, 206, 0.25) 0%, transparent 60%)",
-      }}
-      aria-hidden
-    />
-  );
+function resolveHeroTone(imageUrl: string): HeroTone {
+  const f = imageUrl.toLowerCase();
+  return NUIT_IMAGE_HINTS.some((hint) => f.includes(hint)) ? "nuit" : "violet";
 }
 
-function HeroGrainOverlay() {
-  const filterId = useId();
+const TONE_FIELD: Record<HeroTone, string> = {
+  violet: "bg-primary",
+  nuit: "bg-nuit",
+};
 
+/** Grain doux — soft-light, visible sur les aplats sombres. */
+function Grain() {
+  const id = useId();
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[2]"
-      style={{ opacity: 0.04, mixBlendMode: "multiply" }}
+      className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+      style={{ opacity: 0.12 }}
       aria-hidden
     >
       <svg className="h-full w-full" preserveAspectRatio="none">
-        <filter id={filterId}>
+        <filter id={id}>
           <feTurbulence
             type="fractalNoise"
-            baseFrequency="0.72"
-            numOctaves="4"
+            baseFrequency="0.82"
+            numOctaves="3"
             stitchTiles="stitch"
           />
         </filter>
-        <rect width="100%" height="100%" filter={`url(#${filterId})`} />
+        <rect width="100%" height="100%" filter={`url(#${id})`} />
       </svg>
     </div>
   );
 }
 
-function HeroCurvedCta({ href, label }: { href: string; label: string }) {
-  const pathId = useId();
-
-  return (
-    <Link
-      href={href}
-      className="relative flex cursor-pointer items-center justify-center rounded-full bg-accent transition-transform duration-200 hover:scale-[1.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-      style={{
-        width: CTA_SIZE_PX,
-        height: CTA_SIZE_PX,
-        minWidth: CTA_SIZE_PX,
-        minHeight: CTA_SIZE_PX,
-        boxShadow: CTA_GOLD_SHADOW,
-      }}
-      aria-label={label}
-    >
-      <svg
-        viewBox="0 0 90 90"
-        className="absolute inset-0 size-full"
-        aria-hidden
-      >
-        <path id={pathId} d="M 14 48 A 31 31 0 1 1 76 48" fill="none" />
-        <text
-          className="fill-text font-body font-bold uppercase"
-          style={{ fontSize: "7.5px", letterSpacing: "0.22em" }}
-        >
-          <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
-            {label}
-          </textPath>
-        </text>
-      </svg>
-    </Link>
-  );
-}
-
-export function RadicalHeroSection({ content }: { content: HeroSectionContent }) {
+/**
+ * Hero « écrin de nuit » — une seule pièce présentée dans une vitrine dorée,
+ * sur un mur sombre. Trois froids/chauds à rôle distinct : le violet (ou bleu
+ * nuit) est le mur, le rose est le halo tendre derrière la pièce, le doré est
+ * le cadre + l'action. Rien ne se répète, tout se révèle sous la lumière.
+ */
+export function RadicalHeroSection({
+  content,
+}: {
+  content: HeroSectionContent;
+}) {
   const reduceMotion = useReducedMotion();
+  const tone = resolveHeroTone(content.imageUrl);
+
   const { scrollY } = useScroll();
+  const frameY = useTransform(scrollY, [0, 700], [0, -56]);
+  const haloY = useTransform(scrollY, [0, 700], [0, 90]);
 
-  const imageY = useTransform(scrollY, (value) => {
-    if (reduceMotion) return 0;
-    const halfViewport =
-      typeof window !== "undefined" ? window.innerHeight * 0.5 : 400;
-    const progress = Math.min(Math.max(value / halfViewport, 0), 1);
-    return progress * 40;
-  });
-
-  const titleDelay = 0;
-  const sublineDelay = reduceMotion ? 0 : 0.15;
-  const ctaDelay = reduceMotion ? 0 : 0.35;
+  const initial = (
+    hidden: TargetAndTransition,
+  ): false | TargetAndTransition => (reduceMotion ? false : hidden);
 
   return (
     <section
-      className="relative min-h-[100dvh] w-full overflow-hidden lg:h-[100vh] lg:max-h-[100vh]"
-      aria-label={`Accueil ${SITE_NAME_WITH_CREDIT}`}
+      className={`relative min-h-[100dvh] w-full overflow-hidden ${TONE_FIELD[tone]} text-bg`}
+      aria-label={`Accueil — ${SITE_NAME_WITH_CREDIT}`}
     >
-      <HeroBackground />
-      <HeroGrainOverlay />
-
-      <div
-        className="pointer-events-none absolute z-[3] hidden rounded-full border-[1.5px] border-accent lg:block"
-        style={{ width: 300, height: 300, right: -110, bottom: -95 }}
+      {/* Halo tendre (rose) — la lumière derrière la pièce */}
+      <motion.div
+        className="pointer-events-none absolute -right-[20%] top-1/2 h-[120vmin] w-[120vmin] -translate-y-1/2 lg:right-[2%]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(243,201,206,0.42), rgba(243,201,206,0.10) 45%, transparent 72%)",
+          y: reduceMotion ? undefined : haloY,
+        }}
+        initial={initial({ opacity: 0, scale: 0.7 })}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.4, ease: EXPO, delay: 0.1 }}
         aria-hidden
       />
+
+      {/* Fuite de lumière froide (bleu nuit) — le second froid qui équilibre */}
       <div
-        className="pointer-events-none absolute z-[3] hidden rounded-full border border-secondary/55 lg:block"
-        style={{ width: 228, height: 228, right: -74, bottom: -59 }}
+        className="pointer-events-none absolute inset-y-0 left-0 w-[45%]"
+        style={{
+          background:
+            "linear-gradient(100deg, rgba(31,43,77,0.65), rgba(31,43,77,0.0) 70%)",
+        }}
+        aria-hidden
+      />
+      {/* Vignette basse — assied la composition */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5"
+        style={{
+          background:
+            "linear-gradient(to top, rgba(20,12,26,0.55), transparent)",
+        }}
         aria-hidden
       />
 
-      {/* Mobile-first : texte puis image — jamais de chevauchement badge/titre */}
-      <div className="relative z-10 flex min-h-[100dvh] flex-col px-5 pt-[12vh] sm:px-8 lg:grid lg:min-h-[100vh] lg:grid-cols-2 lg:items-center lg:gap-10 lg:px-[8vw] lg:pt-[14vh]">
-        <div className="max-w-2xl shrink-0">
-          <motion.div
-            initial={reduceMotion ? false : "hidden"}
-            animate="visible"
-            custom={0}
-            variants={fadeUp}
-            style={{ marginBottom: "24px" }}
-          >
-            <LandingMenuBadge
-              label={content.menuBadgeLabel}
-              href={MENU_DU_JOUR_CATALOGUE_HREF}
-            />
-          </motion.div>
+      {/* Ruban doré — fil rouge, se dessine sous la lumière */}
+      <svg
+        className="pointer-events-none absolute inset-y-0 left-[5vw] hidden h-full w-24 sm:block"
+        viewBox="0 0 60 900"
+        fill="none"
+        preserveAspectRatio="xMidYMin slice"
+        aria-hidden
+      >
+        <motion.path
+          d="M30 -10 C 8 120, 52 240, 30 360 C 8 480, 52 600, 30 720 C 14 820, 40 880, 30 960"
+          stroke="var(--color-accent)"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          initial={reduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 1.9, ease: EXPO, delay: 0.35 }}
+          style={{ opacity: 0.55 }}
+        />
+      </svg>
 
-          <motion.h1
-            className="font-display font-bold leading-[0.88] tracking-[-0.03em] text-primary"
-            style={{
-              fontSize: "clamp(3rem, 12vw, 11rem)",
-              textAlign: "left",
-            }}
-            initial={reduceMotion ? false : "hidden"}
-            animate="visible"
-            custom={titleDelay}
-            variants={fadeUp}
+      <Grain />
+
+      <div className="relative z-10 mx-auto grid min-h-[100dvh] w-full max-w-[1400px] grid-cols-1 items-center gap-y-12 px-6 pb-16 pt-28 sm:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-x-10 lg:px-[6vw] lg:pt-24">
+        {/* ── Colonne texte ── */}
+        <div className="order-2 flex flex-col lg:order-1">
+          <motion.p
+            className="flex items-center gap-3 font-body text-[11px] font-semibold uppercase tracking-[0.34em] text-secondary sm:text-xs"
+            initial={initial({ opacity: 0, y: 14 })}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EXPO, delay: 0.15 }}
           >
-            {content.titleLine1}
-            <br />
-            {content.titleLine2}
-          </motion.h1>
+            <span className="h-px w-8 bg-accent" aria-hidden />
+            Maison {ORIGIN_BRAND} · Cotonou
+          </motion.p>
+
+          <h1 className="mt-6 font-display text-bg">
+            <MaskLine reduceMotion={reduceMotion} delay={0.28}>
+              <span
+                className="block font-light italic leading-[0.95] tracking-[-0.01em]"
+                style={{ fontSize: "clamp(3rem, 8.5vw, 6.75rem)" }}
+              >
+                Gift
+              </span>
+            </MaskLine>
+            <MaskLine reduceMotion={reduceMotion} delay={0.4}>
+              <span
+                className="block font-black uppercase leading-[0.86] tracking-[-0.02em]"
+                style={{ fontSize: "clamp(2.6rem, 7.4vw, 6rem)" }}
+              >
+                <span className="text-accent">&</span> Entremets
+              </span>
+            </MaskLine>
+          </h1>
 
           <motion.p
-            className="mt-6 font-body text-[1.1rem] font-semibold tracking-[0.08em] uppercase"
-            initial={reduceMotion ? false : "hidden"}
-            animate="visible"
-            custom={sublineDelay}
-            variants={fadeUp}
+            className="mt-7 max-w-md font-display text-xl italic leading-snug text-bg/85 sm:text-2xl"
+            initial={initial({ opacity: 0, y: 16 })}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EXPO, delay: 0.54 }}
           >
-            <span className="text-primary">{content.sublinePrefix}</span>{" "}
-            <span className="bg-secondary/55 px-2 py-0.5 text-primary">
-              {content.sublineHighlight}
-            </span>
+            {SLOGAN}.
           </motion.p>
-        </div>
 
-        <div className="relative mt-10 w-full min-w-0 pb-16 lg:mt-0 lg:pb-0">
+          <motion.p
+            className="mt-4 max-w-md font-body text-sm leading-relaxed text-bg/60"
+            initial={initial({ opacity: 0, y: 16 })}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EXPO, delay: 0.62 }}
+          >
+            {content.sublinePrefix}{" "}
+            <span className="text-bg/85">{content.sublineHighlight}</span>
+          </motion.p>
+
           <motion.div
-            style={{ y: imageY }}
-            className="relative mx-auto w-full max-w-md lg:max-w-none"
+            className="mt-9 flex flex-wrap items-center gap-x-7 gap-y-4"
+            initial={initial({ opacity: 0, y: 18 })}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: EXPO, delay: 0.72 }}
           >
             <Link
-              href={MENU_DU_JOUR_CATALOGUE_HREF}
-              className="relative block aspect-[4/5] w-full overflow-hidden rounded-[2rem] shadow-[0_24px_64px_rgba(59,31,77,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-              aria-label="Voir le menu du jour"
+              href={content.ctaHref}
+              className="group relative inline-flex min-h-12 items-center gap-2.5 overflow-hidden rounded-full bg-accent px-8 py-3.5 font-body text-sm font-semibold text-text transition-shadow duration-500 hover:shadow-[0_18px_40px_-12px_rgba(201,169,110,0.7)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
-              <Image
-                src={content.imageUrl}
-                alt={`Création glacée signature ${SITE_NAME} — Mango Passion`}
-                fill
-                priority
-                sizes="(max-width: 1024px) 90vw, 45vw"
-                unoptimized={content.imageUrl.endsWith(".svg")}
-                className="object-cover object-center"
-                style={{
-                  transform: `rotate(${HERO_IMAGE_ROTATION}deg) scale(1.08)`,
-                }}
+              {/* Lueur interne qui respire + balayage au survol */}
+              <span
+                className="hero-cta-glow pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(closest-side,rgba(255,255,255,0.7),transparent)]"
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-18deg] bg-white/45 blur-md transition-transform duration-700 ease-out group-hover:translate-x-[320%]"
+                aria-hidden
+              />
+              <span className="relative">{content.ctaLabel}</span>
+              <ArrowUpRight
+                className="relative size-4 transition-transform duration-500 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                aria-hidden
               />
             </Link>
 
-            <motion.div
-              className="absolute top-[68%] z-20 -translate-y-1/2"
-              style={{ left: CTA_LEFT_OFFSET_PX }}
-              initial={reduceMotion ? false : "hidden"}
-              animate="visible"
-              custom={ctaDelay}
-              variants={fadeUp}
+            <Link
+              href="/infos"
+              className="group inline-flex items-center gap-1.5 font-body text-sm font-medium text-bg/75 transition-colors hover:text-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
-              <HeroCurvedCta href={content.ctaHref} label={content.ctaLabel} />
-            </motion.div>
+              <span className="relative">
+                La boutique
+                <span
+                  className="absolute -bottom-0.5 left-0 h-px w-full origin-left scale-x-0 bg-accent transition-transform duration-500 ease-out group-hover:scale-x-100"
+                  aria-hidden
+                />
+              </span>
+              <ArrowUpRight className="size-3.5" aria-hidden />
+            </Link>
           </motion.div>
         </div>
+
+        {/* ── Vitrine : la pièce dans son cadre doré ── */}
+        <motion.div
+          className="order-1 mx-auto w-full max-w-[26rem] lg:order-2 lg:max-w-none lg:justify-self-end"
+          style={{ y: reduceMotion ? undefined : frameY }}
+        >
+          <motion.figure
+            className="relative"
+            initial={initial({ opacity: 0, y: 46, scale: 1.03 })}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 1.1, ease: EXPO, delay: 0.32 }}
+          >
+            {/* Passe-partout : double filet doré (le cadre = doré, détail) */}
+            <div className="relative rounded-[2px] border border-accent/25 p-2.5 sm:p-3">
+              <div className="relative aspect-[5/6] overflow-hidden rounded-[1px] border border-accent/45">
+                <Image
+                  src={content.imageUrl}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 42vw, 88vw"
+                  className="object-cover object-center"
+                  unoptimized={content.imageUrl.endsWith(".svg")}
+                />
+                {/* Vignette interne — la lumière tombe au centre */}
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "radial-gradient(120% 90% at 50% 42%, transparent 52%, rgba(20,12,26,0.5) 100%)",
+                  }}
+                  aria-hidden
+                />
+              </div>
+
+              {/* Repères d'angle dorés — précision minérale */}
+              <CornerTicks />
+            </div>
+
+            {/* Cartouche « menu du jour » — attaché à la vitrine */}
+            <figcaption className="absolute -bottom-4 left-4 flex items-center gap-2.5 rounded-full border border-accent/30 bg-[rgba(20,12,26,0.55)] px-4 py-2 backdrop-blur-md sm:left-6">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/70" />
+                <span className="relative inline-flex size-2 rounded-full bg-success" />
+              </span>
+              <span className="font-body text-[10px] font-semibold uppercase tracking-[0.28em] text-bg/90">
+                {content.menuBadgeLabel} · {BOUTIQUE_HOURS.label}
+              </span>
+            </figcaption>
+
+            {/* Label vertical gravé sur la tranche */}
+            <span
+              className="absolute -left-3 top-1/2 hidden -translate-y-1/2 -rotate-90 font-body text-[10px] font-semibold uppercase tracking-[0.4em] text-accent/70 lg:block"
+              aria-hidden
+            >
+              Édition Cotonou
+            </span>
+          </motion.figure>
+        </motion.div>
       </div>
+
+      {/* Ancre bas — lieu + invite au défilement */}
+      <motion.div
+        className="absolute inset-x-0 bottom-6 z-10 flex items-center justify-center gap-3 px-6 text-bg/50 sm:bottom-8"
+        initial={initial({ opacity: 0 })}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, ease: EXPO, delay: 0.9 }}
+      >
+        <span className="h-px w-6 bg-bg/25" aria-hidden />
+        <span className="font-body text-[10px] uppercase tracking-[0.3em]">
+          {BOUTIQUE_LOCATION.short}
+        </span>
+        <span className="h-px w-6 bg-bg/25" aria-hidden />
+      </motion.div>
     </section>
+  );
+}
+
+/** Révélation par masque — la ligne monte sous la lumière. */
+function MaskLine({
+  children,
+  delay,
+  reduceMotion,
+}: {
+  children: React.ReactNode;
+  delay: number;
+  reduceMotion: boolean | null;
+}) {
+  return (
+    <span className="block overflow-hidden pb-[0.08em]">
+      <motion.span
+        className="block"
+        initial={reduceMotion ? false : { y: "115%" }}
+        animate={{ y: "0%" }}
+        transition={{ duration: 0.95, ease: EXPO, delay }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  );
+}
+
+/** Repères d'angle en L — quatre coins de la vitrine. */
+function CornerTicks() {
+  const base = "pointer-events-none absolute h-4 w-4 border-accent/60";
+  return (
+    <>
+      <span className={`${base} left-0 top-0 border-l border-t`} aria-hidden />
+      <span className={`${base} right-0 top-0 border-r border-t`} aria-hidden />
+      <span
+        className={`${base} bottom-0 left-0 border-b border-l`}
+        aria-hidden
+      />
+      <span
+        className={`${base} bottom-0 right-0 border-b border-r`}
+        aria-hidden
+      />
+    </>
   );
 }

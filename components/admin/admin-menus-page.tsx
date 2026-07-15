@@ -15,6 +15,7 @@ import {
   MenuProductEditor,
   type MenuProductDraft,
 } from "@/components/admin/menu-product-editor";
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -552,19 +553,21 @@ export function AdminMenusPage() {
       )}
 
       {menus.length === 0 && !loading && (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
-          <p className="font-body text-sm text-muted-foreground">
-            Aucun menu programmé. Commencez par le menu de demain — un clic suffit.
-          </p>
-          <Button
-            type="button"
-            className="mt-4 cursor-pointer gap-2"
-            onClick={openCreateTomorrow}
-          >
-            <Plus className="size-4" />
-            Programmer le menu de demain
-          </Button>
-        </div>
+        <AdminEmptyState
+          variant="menus"
+          title="Aucun menu programmé"
+          description="Commence par demain — un clic suffit pour ouvrir le fournil."
+          action={
+            <Button
+              type="button"
+              className="cursor-pointer gap-2"
+              onClick={openCreateTomorrow}
+            >
+              <Plus className="size-4" aria-hidden />
+              Programmer le menu de demain
+            </Button>
+          }
+        />
       )}
     </div>
   );

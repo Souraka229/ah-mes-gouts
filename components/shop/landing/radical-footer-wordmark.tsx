@@ -20,43 +20,43 @@ export function RadicalFooterWordmarkSection({
   return (
     <footer
       id="contact"
-      className="relative overflow-x-hidden bg-primary pb-10 pt-[10vh] text-white"
+      className="relative overflow-x-hidden border-t border-accent/20 bg-primary pb-10 pt-[10vh] text-white"
     >
       {/* Mobile < 768px */}
       <div
-        className="footer-wordmark footer-wordmark--mobile select-none font-body font-bold uppercase md:hidden"
+        className="footer-wordmark footer-wordmark--mobile select-none font-display uppercase md:hidden"
         aria-hidden
       >
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-bg">
+        <span className="footer-wordmark__line block font-light leading-[0.88] tracking-[-0.03em] text-bg">
           GIFT &
         </span>
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-accent">
+        <span className="footer-wordmark__line block font-black leading-[0.88] tracking-[-0.03em] text-accent">
           ENTREMETS
         </span>
       </div>
 
       {/* Tablette 768px – 1023px */}
       <div
-        className="footer-wordmark footer-wordmark--tablet hidden select-none font-body font-bold uppercase md:block lg:hidden"
+        className="footer-wordmark footer-wordmark--tablet hidden select-none font-display uppercase md:block lg:hidden"
         aria-hidden
       >
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-bg">
+        <span className="footer-wordmark__line block font-light leading-[0.88] tracking-[-0.03em] text-bg">
           GIFT &
         </span>
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-accent">
+        <span className="footer-wordmark__line block font-black leading-[0.88] tracking-[-0.03em] text-accent">
           ENTREMETS
         </span>
       </div>
 
       {/* Desktop ≥ 1024px */}
       <div
-        className="footer-wordmark footer-wordmark--desktop hidden select-none font-body font-bold uppercase lg:block"
+        className="footer-wordmark footer-wordmark--desktop hidden select-none font-display uppercase lg:block"
         aria-hidden
       >
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-bg">
+        <span className="footer-wordmark__line block font-light leading-[0.88] tracking-[-0.03em] text-bg">
           GIFT &
         </span>
-        <span className="footer-wordmark__line block leading-[0.88] tracking-[-0.03em] text-accent">
+        <span className="footer-wordmark__line block font-black leading-[0.88] tracking-[-0.03em] text-accent">
           ENTREMETS
         </span>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useMemo } from "react";
 import { Gift, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,24 @@ import {
   isGiftCardProduct,
 } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import type { Product } from "@/types/product";
 
-export function StepUpsell() {
+const MAX_SUGGESTIONS = 4;
+
+function isChocolateSupplement(product: Product): boolean {
+  return product.slug.startsWith("supplement-chocolat");
+}
+
+function looksLikeBouquet(name: string, slug: string | undefined): boolean {
+  const haystack = `${name} ${slug ?? ""}`.toLowerCase();
+  return /rose|bouquet|fleur/.test(haystack);
+}
+
+type StepUpsellProps = {
+  candidates?: Product[];
+};
+
+export function StepUpsell({ candidates }: StepUpsellProps) {
   const setStep = useCheckoutStore((state) => state.setStep);
   const mode = useCheckoutStore((state) => state.mode);
   const isGift = useCheckoutStore((state) => state.isGift);
@@ -23,16 +40,61 @@ export function StepUpsell() {
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
 
-  const upsellProducts = getUpsellProducts(
-    cartItems.map((item) => item.productId),
+  const cartHasBouquet = cartItems.some((item) =>
+    looksLikeBouquet(item.name, item.slug),
   );
+
+  const suggestions = useMemo(() => {
+    const inCart = new Set(cartItems.map((item) => item.productId));
+    const pool = (
+      candidates && candidates.length > 0
+        ? candidates
+        : getUpsellProducts(cartItems.map((item) => item.productId))
+    ).filter((product) => !inCart.has(product.id));
+
+    const chocolates = pool.filter(isChocolateSupplement);
+    const rest = pool.filter((product) => !isChocolateSupplement(product));
+    const giftCards = rest.filter(isGiftCardProduct);
+    const others = rest.filter((product) => !isGiftCardProduct(product));
+
+    let ordered: Product[];
+    if (cartHasBouquet) {
+      // Duo rose + chocolat : on met le chocolat en tête.
+      ordered = [...chocolates, ...giftCards, ...others];
+    } else if (isGift) {
+      // Cadeau : la carte cadeau d'abord.
+      ordered = [...giftCards, ...others, ...chocolates];
+    } else {
+      ordered = [...others, ...giftCards, ...chocolates];
+    }
+
+    return ordered.slice(0, MAX_SUGGESTIONS);
+  }, [candidates, cartItems, cartHasBouquet, isGift]);
+
+  const heading =
+    cartHasBouquet && suggestions.some(isChocolateSupplement)
+      ? {
+          title: "Un duo rose + chocolat ?",
+          subtitle:
+            "Ajoutez du chocolat à votre bouquet pour une surprise encore plus gourmande.",
+        }
+      : isGift
+        ? {
+            title: "Personnalisez votre cadeau",
+            subtitle: "Une carte cadeau ou une douceur en plus pour marquer le coup.",
+          }
+        : {
+            title: "Et si vous vous faisiez plaisir ?",
+            subtitle:
+              "Quelques créations qui accompagnent parfaitement votre commande.",
+          };
 
   const handleSkip = () => {
     const next = getNextStep("upsell", mode);
     if (next) setStep(next);
   };
 
-  const handleAdd = (product: (typeof upsellProducts)[number]) => {
+  const handleAdd = (product: Product) => {
     addItem({
       productId: product.id,
       slug: product.slug,
@@ -53,17 +115,34 @@ export function StepUpsell() {
     }
   };
 
+  if (suggestions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
+            Dernière étape
+          </h1>
+          <p className="mt-2 font-body text-muted-foreground">
+            Tout est prêt — direction le paiement.
+          </p>
+        </div>
+        <Button
+          className="h-11 w-full cursor-pointer bg-accent text-text hover:bg-accent/90 sm:w-auto"
+          onClick={handleSkip}
+        >
+          Continuer vers le paiement
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-          Et si vous vous faisiez plaisir ?
+          {heading.title}
         </h1>
-        <p className="mt-2 font-body text-muted-foreground">
-          {isGift
-            ? "Ajoutez une carte cadeau pour personnaliser votre surprise."
-            : "Quelques créations qui accompagnent parfaitement votre commande."}
-        </p>
+        <p className="mt-2 font-body text-muted-foreground">{heading.subtitle}</p>
       </div>
 
       {isGift && gift.giftMessage.trim() && (
@@ -73,15 +152,18 @@ export function StepUpsell() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {upsellProducts.map((product) => {
+        {suggestions.map((product) => {
           const isCard = isGiftCardProduct(product);
+          const isChoco = isChocolateSupplement(product);
+          const highlight =
+            (isCard && isGift) || (isChoco && cartHasBouquet);
 
           return (
             <article
               key={product.id}
               className={cn(
                 "flex gap-4 rounded-2xl border bg-card p-4",
-                isCard && isGift
+                highlight
                   ? "border-secondary ring-2 ring-secondary/30"
                   : "border-border",
               )}

@@ -43,6 +43,58 @@ export async function saveServerOrderWithRetry(
   });
 }
 
+/** Stock insuffisant à la création — erreur métier, jamais réessayée. */
+export class OrderStockError extends Error {
+  readonly issues: { name: string; message: string }[];
+
+  constructor(issues: { name: string; message: string }[]) {
+    super("Stock insuffisant");
+    this.name = "OrderStockError";
+    this.issues = issues;
+  }
+}
+
+/**
+ * Crée la commande et décrémente le stock DANS LA MÊME TRANSACTION.
+ * Le décrément conditionnel (`stockRemaining >= quantity`) est atomique :
+ * il ferme la fenêtre TOCTOU entre la vérification et l'écriture.
+ * Les produits absents de la base (catalogue mock/fallback) ne sont pas suivis.
+ */
+export async function createServerOrderWithStock(
+  order: SavedOrder,
+  stockClaims: { slug: string; name: string; quantity: number }[],
+): Promise<void> {
+  const prisma = getPrisma();
+  const data = toPrismaOrderCreateInput(order);
+
+  await prisma.$transaction(async (tx) => {
+    for (const claim of stockClaims) {
+      const tracked = await tx.product.findUnique({
+        where: { slug: claim.slug },
+        select: { id: true },
+      });
+      // Produit hors base (fallback mock) : pas de suivi de stock possible.
+      if (!tracked) continue;
+
+      const result = await tx.product.updateMany({
+        where: { slug: claim.slug, stockRemaining: { gte: claim.quantity } },
+        data: { stockRemaining: { decrement: claim.quantity } },
+      });
+
+      if (result.count === 0) {
+        throw new OrderStockError([
+          {
+            name: claim.name,
+            message: "Ce produit vient d'être épuisé.",
+          },
+        ]);
+      }
+    }
+
+    await tx.order.create({ data });
+  });
+}
+
 export async function getServerOrder(
   orderId: string,
 ): Promise<SavedOrder | undefined> {

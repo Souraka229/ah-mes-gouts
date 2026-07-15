@@ -1,453 +1,212 @@
 /**
- * Import photos WhatsApp + PNG studio → WebP catalogue (crop dessert) + affiche.
- * Usage : npm run images:gift
- * Source WhatsApp : C:\Users\DELL\Pictures\gift
+ * Importe & optimise C:\Users\DELL\Pictures\gift → public/images/produits/gift/
+ * + manifest JSON pour seed admin.
+ *
+ * Usage : node scripts/import-gift-images.mjs
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } from "fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+} from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
-import { PrismaClient } from "@prisma/client";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return;
-  for (const line of readFileSync(filePath, "utf8").split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 0) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let value = trimmed.slice(eq + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
-
-loadEnvFile(path.join(root, ".env"));
-loadEnvFile(path.join(root, ".env.local"));
-
-if (process.env.DIRECT_URL) {
-  process.env.DATABASE_URL = process.env.DIRECT_URL;
-}
-
-const giftDir =
-  process.env.GIFT_SOURCE_DIR ??
-  path.join(process.env.USERPROFILE ?? "", "Pictures", "gift");
-const produitsDir = path.join(root, "public/images/produits");
-const outDir = produitsDir;
-const posterDir = path.join(outDir, "affiches");
-const archiveDir = path.join(outDir, "_source-gift");
-
+const SRC = path.join(process.env.USERPROFILE ?? "", "Pictures", "gift");
+const OUT = path.join(root, "public", "images", "produits", "gift");
+const OUT_POSTERS = path.join(OUT, "affiches");
+const OUT_OPS = path.join(root, "public", "images", "ops", "livraison");
+const MANIFEST = path.join(root, "data", "gift-import-manifest.json");
 const BG = { r: 250, g: 247, b: 245, alpha: 1 };
-const TRIM_THRESHOLD = 10;
 
-/** Crop zone dessert — sans texte marketing (ratios 0–1). */
-const FLYER_CROP = { top: 0.2, left: 0.07, width: 0.86, height: 0.5 };
-const STUDIO_CROP = { top: 0.04, left: 0.08, width: 0.84, height: 0.72 };
-
-/**
- * @type {Array<{
- *   slug?: string;
- *   name?: string;
- *   price?: number;
- *   keyword?: string;
- *   description?: string;
- *   source: string;
- *   sourceRoot?: "gift" | "produits";
- *   mode: "flyer" | "studio" | "local";
- *   catalogFile: string;
- *   posterFile?: string;
- *   archiveName: string;
- *   productCrop?: { top: number; left: number; width: number; height: number };
- *   syncDb?: boolean;
- * }>}
- */
-const CATALOG_IMPORTS = [
-  // ── Flyers WhatsApp (4 cœurs signature) ──
-  {
-    slug: "caramel-baileys",
-    name: "Oreos Caramel Baileys",
-    price: 5000,
-    keyword: "Signature",
-    description:
-      "Cœur velours bleu, Oreo croquant, caramel beurre salé et touche Baileys.",
-    source: "oreos-caramel-baileys.png",
-    sourceRoot: "produits",
-    mode: "local",
-    catalogFile: "oreos-caramel-baileys.webp",
-    posterFile: "oreos-caramel-baileys-poster.webp",
-    archiveName: "oreos-caramel-baileys-source.png",
-  },
-  {
-    slug: "tiramisu",
-    name: "Tiramisu Caramel",
-    price: 5000,
-    keyword: "Onctueux",
-    description:
-      "Mascarpone onctueux, biscuit café imbibé et caramel doré en finition.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.45.jpeg",
-    mode: "flyer",
-    catalogFile: "tiramisu-caramel.webp",
-    posterFile: "tiramisu-caramel-poster.webp",
-    archiveName: "tiramisu-caramel-source.jpeg",
-    productCrop: { top: 0.19, left: 0.06, width: 0.88, height: 0.52 },
-  },
-  {
-    slug: "nutella-caramel",
-    name: "Nutella Baileys Speculos",
-    price: 7000,
-    keyword: "Gourmand",
-    description:
-      "Nutella fondant, Baileys, speculoos croustillant — cœur beige généreux.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.45 (1).jpeg",
-    mode: "flyer",
-    catalogFile: "nutella-baileys-speculos.webp",
-    posterFile: "nutella-baileys-speculos-poster.webp",
-    archiveName: "nutella-baileys-speculos-source.jpeg",
-    productCrop: { top: 0.2, left: 0.07, width: 0.86, height: 0.5 },
-  },
-  {
-    slug: "mousse-chocolat",
-    name: "Forêt Noire",
-    price: 5000,
-    keyword: "Intense",
-    description:
-      "Chocolat noir intense, cerises et crème légère — cylindre signature.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.46.jpeg",
-    mode: "flyer",
-    catalogFile: "foret-noire.webp",
-    posterFile: "foret-noire-poster.webp",
-    archiveName: "foret-noire-source.jpeg",
-    productCrop: { top: 0.17, left: 0.05, width: 0.9, height: 0.56 },
-  },
-  // ── Studio WhatsApp (carte produit) ──
-  {
-    slug: "caramel-cappuccino",
-    name: "Caramel Cappuccino",
-    price: 5000,
-    keyword: "Intense",
-    description:
-      "L'intensité du café, la douceur du caramel et une touche de speculoos.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.49.jpeg",
-    mode: "studio",
-    catalogFile: "caramel-cappuccino.webp",
-    archiveName: "caramel-cappuccino-source.jpeg",
-    productCrop: STUDIO_CROP,
-  },
-  {
-    slug: "foret-blanche",
-    name: "Forêt Blanche",
-    price: 5000,
-    keyword: "Délicat",
-    description:
-      "Chocolat blanc, cerises confites et crème légère à la vanille.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.50 (2).jpeg",
-    mode: "studio",
-    catalogFile: "foret-blanche.webp",
-    archiveName: "foret-blanche-source.jpeg",
-    productCrop: STUDIO_CROP,
-  },
-  {
-    slug: "speculoos",
-    name: "Speculoos",
-    price: 5000,
-    keyword: "Croquant",
-    description: "L'élégance gourmande du speculoos dans chaque bouchée.",
-    source: "WhatsApp Image 2026-07-02 at 11.20.51.jpeg",
-    mode: "studio",
-    catalogFile: "chocolat-cappuccino.webp",
-    archiveName: "chocolat-cappuccino-source.jpeg",
-    productCrop: STUDIO_CROP,
-  },
-  {
-    slug: "mango-passion",
-    name: "Mango Passion",
-    price: 5000,
-    keyword: "Solaire",
-    description: "Mangue Alphonso, fruit de la passion et touche citron vert.",
-    source: "mangue-passion.png",
-    sourceRoot: "produits",
-    mode: "local",
-    catalogFile: "mangue-passion.webp",
-    archiveName: "mangue-passion-source.png",
-  },
-  {
-    slug: "goyave-vanille",
-    name: "Goyave Vanille",
-    price: 5000,
-    keyword: "Floral",
-    description: "Goyave rose, vanille de Madagascar et meringue dorée.",
-    source: "goyave-vanille.png",
-    sourceRoot: "produits",
-    mode: "local",
-    catalogFile: "goyave-vanille.webp",
-    posterFile: "goyave-vanille-poster.webp",
-    archiveName: "goyave-vanille-source.png",
-  },
-  {
-    slug: "vanilla-caramel",
-    name: "Vanilla Caramel",
-    price: 5000,
-    keyword: "Doux",
-    description:
-      "Cœur velours vanille, coulis caramel beurre salé et éclats de chocolat.",
-    source: "caramel-cappuccino.png",
-    sourceRoot: "produits",
-    mode: "local",
-    catalogFile: "vanilla-caramel.webp",
-    archiveName: "vanilla-caramel-source.png",
-  },
-  // ── Landing / visuels complémentaires ──
-  {
-    source: "WhatsApp Image 2026-07-02 at 11.20.39 (1).jpeg",
-    mode: "studio",
-    catalogFile: "le-cafe.webp",
-    archiveName: "le-cafe-source.jpeg",
-    productCrop: STUDIO_CROP,
-    syncDb: false,
-  },
-  {
-    source: "WhatsApp Image 2026-07-02 at 11.20.51 (1).jpeg",
-    mode: "studio",
-    catalogFile: "chocolat-menthe.webp",
-    archiveName: "chocolat-menthe-source.jpeg",
-    productCrop: STUDIO_CROP,
-    syncDb: false,
-  },
+/** Classification manuelle des 33 fichiers WhatsApp */
+const ENTRIES = [
+  { file: "WhatsApp Image 2026-07-02 at 11.20.37.jpeg", type: "delivery", slug: "zone-d", name: "Zone D", price: 700 },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.38 (1).jpeg", type: "delivery", slug: "zone-e", name: "Zone E", price: 500 },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.38 (2).jpeg", type: "delivery", slug: "zone-a", name: "Zone A", price: 1500 },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.38.jpeg", type: "delivery", slug: "zone-c", name: "Zone C", price: 800 },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.39.jpeg", type: "delivery", slug: "zone-b", name: "Zone B", price: 1000 },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.41.jpeg", type: "logo", slug: "etiquette-amg", name: "Étiquette Ah Mes Goûts" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.39 (1).jpeg", type: "product", slug: "le-cafe", name: "Le Café", price: 5000, description: "Entremets café, glaçage caramel et grain de café chocolat.", keyword: "Signature" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.40.jpeg", type: "product", slug: "la-mangue", name: "La Mangue", price: 5000, description: "Entremets mangue bicolore surmonté d'une mangue fraîche.", keyword: "Solaire" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.41 (1).jpeg", type: "product", slug: "tiramisu-caramel-baileys", name: "Tiramisu Caramel Baileys", price: 7000, description: "Tiramisu individuel, macaron et finition dorée.", keyword: "Premium" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.41 (2).jpeg", type: "product", slug: "fraise-vanille", name: "Fraise Vanille", price: 5000, description: "Entremets rose, crème, fraise fraîche et macaron.", keyword: "Fruité" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.42 (1).jpeg", type: "product", slug: "fraisier", name: "Fraisier", price: 3000, description: "Mousse cream cheese, crémeux fraise, compotée et génoise.", keyword: "Classique" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.42 (2).jpeg", type: "product", slug: "goyave-vanille", name: "Goyave Vanille", price: 3000, description: "Mousse vanille, insert crémeux goyave.", keyword: "Floral" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.42.jpeg", type: "product", slug: "cheesecake-framboise", name: "Cheesecake Framboise", price: 7000, description: "Base biscuitée, crème fromage, coulis framboise.", keyword: "Gourmand" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.43 (1).jpeg", type: "product", slug: "caramel-cappuccino-baileys", name: "Caramel Cappuccino Baileys", price: 5000, description: "Cœur velours, meringue, macaron et chocolats.", keyword: "Signature" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.43 (2).jpeg", type: "product", slug: "nutella-kinder-speculos", name: "Nutella Kinder Speculos", price: 7000, description: "Mousse Nutella, insert croustillant Kinder & Speculos.", keyword: "Gourmand" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.43 (3).jpeg", type: "product", slug: "tiramisu-caramel-cappuccino", name: "Tiramisu Caramel Cappuccino", price: 7000, description: "Tiramisu coque caramel, macaron et chocolat doré.", keyword: "Premium" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.43.jpeg", type: "product", slug: "foret-noire", name: "Forêt Noire", price: 7000, description: "Mousse chocolat et vanille, insert compotée de cerise.", keyword: "Intense" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.44.jpeg", type: "product", slug: "la-corbeille-a-fruits", name: "La Corbeille à Fruits", price: 5000, description: "Vanille – fruits rouges, panier rose garni.", keyword: "Fruité" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.45 (1).jpeg", type: "product", slug: "nutella-baileys-speculos", name: "Nutella Baileys Speculos", price: 7000, description: "L'élégance gourmande dans chaque bouchée.", keyword: "Gourmand" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.45.jpeg", type: "product", slug: "tiramisu-caramel", name: "Tiramisu Caramel", price: 5000, description: "L'intensité du café, la douceur du caramel.", keyword: "Onctueux" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.46.jpeg", type: "product", slug: "foret-noire", name: "Forêt Noire", price: 5000, description: "Mousse chocolat, insert cerise et crémeux vanille.", keyword: "Intense" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.47 (1).jpeg", type: "product", slug: "mangue-passion", name: "Mangue Passion", price: 5000, description: "Carré jaune velours, fruits frais.", keyword: "Solaire" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.47.jpeg", type: "product", slug: "nutella-caramel-baileys", name: "Nutella Caramel Baileys", price: 7000, description: "Cœur velours, fraise et chocolat.", keyword: "Gourmand" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.48 (1).jpeg", type: "product", slug: "fraisier", name: "Fraisier", price: 3000, description: "Mousse cream cheese, crémeux et compotée de fraise.", keyword: "Classique" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.48.jpeg", type: "product", slug: "goyave-vanille", name: "Goyave Vanille", price: 3000, description: "Mousse vanille, insert crémeux goyave.", keyword: "Floral" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.49 (1).jpeg", type: "product", slug: "caramel-cappuccino-baileys", name: "Caramel Cappuccino Baileys", price: 5000, description: "Cœur rouge, fraise et chocolat.", keyword: "Signature" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.49.jpeg", type: "product", slug: "caramel-cappuccino", name: "Caramel Cappuccino", price: 5000, description: "Cylindre caramel, KitKat, Lotus et guimauve.", keyword: "Café" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.50 (1).jpeg", type: "product", slug: "chocolat-baileys", name: "Chocolat Baileys", price: 5000, description: "Cœur velours, fraise et chocolat.", keyword: "Intense" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.50 (2).jpeg", type: "product", slug: "foret-blanche", name: "Forêt Blanche", price: 5000, description: "Carré crème, cœur rouge et fruits rouges.", keyword: "Doux" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.50.jpeg", type: "product", slug: "tiramisu", name: "Tiramisu", price: 5000, description: "Cœur rose, meringue, macaron et fraise.", keyword: "Onctueux" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.51 (1).jpeg", type: "product", slug: "chocolat-menthe", name: "Chocolat Menthe", price: 5000, description: "Cœur vert, fraise et macaron.", keyword: "Frais" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.51 (2).jpeg", type: "product", slug: "foret-noire", name: "Forêt Noire", price: 5000, description: "Carré noir velours, fraise et framboises.", keyword: "Intense" },
+  { file: "WhatsApp Image 2026-07-02 at 11.20.51.jpeg", type: "product", slug: "chocolat-cappuccino", name: "Chocolat Cappuccino", price: 5000, description: "Cylindre chocolat caramel, KitKat et Lotus.", keyword: "Café" },
 ];
-
-function resolveInputPath(item) {
-  const base = item.sourceRoot === "produits" ? produitsDir : giftDir;
-  return path.join(base, item.source);
-}
 
 async function trimSafe(buffer) {
   try {
-    return await sharp(buffer).trim({ threshold: TRIM_THRESHOLD }).toBuffer();
+    return await sharp(buffer).trim({ threshold: 16 }).toBuffer();
   } catch {
     return buffer;
   }
 }
 
-async function extractProductRegion(inputPath, crop) {
-  const rotated = await sharp(inputPath).rotate().toBuffer();
-  const meta = await sharp(rotated).metadata();
-  const w = meta.width ?? 720;
-  const h = meta.height ?? 1080;
-
-  const left = Math.round(w * crop.left);
-  const top = Math.round(h * crop.top);
-  const width = Math.min(Math.round(w * crop.width), w - left);
-  const height = Math.min(Math.round(h * crop.height), h - top);
-
-  return sharp(rotated).extract({ left, top, width, height }).toBuffer();
-}
-
-async function writeCatalogWebp(buffer, outputPath) {
+async function toCatalogWebp(inputPath, outputPath) {
+  let buffer = await sharp(inputPath).rotate().toBuffer();
+  buffer = await trimSafe(buffer);
   await sharp(buffer)
-    .resize(1000, 1250, {
-      fit: "contain",
-      position: "centre",
-      background: BG,
-    })
-    .webp({ quality: 85, effort: 6, smartSubsample: true })
+    .resize(1000, 1250, { fit: "contain", position: "centre", background: BG })
+    .webp({ quality: 88, effort: 6 })
     .toFile(outputPath);
 }
 
-async function writePosterWebp(inputPath, outputPath) {
+async function toPosterWebp(inputPath, outputPath) {
   let buffer = await sharp(inputPath).rotate().toBuffer();
-  buffer = await trimSafe(buffer);
-
   await sharp(buffer)
-    .resize({ width: 1080, withoutEnlargement: false })
-    .webp({ quality: 88, effort: 6, smartSubsample: true })
+    .resize({ width: 1200, withoutEnlargement: true })
+    .webp({ quality: 90, effort: 6 })
     .toFile(outputPath);
 }
 
-function kb(filePath) {
-  return Math.round(statSync(filePath).size / 1024);
+function ensureDir(dir) {
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-async function processLocalItem(item, inputPath) {
-  const catalogPath = path.join(outDir, item.catalogFile);
-  const archivePath = path.join(archiveDir, item.archiveName);
-
-  copyFileSync(inputPath, archivePath);
-
-  let buffer = await sharp(inputPath).rotate().toBuffer();
-  buffer = await trimSafe(buffer);
-  await writeCatalogWebp(buffer, catalogPath);
-
-  let posterKb = 0;
-  if (item.posterFile) {
-    const posterPath = path.join(posterDir, item.posterFile);
-    await writePosterWebp(inputPath, posterPath);
-    posterKb = kb(posterPath);
+async function main() {
+  if (!existsSync(SRC)) {
+    console.error("Dossier introuvable:", SRC);
+    process.exit(1);
   }
 
-  return { catalogKb: kb(catalogPath), posterKb };
-}
+  ensureDir(OUT);
+  ensureDir(OUT_POSTERS);
+  ensureDir(OUT_OPS);
+  ensureDir(path.dirname(MANIFEST));
 
-async function processStudioItem(item, inputPath) {
-  const catalogPath = path.join(outDir, item.catalogFile);
-  const archivePath = path.join(archiveDir, item.archiveName);
+  /** @type {Map<string, object>} */
+  const productsBySlug = new Map();
+  const delivery = [];
+  let processed = 0;
 
-  copyFileSync(inputPath, archivePath);
-
-  const crop = item.productCrop ?? STUDIO_CROP;
-  const productBuffer = await extractProductRegion(inputPath, crop);
-  await writeCatalogWebp(productBuffer, catalogPath);
-
-  let posterKb = 0;
-  if (item.posterFile) {
-    const posterPath = path.join(posterDir, item.posterFile);
-    await writePosterWebp(inputPath, posterPath);
-    posterKb = kb(posterPath);
-  }
-
-  return { catalogKb: kb(catalogPath), posterKb };
-}
-
-async function processFlyerItem(item, inputPath) {
-  const catalogPath = path.join(outDir, item.catalogFile);
-  const posterPath = path.join(posterDir, item.posterFile);
-  const archivePath = path.join(archiveDir, item.archiveName);
-
-  copyFileSync(inputPath, archivePath);
-
-  const crop = item.productCrop ?? FLYER_CROP;
-  const productBuffer = await extractProductRegion(inputPath, crop);
-  await writeCatalogWebp(productBuffer, catalogPath);
-  await writePosterWebp(inputPath, posterPath);
-
-  return {
-    catalogKb: kb(catalogPath),
-    posterKb: kb(posterPath),
-  };
-}
-
-async function processItem(item) {
-  const inputPath = resolveInputPath(item);
-  if (!existsSync(inputPath)) {
-    throw new Error(`Source introuvable : ${inputPath}`);
-  }
-
-  let sizes;
-  if (item.mode === "local") {
-    sizes = await processLocalItem(item, inputPath);
-    if (item.posterFile && sizes.posterKb === 0) {
-      const posterPath = path.join(posterDir, item.posterFile);
-      await writePosterWebp(inputPath, posterPath);
-      sizes.posterKb = kb(posterPath);
+  for (const entry of ENTRIES) {
+    const srcPath = path.join(SRC, entry.file);
+    if (!existsSync(srcPath)) {
+      console.warn("Manquant:", entry.file);
+      continue;
     }
-  } else if (item.mode === "studio") {
-    sizes = await processStudioItem(item, inputPath);
-  } else {
-    sizes = await processFlyerItem(item, inputPath);
-  }
 
-  const catalogUrl = `/images/produits/${item.catalogFile}`;
-  const posterUrl = item.posterFile
-    ? `/images/produits/affiches/${item.posterFile}`
-    : undefined;
-
-  return {
-    slug: item.slug,
-    name: item.name,
-    price: item.price,
-    keyword: item.keyword,
-    description: item.description,
-    syncDb: item.syncDb !== false && Boolean(item.slug),
-    catalogUrl,
-    posterUrl,
-    sourceKb: kb(inputPath),
-    ...sizes,
-  };
-}
-
-async function syncCatalog(results) {
-  const prisma = new PrismaClient();
-  try {
-    for (const r of results) {
-      if (!r.syncDb || !r.slug) continue;
-
-      const imageUrls = r.posterUrl
-        ? [r.catalogUrl, r.posterUrl]
-        : [r.catalogUrl];
-
-      const data = {
-        imageUrl: r.catalogUrl,
-        imageUrls,
-      };
-      if (r.name) data.name = r.name;
-      if (r.price) data.price = r.price;
-      if (r.keyword) data.keyword = r.keyword;
-      if (r.description) data.description = r.description;
-
-      const updated = await prisma.product.updateMany({
-        where: { slug: r.slug },
-        data,
+    if (entry.type === "delivery") {
+      const outName = `${entry.slug}.webp`;
+      const outPath = path.join(OUT_OPS, outName);
+      await toPosterWebp(srcPath, outPath);
+      delivery.push({
+        ...entry,
+        imageUrl: `/images/ops/livraison/${outName}`,
       });
-      if (updated.count === 0) {
-        console.warn(`  ⚠ slug "${r.slug}" introuvable en base`);
-      } else {
-        console.log(`  ✓ DB ${r.slug} → ${r.name ?? r.slug}`);
-      }
+      processed++;
+      console.log("zone →", outName);
+      continue;
     }
-  } catch (e) {
-    console.warn(
-      `\n  ⚠ Sync Prisma ignorée (${e instanceof Error ? e.message : "erreur réseau"})`,
-    );
-    console.warn("  Relancez npm run images:gift quand la DB est joignable.\n");
-  } finally {
-    await prisma.$disconnect();
+
+    if (entry.type === "logo") {
+      const outPath = path.join(root, "public", "images", "brand", "etiquette-amg.webp");
+      ensureDir(path.dirname(outPath));
+      await toPosterWebp(srcPath, outPath);
+      processed++;
+      console.log("logo → etiquette-amg.webp");
+      continue;
+    }
+
+    // product
+    const catalogName = `${entry.slug}.webp`;
+    const posterName = `${entry.slug}-affiche.webp`;
+    // unique file per source to avoid overwrite when same slug
+    const stamp = entry.file
+      .replace(/WhatsApp Image 2026-07-02 at /, "")
+      .replace(/\.jpeg$/i, "")
+      .replace(/[^\d().]+/g, "")
+      .replace(/[()]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    const uniqueCatalog = `${entry.slug}-${stamp || processed}.webp`;
+    const uniquePoster = `${entry.slug}-${stamp || processed}-affiche.webp`;
+
+    const catalogPath = path.join(OUT, uniqueCatalog);
+    const posterPath = path.join(OUT_POSTERS, uniquePoster);
+    await toCatalogWebp(srcPath, catalogPath);
+    await toPosterWebp(srcPath, posterPath);
+
+    const catalogUrl = `/images/produits/gift/${uniqueCatalog}`;
+    const posterUrl = `/images/produits/gift/affiches/${uniquePoster}`;
+
+    const existing = productsBySlug.get(entry.slug);
+    if (existing) {
+      const urls = [...(existing.imageUrls ?? [])];
+      if (!urls.includes(catalogUrl)) urls.push(catalogUrl);
+      if (!urls.includes(posterUrl) && urls.length < 3) urls.push(posterUrl);
+      existing.imageUrls = urls.slice(0, 3);
+      existing.imageUrl = existing.imageUrls[0];
+      if ((entry.price ?? 0) > (existing.price ?? 0)) existing.price = entry.price;
+      if (entry.description && entry.description.length > (existing.description?.length ?? 0)) {
+        existing.description = entry.description;
+      }
+    } else {
+      productsBySlug.set(entry.slug, {
+        slug: entry.slug,
+        name: entry.name,
+        price: entry.price ?? 5000,
+        description: entry.description ?? "",
+        keyword: entry.keyword ?? "Signature",
+        category: "Entremets",
+        imageUrl: catalogUrl,
+        imageUrls: [catalogUrl, posterUrl].slice(0, 3),
+        stockRemaining: 10,
+        stockMinimum: 5,
+      });
+    }
+
+    processed++;
+    console.log("produit →", uniqueCatalog);
   }
+
+  const products = [...productsBySlug.values()];
+  const manifest = {
+    importedAt: new Date().toISOString(),
+    source: SRC,
+    products,
+    delivery,
+    counts: {
+      products: products.length,
+      delivery: delivery.length,
+      filesProcessed: processed,
+    },
+  };
+
+  writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2), "utf8");
+  console.log("\nOK", manifest.counts);
+  console.log("Manifest:", MANIFEST);
 }
 
-mkdirSync(outDir, { recursive: true });
-mkdirSync(posterDir, { recursive: true });
-mkdirSync(archiveDir, { recursive: true });
-
-console.log("\n=== Import catalogue (WhatsApp + studio → WebP) ===\n");
-console.log(`Source gift : ${giftDir}\n`);
-
-const results = [];
-let totalIn = 0;
-let totalOut = 0;
-let fileCount = 0;
-
-for (const item of CATALOG_IMPORTS) {
-  const label = item.name ?? item.catalogFile;
-  const r = await processItem(item);
-  results.push(r);
-  totalIn += r.sourceKb;
-  totalOut += r.catalogKb + (r.posterKb ?? 0);
-  fileCount += r.posterKb ? 2 : 1;
-  console.log(
-    `${label}\n  source ${r.sourceKb} Ko → produit ${r.catalogKb} Ko` +
-      (r.posterKb ? ` + affiche ${r.posterKb} Ko` : ""),
-  );
-  console.log(`  ${r.catalogUrl}`);
-  if (r.posterUrl) console.log(`  ${r.posterUrl}`);
-  console.log();
-}
-
-console.log("=== Sync Prisma ===\n");
-try {
-  await syncCatalog(results);
-} catch {
-  // syncCatalog gère déjà les erreurs réseau
-}
-
-console.log(
-  `\nTotal : ${totalIn} Ko sources → ${totalOut} Ko WebP (${fileCount} fichiers)\n`,
-);
-console.log(`Archives : public/images/produits/_source-gift/\n`);
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

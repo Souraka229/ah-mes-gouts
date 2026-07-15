@@ -28,8 +28,10 @@ export function BrandLogo({
     <div className={cn("flex flex-col leading-none", className)}>
       <span
         className={cn(
-          "font-display text-[clamp(1rem,2.5vw,1.35rem)] font-semibold tracking-tight",
-          onDark ? "text-bg" : "text-primary",
+          "font-display font-semibold tracking-[-0.02em]",
+          onDark
+            ? "text-[clamp(1.15rem,2.8vw,1.55rem)] text-bg drop-shadow-[0_1px_12px_rgba(0,0,0,0.25)]"
+            : "text-[clamp(1rem,2.5vw,1.35rem)] text-primary",
         )}
       >
         {SITE_NAME}
@@ -37,8 +39,8 @@ export function BrandLogo({
       {!compact && (
         <span
           className={cn(
-            "mt-0.5 font-body text-[0.6rem] font-medium tracking-[0.12em] uppercase sm:text-[0.65rem]",
-            onDark ? "text-white/55" : "text-muted-foreground",
+            "mt-1 font-body text-[0.6rem] font-medium tracking-[0.16em] uppercase sm:text-[0.65rem]",
+            onDark ? "text-white/60" : "text-muted-foreground",
           )}
         >
           By {ORIGIN_BRAND}

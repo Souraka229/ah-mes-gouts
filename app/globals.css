@@ -18,6 +18,11 @@
   --color-destructive: #b44a4a;
   --color-border: #e8e0dc;
   --color-photo-bg: #e8dfd4;
+  /* Écrin de nuit — second froid minéral (jamais en CTA) + respiration jour */
+  --color-nuit: #1f2b4d;
+  --color-bluegray: #e7eaf1;
+  /* Ops admin — état « en cours / info » (pas un bleu SaaS) */
+  --color-ops: #3d5a6c;
 
   --font-display: var(--font-family-display);
   --font-body: var(--font-family-body);
@@ -206,6 +211,30 @@
 html.custom-cursor-active,
 html.custom-cursor-active * {
   cursor: none !important;
+}
+
+/* ─── Hero « écrin de nuit » — le CTA doré respire (lueur lente) ─── */
+@keyframes hero-cta-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+}
+
+.hero-cta-glow {
+  animation: hero-cta-breathe 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta-glow {
+    animation: none;
+    opacity: 0.55;
+  }
 }
 
 /* ─── Footer wordmark — breakpoints distincts ─── */

@@ -3,6 +3,10 @@ import Link from "next/link";
 
 import { ProductImageFrame } from "@/components/shop/product-image-frame";
 import { Badge } from "@/components/ui/badge";
+import {
+  PRODUCT_SHAPE_BY_SLUG,
+  PRODUCT_SHAPES,
+} from "@/lib/business-info";
 import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
@@ -33,6 +37,8 @@ export function ProductCard({
   const price = getProductPrice(product);
   const showPromotion =
     product.isPromotion && product.promotionPrice !== undefined;
+  const shapeId =
+    product.shape ?? PRODUCT_SHAPE_BY_SLUG[product.slug] ?? null;
 
   const categoryLabel =
     product.keyword?.trim() ||
@@ -64,6 +70,11 @@ export function ProductCard({
       badges={
         <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-2">
           {!available && <Badge variant="destructive">Épuisé</Badge>}
+          {available && shapeId && (
+            <Badge className="border-0 bg-primary/90 text-primary-foreground">
+              {PRODUCT_SHAPES[shapeId].label}
+            </Badge>
+          )}
           {available && product.isNew && (
             <Badge className="bg-primary text-primary-foreground">Nouveau</Badge>
           )}

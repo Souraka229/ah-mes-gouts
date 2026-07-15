@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Package, RefreshCw } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { OrderBoardCard } from "@/components/admin/order-board-card";
 import {
   BOARD_TAB_LABELS,
@@ -31,6 +33,13 @@ type DriverOption = {
 
 const TAB_ORDER: OrderBoardTab[] = ["nouvelles", "preparation", "livraison"];
 
+function parseTab(value: string | null): OrderBoardTab {
+  if (value === "preparation" || value === "livraison" || value === "nouvelles") {
+    return value;
+  }
+  return "nouvelles";
+}
+
 const LIVRAISON_SORT: Record<string, number> = {
   prete: 0,
   en_livraison: 1,
@@ -38,14 +47,25 @@ const LIVRAISON_SORT: Record<string, number> = {
 };
 
 export function AdminOrdersPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<OrderBoardTab>("nouvelles");
+  const activeTab = parseTab(searchParams.get("tab"));
   const [pendingDriver, setPendingDriver] = useState<Record<string, string>>(
     {},
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const setActiveTab = useCallback(
+    (tab: OrderBoardTab) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", tab);
+      router.replace(`/admin/commandes?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,6 +101,29 @@ export function AdminOrdersPage() {
       );
     },
   });
+
+  useEffect(() => {
+    const focusId = searchParams.get("focus");
+    if (!focusId || loading) return;
+    const order = orders.find((o) => o.id === focusId);
+    if (!order) return;
+    const tab =
+      order.status === "recue" || order.status === "paiement_confirme"
+        ? "nouvelles"
+        : order.status === "preparation"
+          ? "preparation"
+          : "livraison";
+    if (activeTab !== tab) {
+      setActiveTab(tab);
+      return;
+    }
+    setExpandedId(focusId);
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`order-${focusId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, [searchParams, loading, orders, activeTab, setActiveTab]);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -305,13 +348,11 @@ export function AdminOrdersPage() {
           Chargement…
         </div>
       ) : tabOrders.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-          <Package className="mx-auto size-10 text-muted-foreground/50" />
-          <p className="mt-4 font-body text-sm text-muted-foreground">
-            Aucune commande dans « {BOARD_TAB_LABELS[activeTab]} » pour
-            aujourd&apos;hui.
-          </p>
-        </div>
+        <AdminEmptyState
+          variant="orders"
+          title={`File « ${BOARD_TAB_LABELS[activeTab]} » vide`}
+          description="Rien à avancer ici pour le moment. Passe à un autre onglet ou attends la prochaine commande."
+        />
       ) : (
         <div className="space-y-4">
           {tabOrders.map((order) => (
@@ -339,11 +380,11 @@ export function AdminOrdersPage() {
       )}
 
       {cancelledToday.length > 0 && (
-        <section className="rounded-2xl border border-red-200 bg-red-50/50 p-4">
-          <h2 className="font-display text-sm font-semibold text-red-800">
+        <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
+          <h2 className="font-display text-sm font-semibold text-destructive">
             Annulées aujourd&apos;hui ({cancelledToday.length})
           </h2>
-          <ul className="mt-2 space-y-1 font-body text-sm text-red-900/80">
+          <ul className="mt-2 space-y-1 font-body text-sm text-muted-foreground">
             {cancelledToday.map((o) => (
               <li key={o.id}>
                 {o.id} — {clientLabel(o)} — {formatPrice(o.total)}
@@ -354,7 +395,7 @@ export function AdminOrdersPage() {
       )}
 
       <p className="text-center font-body text-xs text-muted-foreground">
-        🟡 Nouvelle · 🔵 Préparation · 🟣 Prête · 🟠 Livraison · 🟢 Livrée
+        Nouvelle · Préparation · Prête · Livraison · Livrée
       </p>
     </div>
   );

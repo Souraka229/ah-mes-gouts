@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed-db.mjs",
@@ -15,6 +16,9 @@
     "seed:db": "node scripts/seed-db.mjs",
     "db:inspect": "node scripts/db-inspect.mjs",
     "db:health": "node scripts/db-health-check.mjs",
+    "deploy:check": "node scripts/deploy-check.mjs",
+    "deploy:env": "node scripts/push-vercel-env.mjs",
+    "sync:zones": "node scripts/sync-delivery-zones.mjs",
     "images:gift": "node scripts/import-gift-images.mjs",
     "images:optimize": "node scripts/optimize-produits-images.mjs",
     "images:restore": "node scripts/restore-produits-images.mjs && node scripts/optimize-produits-images.mjs",
@@ -25,6 +29,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@lottiefiles/dotlottie-react": "^0.19.9",
     "@prisma/client": "^6.19.0",
     "@supabase/supabase-js": "^2.110.0",
     "class-variance-authority": "^0.7.1",

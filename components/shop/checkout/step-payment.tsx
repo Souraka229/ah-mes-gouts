@@ -9,6 +9,8 @@ import { useCheckoutTotal } from "@/components/shop/checkout/checkout-summary";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { getLineUnitPrice } from "@/lib/cart-utils";
+import { getOrCreateDeviceKey } from "@/lib/crm/device-id";
+import { trackActivity } from "@/lib/crm/track";
 import { processPayment } from "@/lib/payments/process-payment";
 import {
   generateOrderId,
@@ -66,11 +68,13 @@ async function persistOrderOnServer(
   order: SavedOrder,
   idempotencyKey: string,
 ): Promise<void> {
+  const deviceKey = getOrCreateDeviceKey();
   const response = await fetch("/api/orders", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey,
+      ...(deviceKey ? { "x-amg-device-key": deviceKey } : {}),
     },
     body: JSON.stringify(order),
   });
@@ -212,6 +216,7 @@ export function StepPayment() {
         quantity: item.quantity,
         unitPrice: getLineUnitPrice(item),
         supplements: item.supplements.map((s) => s.name),
+        slug: item.slug,
       })),
       subtotal: totals.subtotal,
       total: totals.total,

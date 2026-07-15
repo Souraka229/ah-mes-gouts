@@ -1,5 +1,5 @@
 import type { OrderStatus, SavedOrder } from "@/types/order";
-import { PAYMENT_METHOD_LABELS } from "@/types/order";
+import { PAYMENT_METHOD_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
 
 export type OrderBoardTab = "nouvelles" | "preparation" | "livraison";
 
@@ -96,7 +96,7 @@ export function formatScheduleLabel(order: SavedOrder): string {
 
 export function formatFulfillmentType(order: SavedOrder): string {
   const mode = order.fulfillmentType ?? order.mode;
-  return mode === "delivery" ? "Livraison" : "Retrait sur place";
+  return RECEPTION_MODE_LABELS[mode];
 }
 
 export function formatFulfillmentPlace(order: SavedOrder): string {
@@ -104,7 +104,7 @@ export function formatFulfillmentPlace(order: SavedOrder): string {
   if (mode === "delivery") {
     return order.zoneName ?? (order.client.address || "—");
   }
-  return "Boutique";
+  return mode === "dinein" ? "Boutique (sur place)" : "Boutique (à emporter)";
 }
 
 export function getCakeMessage(order: SavedOrder): string | null {

@@ -6,6 +6,7 @@ import {
   Bell,
   Bot,
   Calendar,
+  Database,
   IceCreamCone,
   LayoutTemplate,
   Palette,
@@ -41,6 +42,7 @@ const SETTINGS_NAV = [
     icon: Users,
   },
   { href: "/admin/assistant", label: "Assistant IA", icon: Bot },
+  { href: "/admin/donnees", label: "Données", icon: Database },
   { href: "/admin/parametres/journal", label: "Journal des actions", icon: ScrollText },
   {
     href: "/admin/parametres/notifications",

@@ -8,12 +8,12 @@ import {
   MessageCircle,
   Plus,
   RefreshCw,
-  Truck,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import {
   buildDriverPortalUrl,
   buildDriverWelcomeMessage,
@@ -225,12 +225,11 @@ export function AdminDriversPage() {
           Chargement…
         </div>
       ) : drivers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border px-6 py-12 text-center">
-          <Truck className="mx-auto size-10 text-muted-foreground/50" />
-          <p className="mt-4 font-body text-sm text-muted-foreground">
-            Aucun livreur pour l&apos;instant.
-          </p>
-        </div>
+        <AdminEmptyState
+          variant="drivers"
+          title="Aucun livreur"
+          description="Ajoute ton premier livreur pour assigner les sorties depuis le board commandes."
+        />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full min-w-[40rem] font-body text-sm">

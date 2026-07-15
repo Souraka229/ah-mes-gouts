@@ -105,18 +105,26 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
 }
 
 async function readMenusFromDb(): Promise<ScheduledMenu[] | null> {
-  const prisma = getPrisma();
-  const rows = await prisma.menu.findMany({ orderBy: { activateAt: "desc" } });
-  if (rows.length === 0) return null;
-  return rows.map(toScheduledMenu);
+  try {
+    const prisma = getPrisma();
+    const rows = await prisma.menu.findMany({ orderBy: { activateAt: "desc" } });
+    if (rows.length === 0) return null;
+    return rows.map(toScheduledMenu);
+  } catch {
+    return null;
+  }
 }
 
 async function writeMenusToDb(menus: ScheduledMenu[]): Promise<void> {
-  const prisma = getPrisma();
-  await prisma.$transaction([
-    prisma.menu.deleteMany(),
-    prisma.menu.createMany({ data: menus.map(toMenuRow) }),
-  ]);
+  try {
+    const prisma = getPrisma();
+    await prisma.$transaction([
+      prisma.menu.deleteMany(),
+      prisma.menu.createMany({ data: menus.map(toMenuRow) }),
+    ]);
+  } catch {
+    // Mode dégradé sans Postgres
+  }
 }
 
 export async function getAllMenus(): Promise<ScheduledMenu[]> {
@@ -267,15 +275,17 @@ export async function activateDueMenus(): Promise<ScheduledMenu[]> {
     }
 
     return activated;
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Erreur activation menus";
-    throw new Error(`Activation menu programmé impossible : ${message}`);
+  } catch {
+    return [];
   }
 }
 
 export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
-  await activateDueMenus();
+  try {
+    await activateDueMenus();
+  } catch {
+    // ignore — fallback mock / catalogue
+  }
   const catalog = await getAdminCatalog();
   const active = await getActiveMenu();
 

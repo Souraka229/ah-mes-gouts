@@ -10,86 +10,70 @@ export type DeliveryZoneSeo = {
   deliveryTime: string;
 };
 
+function areasOf(zoneId: string): string[] {
+  return deliveryZones.find((z) => z.id === zoneId)?.areas ?? [];
+}
+
 export const deliveryZoneSeoContent: DeliveryZoneSeo[] = [
   {
     zoneId: "zone-e",
-    headline: "Livraison de glaces à Fidjrossè et bord de mer",
-    intro:
-      "Commandez vos glaces artisanales avec livraison rapide vers Fidjrossè et les quartiers côtiers de Cotonou. Idéal pour une pause gourmande à domicile après une journée à la plage.",
-    neighborhoods: ["Fidjrossè", "Bord de mer", "Jonquet", "Les Cocotiers (littoral)"],
-    deliveryTime: "45 à 75 minutes",
+    headline: "Destinations E — 500 F",
+    intro: `Livraison locale autour de la boutique ${SITE_NAME} : Fidjrossè centre, Calvaire, Akogbato et environs immédiats.`,
+    neighborhoods: areasOf("zone-e"),
+    deliveryTime: "30 à 50 minutes",
   },
   {
     zoneId: "zone-d",
-    headline: "Glace livraison Agla, Godomey et Akogbato",
+    headline: "Destinations D — 700 F",
     intro:
-      `${SITE_NAME} dessert Agla, Godomey et Akogbato avec des créations glacées premium. Commandez en ligne et recevez vos desserts frais directement chez vous.`,
-    neighborhoods: ["Agla", "Godomey", "Akogbato", "Vekky", "Ouando"],
-    deliveryTime: "50 à 80 minutes",
+      "Agla, Cadjèhoun, Haie Vive, Vodjè et quartiers voisins — livraison soignée à tarif préférentiel.",
+    neighborhoods: areasOf("zone-d"),
+    deliveryTime: "35 à 60 minutes",
   },
   {
     zoneId: "zone-c",
-    headline: "Livraison glace Akpakpa, Tokpa et St Michel",
+    headline: "Destinations C — 800 F",
     intro:
-      "Zone C : livraison de glaces à Akpakpa, Guinkomey, Tokpa et St Michel. Parfait pour les soirées entre amis ou les commandes bureau à Cotonou.",
-    neighborhoods: [
-      "Akpakpa",
-      "Guinkomey",
-      "Tokpa",
-      "St Michel",
-      "Jéricho",
-    ],
+      "Centre-ville et artères majeures : Ganhi, Tokpa, St Michel, Jéricho, Zogbo et alentours.",
+    neighborhoods: areasOf("zone-c"),
     deliveryTime: "40 à 70 minutes",
   },
   {
     zoneId: "zone-b",
-    headline: "Glace livraison Cadjehoun, Haie Vive et Cocotiers",
+    headline: "Destinations B — 1 000 F",
     intro:
-      "Notre zone premium couvre Cadjehoun, Haie Vive et les Cocotiers. Glacier haut de gamme avec livraison soignée dans les quartiers centraux de Cotonou.",
-    neighborhoods: [
-      "Cadjehoun",
-      "Haie Vive",
-      "Cocotiers",
-      "Ganhi",
-      "Plateau",
-    ],
-    deliveryTime: "35 à 60 minutes",
+      "Segbèya, Habitat, Place Lénine, Campus Abomey-Calavi, Fidjrossè Club des Rois et secteurs intermédiaires.",
+    neighborhoods: areasOf("zone-b"),
+    deliveryTime: "45 à 75 minutes",
   },
   {
     zoneId: "zone-a",
-    headline: "Livraison glace Abomey-Calavi et zones périphériques",
+    headline: "Destinations A — 1 500 F",
     intro:
-      "Nous livrons jusqu'à Abomey-Calavi et les secteurs périphériques de Cotonou. Commandez vos glaces en ligne depuis Calavi, Akpakpa éloigné ou les environs.",
-    neighborhoods: [
-      "Abomey-Calavi",
-      "Calavi centre",
-      "Akpakpa (éloigné)",
-      "Togba",
-      "Kpanroun",
-    ],
-    deliveryTime: "60 à 90 minutes",
+      "Calavi (Bidossessi, Tankpè, Kpota…), Zone des Ambassades, Cococodji et périphérie étendue.",
+    neighborhoods: areasOf("zone-a"),
+    deliveryTime: "55 à 90 minutes",
   },
 ];
 
 export const deliveryFaq = [
   {
-    question: "Quels quartiers de Cotonou sont desservis ?",
-    answer: `Nous livrons dans tout Cotonou et environs : ${deliveryZones.flatMap((z) => z.areas).join(", ")}. Consultez notre grille tarifaire par zone pour connaître les frais exacts.`,
+    question: "Quels quartiers sont desservis ?",
+    answer: `Nous livrons selon la grille officielle Destinations E → A. Exemples : Fidjrossè, Agla, Cadjèhoun, Tokpa, Segbèya, Calavi… Voir la liste complète sur cette page. Frais : 500 F à 1 500 F selon la destination.`,
   },
   {
-    question: "Quel est le délai de livraison des glaces ?",
+    question: "Quel est le délai de livraison ?",
     answer:
-      "Le délai varie selon la zone, généralement entre 35 et 90 minutes. Vous recevez une confirmation par SMS après validation du paiement.",
+      "Selon la zone, généralement entre 30 et 90 minutes pendant les horaires d'ouverture (13h–19h).",
   },
   {
     question: "Quels moyens de paiement acceptez-vous ?",
     answer:
-      "Nous acceptons MTN MoMo, Moov Money, Celtiis Cash et les cartes bancaires Visa/Mastercard via notre plateforme sécurisée.",
+      "MTN MoMo, Moov Money, Celtiis Cash et cartes Visa/Mastercard.",
   },
   {
-    question: "Puis-je commander des glaces en ligne depuis Calavi ?",
-    answer:
-      "Oui, Abomey-Calavi et Calavi sont couverts (zone A). Commandez sur notre catalogue en ligne et choisissez la livraison à l'étape checkout.",
+    question: "Puis-je commander depuis Calavi ?",
+    answer: `Oui — Calavi Bidossessi, Tankpè, Kpota, Arconville, etc. sont en Destinations A (${formatPrice(1500)}).`,
   },
 ] as const;
 

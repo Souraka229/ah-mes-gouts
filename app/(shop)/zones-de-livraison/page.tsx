@@ -12,7 +12,6 @@ import {
   buildFaqSchema,
 } from "@/lib/seo/schemas";
 import { createPageMetadata } from "@/lib/seo/metadata";
-import { SITE_NAME } from "@/lib/seo/site";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -45,9 +44,11 @@ export default function DeliveryZonesPage() {
           Livraison de glaces à Cotonou et environs
         </h1>
         <p className="mt-4 font-body text-lg leading-relaxed text-muted-foreground">
-          {SITE_NAME} livre vos créations glacées premium dans tous les
-          quartiers de Cotonou, de Cadjehoun à Abomey-Calavi. Choisissez votre
-          zone au checkout — les frais s&apos;ajoutent automatiquement.
+          Grille officielle Destinations E → A : de{" "}
+          <span className="font-semibold text-text">500 F</span> à{" "}
+          <span className="font-semibold text-text">1 500 F</span>. Choisissez
+          votre quartier au checkout — les frais s&apos;ajoutent
+          automatiquement.
         </p>
 
         <div className="mt-10 space-y-8">

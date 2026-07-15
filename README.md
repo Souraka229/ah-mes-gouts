@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gift & ENTREMETS
 
-## Getting Started
+**By [Ah Mes Goûts](https://ah-mes-gouts.vercel.app)** — desserts glacés premium à Cotonou.
 
-First, run the development server:
+Site e-commerce haut de gamme : catalogue → personnalisation → panier → boutique sur place → upsell → paiement Mobile Money / carte → suivi temps réel.
+
+> Expérience type pâtisserie de luxe, pas un template Shopify. Objectif business : remplacer entièrement les commandes WhatsApp.
+
+---
+
+## Stack
+
+| Couche | Techno |
+|--------|--------|
+| Front | Next.js 15 (App Router) · React 19 · TypeScript strict · Tailwind CSS v4 · Framer Motion |
+| Back | NestJS-ready / API routes · Prisma · PostgreSQL (Supabase) |
+| Médias | Cloudinary (prod) · WebP locaux (`public/images/produits/`) |
+| Auth admin | JWT session cookie + liens magiques (`ADMIN_ACCESS_TOKENS`) |
+| Paiements | MTN MoMo · Moov Money · Celtiis Cash · Visa/Mastercard |
+| Deploy | Vercel (front) · Postgres managé |
+
+## Design system
+
+| Token | Hex | Usage |
+|-------|-----|--------|
+| Background | `#FAF7F5` | Crème |
+| Primary | `#3B1F4D` | Violet profond |
+| Secondary | `#F3C9CE` | Rose poudré |
+| Accent / CTA | `#C9A96E` | Doré — actions clés uniquement |
+| Text | `#241726` | Quasi-noir violacé |
+| Success | `#6B8F71` | Vert sauge |
+
+Typo : **Cormorant Garamond / Fraunces** (display) + **Plus Jakarta Sans / Inter** (UI). Icônes : Lucide uniquement.
+
+## Admin — cockpit ops
+
+Back-office pensé **ultra simple** et premium (`/admin`) :
+
+- **KPIs du jour** : CA, commandes, panier moyen, part boutique / cadeaux (+ delta vs hier)
+- **Pipeline** : Nouvelles → Préparation → Prêtes → En cours → Terminées
+- **Accès rapides** : commandes, menu du jour, produits
+- Rôles Administrateur / Employé, journal d’actions
+
+Connexion : `/admin/entree?token=…` (tokens dans `ADMIN_ACCESS_TOKENS`).
+
+## Parcours client
+
+1. Catalogue & menu du jour  
+2. Personnalisation  
+3. Panier (drawer glass)  
+4. **En boutique · Sur place**  
+5. Upsell cadeaux (1 clic, skip facile)  
+6. Paiement Mobile Money / carte  
+7. Suivi de commande  
+
+Infos métier (horaires 13h–19h, WhatsApp, règles) : `/infos` · `lib/business-info.ts`.
+
+## Démarrage local
 
 ```bash
+npm install
+cp .env.example .env.local   # remplir DATABASE_URL, ADMIN_*, etc.
+npx prisma migrate dev
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Boutique : [http://localhost:3000](http://localhost:3000)  
+- Admin : [http://localhost:3000/admin](http://localhost:3000/admin)  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Conventions clés
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Montants en **FCFA entiers** (jamais de float)  
+- Stock diminué **après paiement validé** uniquement  
+- Statuts commande stricts : Reçue → Paiement confirmé → Préparation → Prête → En livraison → Livrée  
+- Client mémorisé en LocalStorage (compte non obligatoire)  
+- Pas de clé API exposée côté client · validation Zod front + back  
 
-## Learn More
+## Structure utile
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/(shop)/          # boutique publique
+app/(admin)/admin/   # back-office
+components/shop/     # UI client
+components/admin/    # cockpit + commandes + menus
+lib/admin/kpis.ts    # KPIs dashboard
+lib/business-info.ts # horaires, WhatsApp, règles
+public/images/produits/  # photos catalogue WebP
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Site
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Prod Vercel : [https://gift-entremets.vercel.app](https://gift-entremets.vercel.app)
+- Projet : `souraka017-8383s-projects/gift-entremets`
+- Ancien projet (à ne plus utiliser) : `ah-mes-gouts`
 
-## Deploy on Vercel
+```bash
+npm run deploy:check
+npm run deploy:env      # pousse env vers Vercel
+npm run db:health
+npx vercel deploy --prod
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Marque commerciale **Gift & ENTREMETS** — crédit **Ah Mes Goûts**. Ne pas renommer.

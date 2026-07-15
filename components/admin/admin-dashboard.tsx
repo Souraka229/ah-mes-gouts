@@ -1,299 +1,402 @@
 import Link from "next/link";
 import {
-  Bot,
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
   Calendar,
+  Clock3,
   IceCreamCone,
+  Info,
   Package,
-  Truck,
 } from "lucide-react";
-
+import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminSeedButton } from "@/components/admin/admin-seed-button";
-import { formatPrice } from "@/lib/format";
-import { getAdminActionLog } from "@/lib/server/admin-action-log";
-import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import {
-  getActiveMenu,
-  getNextScheduledMenu,
-} from "@/lib/server/menu-repository";
+  buildAdminKpis,
+  type AdminAlert,
+} from "@/lib/admin/kpis";
+import { formatPrice } from "@/lib/format";
+import { isDevAdminOpen } from "@/lib/server/admin-auth";
 import { getAllServerOrders } from "@/lib/server/order-repository";
-import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
-import { ORDER_STATUS_LABELS } from "@/types/order";
-import { MENU_STATUS_LABELS } from "@/types/menu";
+import { getShopProductsFromActiveMenu } from "@/lib/server/menu-repository";
+import { getVisitStats } from "@/lib/server/site-visits";
+import { ORDER_STATUS_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
+import { cn } from "@/lib/utils";
 
 export async function AdminDashboard() {
-  const [orders, { zones }, journal, activeMenu, nextMenu, catalog] =
-    await Promise.all([
-      getAllServerOrders(),
-      getDeliveryConfig(),
-      getAdminActionLog(),
-      getActiveMenu(),
-      getNextScheduledMenu(),
-      getAdminCatalog(),
-    ]);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const ordersToday = orders.filter((o) => {
-    if (!o.scheduledSlotStart) return false;
-    const d = new Date(o.scheduledSlotStart);
-    return d.toDateString() === today.toDateString();
-  });
-
-  const lowStock = catalog.filter(
-    (p) => p.stockRemaining <= p.stockMinimum,
-  ).length;
-
-  const activeZones = zones.filter((z) => z.isActive).length;
-  const recentOrders = orders.slice(0, 5);
-  const recentJournal = journal.slice(0, 5);
-  const menuActivations = journal.filter((e) => e.action === "menu_activated");
+  const [orders, menuProducts, visits] = await Promise.all([
+    getAllServerOrders(),
+    getShopProductsFromActiveMenu(),
+    getVisitStats(),
+  ]);
+  const kpis = buildAdminKpis(orders, { menuProducts });
+  const showSeedButton = isDevAdminOpen();
+  const masterIsAttention = kpis.attentionCount > 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary">
-          Tableau de bord
-        </h1>
-        <p className="mt-2 font-body text-sm text-muted-foreground">
-          Chaque chiffre est cliquable — accès direct aux listes filtrées.
-        </p>
-        <div className="mt-4">
-          <AdminSeedButton />
+    <div className="mx-auto max-w-6xl space-y-7">
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-body text-[11px] font-semibold tracking-[0.28em] text-muted-foreground uppercase">
+            Cockpit du jour
+          </p>
+          <h1 className="mt-1 font-display text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
+            Aujourd&apos;hui
+          </h1>
+          <p className="mt-1 font-body text-sm capitalize text-muted-foreground">
+            {kpis.dateLabel}
+          </p>
         </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          href="/admin/commandes"
-          label="Commandes aujourd'hui"
-          value={String(ordersToday.length)}
-          hint="Créneaux du jour"
-        />
-        <StatCard
-          href="/admin/commandes"
-          label="Commandes totales"
-          value={String(orders.length)}
-          hint="Toutes les commandes"
-        />
-        <StatCard
-          href="/admin/produits"
-          label="Stock faible"
-          value={String(lowStock)}
-          hint="Sous le minimum"
-        />
-        <StatCard
-          href="/admin/parametres/livraison"
-          label="Zones actives"
-          value={`${activeZones} / ${zones.length}`}
-          hint="Livraison"
-        />
-      </div>
-
-      {(activeMenu || nextMenu) && (
-        <section className="rounded-2xl border border-accent/40 bg-accent/10 p-5">
-          <h2 className="font-display text-lg font-semibold text-primary">
-            Menus journaliers
-          </h2>
-          <div className="mt-3 flex flex-wrap gap-4 font-body text-sm">
-            {activeMenu && (
-              <p>
-                <span className="font-medium text-emerald-800">Actif</span>
-                {" — "}
-                {activeMenu.productIds.length} produits ·{" "}
-                {MENU_STATUS_LABELS.active}
-              </p>
-            )}
-            {nextMenu && (
-              <p className="text-muted-foreground">
-                Prochain :{" "}
-                {new Date(nextMenu.activateAt).toLocaleString("fr-FR", {
-                  weekday: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            )}
-          </div>
-          {menuActivations[0] && (
-            <p className="mt-2 font-body text-xs text-muted-foreground">
-              Dernière activation auto : {menuActivations[0].summary}
-            </p>
-          )}
+        <div className="flex flex-wrap items-center gap-2">
+          {showSeedButton && <AdminSeedButton />}
           <Link
-            href="/admin/menus"
-            className="mt-3 inline-flex font-body text-sm font-semibold text-primary hover:underline"
+            href="/admin/commandes?tab=nouvelles"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-text transition-transform hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            Gérer les menus →
+            {kpis.nouvelles > 0
+              ? `Traiter (${kpis.nouvelles})`
+              : "Ouvrir les commandes"}
+            <ArrowRight className="size-4" aria-hidden />
           </Link>
+        </div>
+      </header>
+
+      {/* Cadran maître + secondaires — pas 4 cartes clones */}
+      <section className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+        <article
+          className={cn(
+            "rounded-[24px] border bg-white p-6 sm:p-7",
+            masterIsAttention
+              ? "border-destructive/35 shadow-[0_12px_40px_rgba(180,74,74,0.08)]"
+              : "border-border/80 shadow-[0_12px_40px_rgba(59,31,77,0.04)]",
+          )}
+        >
+          <p className="font-body text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
+            {masterIsAttention ? "À traiter maintenant" : "CA du jour"}
+          </p>
+          {masterIsAttention ? (
+            <>
+              <p className="mt-3 font-display text-5xl font-semibold tracking-tight text-primary tabular-nums sm:text-6xl">
+                {kpis.attentionCount}
+              </p>
+              <p className="mt-2 font-body text-sm text-muted-foreground">
+                alerte{kpis.attentionCount > 1 ? "s" : ""} ops · CA{" "}
+                <span className="font-semibold text-primary tabular-nums">
+                  {formatPrice(kpis.revenueToday)}
+                </span>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 font-display text-5xl font-semibold tracking-tight text-primary tabular-nums sm:text-6xl">
+                {formatPrice(kpis.revenueToday)}
+              </p>
+              <DeltaLine
+                delta={kpis.comparedToYesterday.revenueDelta}
+                money
+              />
+            </>
+          )}
+        </article>
+
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <MiniKpi
+            label="Commandes"
+            value={String(kpis.ordersToday)}
+            hint={
+              kpis.nouvelles > 0
+                ? `${kpis.nouvelles} nouvelles`
+                : "File à jour"
+            }
+          />
+          <MiniKpi
+            label="Panier moyen"
+            value={formatPrice(kpis.avgTicket)}
+            hint="Actives"
+          />
+          <MiniKpi
+            label="Visiteurs"
+            value={String(visits.todayUnique)}
+            hint={`${visits.todayViews} vues · ${kpis.boutiqueShare}% boutique`}
+          />
+          <MiniKpi
+            label="Terminées"
+            value={String(kpis.livrees)}
+            hint={
+              kpis.comparedToYesterday.ordersDelta === 0
+                ? `${kpis.giftShare}% cadeaux · vs hier stable`
+                : `${kpis.giftShare}% cadeaux · ${kpis.comparedToYesterday.ordersDelta > 0 ? "+" : ""}${kpis.comparedToYesterday.ordersDelta} cmd vs hier`
+            }
+          />
+        </div>
+      </section>
+
+      {/* Alertes */}
+      {kpis.alerts.length > 0 && (
+        <section aria-label="Alertes du jour" className="space-y-2">
+          {kpis.alerts.map((alert) => (
+            <AlertRow key={alert.id} alert={alert} />
+          ))}
         </section>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <QuickLink
-          href="/admin/commandes"
-          icon={Package}
-          title="Commandes"
-          desc="Statut en un clic"
-        />
-        <QuickLink
-          href="/admin/menus"
-          icon={Calendar}
-          title="Menus"
-          desc="Programmer demain"
-        />
-        <QuickLink
-          href="/admin/produits"
-          icon={IceCreamCone}
-          title="Produits"
-          desc="Prix & dispo"
-        />
-        <QuickLink
-          href="/admin/livreurs"
-          icon={Truck}
-          title="Livreurs"
-          desc="Lien WhatsApp · affectation"
-        />
-        <QuickLink
-          href="/admin/parametres/livraison"
-          icon={Truck}
-          title="Créneaux"
-          desc="Horaires & zones"
-        />
-        <QuickLink
-          href="/admin/assistant"
-          icon={Bot}
-          title="Assistant IA"
-          desc="Actions rapides"
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-border bg-white p-5">
-          <h2 className="font-display text-lg font-semibold text-primary">
-            Dernières commandes
-          </h2>
-          {recentOrders.length === 0 ? (
-            <div className="mt-4 rounded-xl bg-bg px-4 py-6 text-center">
-              <p className="font-body text-sm text-muted-foreground">
-                Aucune commande pour l&apos;instant.
+      {/* Pipeline */}
+      <section className="rounded-[24px] border border-border/80 bg-white p-5 shadow-[0_12px_40px_rgba(59,31,77,0.04)] sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-primary">
+              Pipeline
+            </h2>
+            <p className="mt-1 font-body text-sm text-muted-foreground">
+              Un tap = ouvrir la file filtrée
+            </p>
+          </div>
+          <Link
+            href="/admin/commandes"
+            className="font-body text-sm font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            Tableau →
+          </Link>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-5 sm:gap-3">
+          {kpis.pipeline.map((step) => (
+            <Link
+              key={step.label}
+              href={step.href}
+              className={cn(
+                "rounded-2xl p-4 transition-transform hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                step.tone,
+              )}
+            >
+              <p className="font-body text-[10px] font-semibold tracking-[0.18em] uppercase opacity-80 sm:text-[11px]">
+                {step.label}
               </p>
-              <Link
-                href="/admin/commandes"
-                className="mt-2 inline-block font-body text-sm font-semibold text-primary hover:underline"
-              >
-                Voir les commandes →
-              </Link>
-            </div>
+              <p className="mt-2 font-body text-3xl font-semibold tabular-nums">
+                {step.count}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <section className="rounded-[24px] border border-border/80 bg-white p-5 shadow-[0_12px_40px_rgba(59,31,77,0.04)] sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-display text-xl font-semibold text-primary">
+              Dernières commandes
+            </h2>
+            <Link
+              href="/admin/commandes"
+              className="font-body text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Tout voir
+            </Link>
+          </div>
+
+          {kpis.recentOrders.length === 0 ? (
+            <AdminEmptyState
+              className="mt-6"
+              variant="calm"
+              title="Journée calme"
+              description="Les nouvelles commandes apparaîtront ici dès qu&apos;un client valide."
+            />
           ) : (
-            <ul className="mt-4 space-y-3">
-              {recentOrders.map((order) => (
-                <li
-                  key={order.id}
-                  className="flex items-start justify-between gap-3 rounded-xl bg-bg px-3 py-2 font-body text-sm"
-                >
-                  <div>
-                    <p className="font-medium text-text">{order.id}</p>
-                    <p className="text-muted-foreground">
-                      {order.client.firstName} {order.client.lastName}
+            <ul className="mt-4 divide-y divide-border/70">
+              {kpis.recentOrders.map((order) => (
+                <li key={order.id}>
+                  <Link
+                    href={`/admin/commandes?focus=${order.id}`}
+                    className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-bg/80"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-body text-sm font-semibold text-text">
+                        {order.client.firstName} {order.client.lastName}
+                      </p>
+                      <p className="mt-0.5 font-body text-xs text-muted-foreground">
+                        {ORDER_STATUS_LABELS[order.status]}
+                        {" · "}
+                        {
+                          RECEPTION_MODE_LABELS[
+                            order.fulfillmentType ?? order.mode
+                          ]
+                        }
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-body text-sm font-semibold text-primary tabular-nums">
+                      {formatPrice(order.total)}
                     </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatPrice(order.total)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ORDER_STATUS_LABELS[order.status]}
-                    </p>
-                  </div>
+                  </Link>
                 </li>
               ))}
             </ul>
           )}
         </section>
 
-        <section className="rounded-2xl border border-border bg-white p-5">
-          <h2 className="font-display text-lg font-semibold text-primary">
-            Journal admin
+        <section className="space-y-2.5">
+          <h2 className="px-1 font-display text-xl font-semibold text-primary">
+            Accès rapides
           </h2>
-          {recentJournal.length === 0 ? (
-            <p className="mt-4 font-body text-sm text-muted-foreground">
-              Les actions (menus, assistant…) apparaîtront ici.
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {recentJournal.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="rounded-xl bg-bg px-3 py-2 font-body text-sm"
-                >
-                  <p className="text-text">{entry.summary}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {entry.adminName}
-                    {entry.source === "ai_assistant" ? " · assistant IA" : ""}
-                    {" · "}
-                    {new Date(entry.createdAt).toLocaleString("fr-FR")}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+          <QuickAction
+            href="/admin/commandes?tab=nouvelles"
+            icon={Package}
+            title="Commandes"
+            desc="Avancer les statuts"
+            hot={kpis.nouvelles > 0}
+            badge={kpis.nouvelles > 0 ? String(kpis.nouvelles) : undefined}
+          />
+          <QuickAction
+            href="/admin/menus"
+            icon={Calendar}
+            title="Menu du jour"
+            desc="86 / activer / programmer"
+          />
+          <QuickAction
+            href="/admin/produits"
+            icon={IceCreamCone}
+            title="Produits"
+            desc="Prix, stock, photos"
+          />
         </section>
       </div>
     </div>
   );
 }
 
-function StatCard({
-  href,
+function DeltaLine({ delta, money }: { delta: number; money?: boolean }) {
+  const positive = delta > 0;
+  const negative = delta < 0;
+  return (
+    <p
+      className={cn(
+        "mt-2 inline-flex items-center gap-1 font-body text-xs font-medium",
+        positive && "text-success",
+        negative && "text-destructive",
+        !positive && !negative && "text-muted-foreground",
+      )}
+    >
+      {positive ? (
+        <ArrowUpRight className="size-3.5" aria-hidden />
+      ) : negative ? (
+        <ArrowDownRight className="size-3.5" aria-hidden />
+      ) : null}
+      {delta === 0
+        ? "Stable vs hier"
+        : `${positive ? "+" : ""}${money ? formatPrice(delta) : delta} vs hier`}
+    </p>
+  );
+}
+
+function MiniKpi({
   label,
   value,
   hint,
 }: {
-  href: string;
   label: string;
   value: string;
   hint: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="block rounded-2xl border border-border bg-white p-5 transition-colors hover:border-primary/30 hover:bg-bg"
-      title={`Voir : ${label}`}
-    >
-      <p className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase">
+    <article className="rounded-[20px] border border-border/80 bg-white p-4 shadow-[0_8px_24px_rgba(59,31,77,0.03)]">
+      <p className="font-body text-[10px] font-semibold tracking-[0.2em] text-muted-foreground uppercase">
         {label}
       </p>
-      <p className="mt-2 font-display text-3xl font-semibold text-primary">
+      <p className="mt-2 font-body text-2xl font-semibold text-primary tabular-nums">
         {value}
       </p>
       <p className="mt-1 font-body text-xs text-muted-foreground">{hint}</p>
+    </article>
+  );
+}
+
+function AlertRow({ alert }: { alert: AdminAlert }) {
+  const Icon =
+    alert.tone === "urgent"
+      ? AlertTriangle
+      : alert.tone === "action"
+        ? Clock3
+        : Info;
+
+  return (
+    <Link
+      href={alert.href}
+      className={cn(
+        "flex min-h-12 items-start gap-3 rounded-2xl border px-4 py-3 transition-colors",
+        alert.tone === "urgent" &&
+          "border-destructive/30 bg-destructive/5 hover:bg-destructive/10",
+        alert.tone === "action" &&
+          "border-accent/40 bg-accent/10 hover:bg-accent/15",
+        alert.tone === "info" && "border-ops/25 bg-ops/5 hover:bg-ops/10",
+      )}
+    >
+      <Icon
+        className={cn(
+          "mt-0.5 size-4 shrink-0",
+          alert.tone === "urgent" && "text-destructive",
+          alert.tone === "action" && "text-text",
+          alert.tone === "info" && "text-ops",
+        )}
+        aria-hidden
+      />
+      <div className="min-w-0 flex-1">
+        <p className="font-body text-sm font-semibold text-text">
+          {alert.title}
+        </p>
+        <p className="mt-0.5 font-body text-xs text-muted-foreground">
+          {alert.detail}
+        </p>
+      </div>
+      <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden />
     </Link>
   );
 }
 
-function QuickLink({
+function QuickAction({
   href,
   icon: Icon,
   title,
   desc,
+  hot,
+  badge,
 }: {
   href: string;
   icon: typeof Package;
   title: string;
   desc: string;
+  hot?: boolean;
+  badge?: string;
 }) {
   return (
     <Link
       href={href}
-      className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 transition-colors hover:border-primary/30 hover:bg-bg"
+      className={cn(
+        "group flex items-start gap-3 rounded-[18px] border bg-white p-3.5 transition-colors hover:border-primary/25",
+        hot ? "border-accent/50" : "border-border/80",
+      )}
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        <Icon className="size-5" aria-hidden />
+      <div
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-xl",
+          hot ? "bg-accent text-text" : "bg-primary/8 text-primary",
+        )}
+      >
+        <Icon className="size-4" aria-hidden />
       </div>
-      <div>
-        <p className="font-display font-semibold text-primary">{title}</p>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="font-body text-sm font-semibold text-primary">{title}</p>
+          {badge && (
+            <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-bold text-primary-foreground tabular-nums">
+              {badge}
+            </span>
+          )}
+        </div>
         <p className="mt-0.5 font-body text-xs text-muted-foreground">{desc}</p>
       </div>
+      <ArrowRight
+        className="mt-1 size-4 shrink-0 text-muted-foreground group-hover:text-primary"
+        aria-hidden
+      />
     </Link>
   );
 }

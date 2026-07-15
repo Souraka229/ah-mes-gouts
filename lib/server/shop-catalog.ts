@@ -1,5 +1,6 @@
 import {
   getProductPrice,
+  isGiftCardProduct,
   isProductAvailable,
   products as fallbackProducts,
 } from "@/lib/mock-data";
@@ -83,6 +84,41 @@ export async function getSimilarShopProducts(
       return score(b) - score(a);
     })
     .slice(0, limit);
+}
+
+/**
+ * Sélection curée de produits complémentaires pour l'étape upsell.
+ * Puise dans le vrai catalogue : suppléments chocolat (duo rose + chocolat),
+ * carte cadeau, le bouquet et le nounours les moins chers.
+ */
+export async function getUpsellCandidates(): Promise<Product[]> {
+  const catalog = await getFullCatalog();
+  const available = catalog.filter(isProductAvailable);
+
+  const cheapest = (list: Product[]): Product | undefined =>
+    [...list].sort((a, b) => getProductPrice(a) - getProductPrice(b))[0];
+
+  const chocolates = available.filter((p) =>
+    p.slug.startsWith("supplement-chocolat"),
+  );
+  const giftCard = available.find((p) => isGiftCardProduct(p));
+  const bouquet = cheapest(
+    available.filter((p) => p.slug.startsWith("bouquet-")),
+  );
+  const nounours = cheapest(
+    available.filter((p) => p.slug.startsWith("nounours-")),
+  );
+
+  const picks = [...chocolates, giftCard, bouquet, nounours].filter(
+    (p): p is Product => Boolean(p),
+  );
+
+  const seen = new Set<string>();
+  return picks.filter((p) => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
 }
 
 export function getProductGalleryUrls(product: Product): string[] {

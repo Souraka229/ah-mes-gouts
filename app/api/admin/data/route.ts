@@ -1,16 +1,28 @@
 import { NextResponse } from "next/server";
 
-import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
+import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
+import {
+  getAdminDisplayNameAsync,
+  isAdministratorAsync,
+} from "@/lib/server/admin-role";
+import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getAllServerOrders } from "@/lib/server/order-repository";
 import { getAllSlotBookings } from "@/lib/server/slot-bookings";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET() {
   if (!(await isAdminAuthorizedAsync())) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  if (!(await isAdministratorAsync())) {
+    return NextResponse.json(
+      { error: "Export réservé à l'administrateur" },
+      { status: 403 },
+    );
   }
 
   const [deliveryConfig, orders, catalog] = await Promise.all([
@@ -18,6 +30,14 @@ export async function GET(request: Request) {
     getAllServerOrders(),
     getAdminCatalog(),
   ]);
+
+  void appendAdminActionLog({
+    adminName: await getAdminDisplayNameAsync(),
+    source: "manual",
+    action: "data_export",
+    summary: "Export données admin (/api/admin/data)",
+    details: { ordersCount: orders.length, catalogCount: catalog.length },
+  });
 
   return NextResponse.json(
     {

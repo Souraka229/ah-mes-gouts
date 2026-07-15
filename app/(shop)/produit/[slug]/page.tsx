@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { ProductPurchasePanel } from "@/components/shop/product-purchase-panel";
+import { ProductViewTracker } from "@/components/shop/product-view-tracker";
 import { SimilarProducts } from "@/components/shop/similar-products";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
@@ -83,6 +84,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <>
+      <ProductViewTracker
+        productId={product.id}
+        productSlug={product.slug}
+        productName={product.name}
+      />
       <JsonLd
         data={[
           buildBreadcrumbSchema(breadcrumbs),

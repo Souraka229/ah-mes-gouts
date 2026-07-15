@@ -1,8 +1,8 @@
 import { getProductImageUrl, LANDING_EXTRA_IMAGES, LANDING_POSTER_IMAGES } from "@/lib/product-images";
 
-/** Visuels landing — photos réelles client WebP */
+/** Visuels landing — photos réelles client WebP (+ import Gift) */
 export const LANDING_IMAGES = {
-  hero: getProductImageUrl("mango-passion"),
+  hero: "/images/produits/nutella-baileys-speculos.webp",
   goyaveVanille: getProductImageUrl("goyave-vanille"),
   tiramisuPoster: LANDING_POSTER_IMAGES.tiramisuPoster,
   nutella: getProductImageUrl("nutella-caramel"),
@@ -14,6 +14,7 @@ export const LANDING_IMAGES = {
   tiramisuRose: getProductImageUrl("tiramisu"),
   chocolatMenthe: LANDING_EXTRA_IMAGES.chocolatMenthe,
   chocolatCappuccino: getProductImageUrl("speculoos"),
+  corbeille: "/images/produits/gift/la-corbeille-a-fruits-11.20.44.webp",
 } as const;
 
 export const MENU_DU_JOUR_CATALOGUE_HREF = "/catalogue#menu-du-jour";
@@ -47,7 +48,8 @@ export const triptyqueItems = [
 
 export const footerNavLinks = [
   { href: "/catalogue", label: "Carte" },
-  { href: "/zones-de-livraison", label: "Zones de livraison" },
+  { href: "/infos", label: "Infos" },
+  { href: "/#contact", label: "Boutique" },
   { href: "#", label: "CGV" },
   { href: "/contact", label: "Contact" },
 ] as const;
@@ -83,7 +85,7 @@ export const menuPacks: MenuPack[] = [
     includes: [
       "4 entremets au choix",
       "4 couverts dorés",
-      "Livraison offerte en zone 1",
+      "Sur place en boutique",
     ],
     packPrice: 18000,
     unitTotalPrice: 22000,

@@ -26,5 +26,9 @@ export function formatFulfillmentSummary(order: FulfillmentInfo): string | null 
     return `Livraison prévue le ${dateLabel} entre ${timeLabel} à ${zone}`;
   }
 
-  return `Retrait prévu le ${dateLabel} entre ${timeLabel} en boutique (${PICKUP_ADDRESS})`;
+  if (order.mode === "dinein") {
+    return `Dégustation sur place le ${dateLabel} entre ${timeLabel} (${PICKUP_ADDRESS})`;
+  }
+
+  return `Retrait en boutique le ${dateLabel} entre ${timeLabel} (${PICKUP_ADDRESS})`;
 }

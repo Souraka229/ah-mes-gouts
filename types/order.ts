@@ -7,7 +7,7 @@ export type OrderStatus =
   | "livree"
   | "annulee";
 
-export type ReceptionMode = "delivery" | "pickup";
+export type ReceptionMode = "delivery" | "pickup" | "dinein";
 
 export type PaymentMethod =
   | "mtn_momo"
@@ -77,6 +77,8 @@ export type SavedOrder = {
     quantity: number;
     unitPrice: number;
     supplements: string[];
+    /** Slug catalogue — utilisé côté serveur pour recalculer prix/stock. */
+    slug?: string;
   }[];
   subtotal: number;
   total: number;
@@ -136,4 +138,18 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   moov_money: "Moov Money",
   celtiis_cash: "Celtiis Cash",
   card: "Carte bancaire",
+};
+
+/** Libellés des 3 modes de réception — Sur place ≠ À emporter ≠ Livraison. */
+export const RECEPTION_MODE_LABELS: Record<ReceptionMode, string> = {
+  delivery: "Livraison",
+  pickup: "À emporter",
+  dinein: "Sur place",
+};
+
+/** Verbe d'action associé à chaque mode (pour titres/CTA). */
+export const RECEPTION_MODE_TAGLINES: Record<ReceptionMode, string> = {
+  delivery: "Livré à votre adresse",
+  pickup: "À récupérer en boutique",
+  dinein: "À déguster sur place",
 };

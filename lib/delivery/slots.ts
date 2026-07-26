@@ -1,3 +1,8 @@
+import {
+  getShopDateKey,
+  getShopDayOfWeek,
+  shopDateTimeToUtc,
+} from "@/lib/business-date";
 import { DELIVERY_WAVES } from "@/lib/delivery/constants";
 import type {
   DeliveryScheduleConfig,
@@ -5,23 +10,21 @@ import type {
   TimeSlotOption,
 } from "@/lib/delivery/types";
 
-function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h! * 60 + m!;
+/** Clé unique partagée client/serveur : `delivery:2026-07-26T12:00:00.000Z`. */
+export function buildSlotKey(type: FulfillmentType, startIso: string): string {
+  return `${type}:${startIso}`;
 }
 
-function startOfDay(date: Date): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+export function parseSlotKey(slotKey: string): {
+  type: string;
+  startIso: string;
+} {
+  const colon = slotKey.indexOf(":");
+  if (colon < 0) return { type: "", startIso: slotKey };
+  return {
+    type: slotKey.slice(0, colon),
+    startIso: slotKey.slice(colon + 1),
+  };
 }
 
 export function getScheduleForDay(
@@ -34,7 +37,7 @@ export function getScheduleForDay(
   );
 }
 
-/** Aujourd'hui + N-1 jours suivants où le jour est actif. */
+/** Aujourd'hui + N-1 jours suivants où le jour est actif (fuseau boutique). */
 export function getSelectableDates(
   schedules: DeliveryScheduleConfig[],
   type: FulfillmentType,
@@ -42,13 +45,24 @@ export function getSelectableDates(
   daysAhead = 7,
 ): Date[] {
   const dates: Date[] = [];
-  const base = startOfDay(now);
+  const todayKey = getShopDateKey(now);
 
   for (let offset = 0; offset < daysAhead; offset++) {
-    const date = new Date(base);
-    date.setDate(base.getDate() + offset);
-    const schedule = getScheduleForDay(schedules, type, date.getDay());
-    if (schedule) dates.push(date);
+    const probe = new Date(now.getTime() + offset * 24 * 60 * 60 * 1000);
+    const dateKey = getShopDateKey(probe);
+    // Ancre midi UTC+1 pour un Instant stable représentant ce jour boutique.
+    const noon = shopDateTimeToUtc(dateKey, "12:00");
+    const schedule = getScheduleForDay(
+      schedules,
+      type,
+      getShopDayOfWeek(noon),
+    );
+    if (schedule) {
+      // Évite les doublons si le décalage tombe sur la même dateKey.
+      if (dates.some((d) => getShopDateKey(d) === dateKey)) continue;
+      if (offset === 0 && dateKey !== todayKey) continue;
+      dates.push(noon);
+    }
   }
 
   return dates;
@@ -59,40 +73,34 @@ export function isDateClosed(
   type: FulfillmentType,
   date: Date,
 ): boolean {
-  return !getScheduleForDay(schedules, type, date.getDay());
-}
-
-function timeOnDate(date: Date, time: string): Date {
-  const minutes = parseTimeToMinutes(time);
-  const d = new Date(date);
-  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return d;
+  return !getScheduleForDay(schedules, type, getShopDayOfWeek(date));
 }
 
 /**
  * Créneaux proposés à la cliente.
- * Deux vagues fixes pour tous les modes (13h–15h30, 16h–18h30).
- * Le jour reste piloté par la config (schedule.isActive) ; seules
- * les heures sont figées pour rester ultra simples.
+ * Deux vagues fixes pour tous les modes (13h–15h30, 16h–18h30) en heure Cotonou.
  */
 export function buildSlotsForDate(
   schedule: DeliveryScheduleConfig,
   date: Date,
   now = new Date(),
 ): TimeSlotOption[] {
-  const today = isSameDay(date, now);
+  const dateKey = getShopDateKey(date);
+  const today = dateKey === getShopDateKey(now);
 
   return DELIVERY_WAVES.flatMap((wave) => {
-    const start = timeOnDate(date, wave.start);
-    const end = timeOnDate(date, wave.end);
-    // La vague reste commandable jusqu'à sa fin.
-    if (today && end <= now) return [];
+    const start = shopDateTimeToUtc(dateKey, wave.start);
+    const end = shopDateTimeToUtc(dateKey, wave.end);
+    // La vague reste commandable jusqu'à sa fin (heure boutique).
+    if (today && end.getTime() <= now.getTime()) return [];
+
+    const startIso = start.toISOString();
     return [
       {
-        start: start.toISOString(),
+        start: startIso,
         end: end.toISOString(),
         label: wave.label,
-        slotKey: `${schedule.type}:${wave.key}:${start.toISOString()}`,
+        slotKey: buildSlotKey(schedule.type, startIso),
       },
     ];
   });
@@ -104,13 +112,18 @@ export function getSlotsForDate(
   date: Date,
   now = new Date(),
 ): TimeSlotOption[] {
-  const schedule = getScheduleForDay(schedules, type, date.getDay());
+  const schedule = getScheduleForDay(
+    schedules,
+    type,
+    getShopDayOfWeek(date),
+  );
   if (!schedule) return [];
   return buildSlotsForDate(schedule, date, now);
 }
 
 export function formatSlotDate(date: Date): string {
   return date.toLocaleDateString("fr-FR", {
+    timeZone: "Africa/Porto-Novo",
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -118,15 +131,18 @@ export function formatSlotDate(date: Date): string {
 }
 
 export function formatSlotRange(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const time = (d: Date) =>
-    d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  return `${time(start)} et ${time(end)}`;
+  const time = (iso: string) =>
+    new Date(iso).toLocaleTimeString("fr-FR", {
+      timeZone: "Africa/Porto-Novo",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  return `${time(startIso)} et ${time(endIso)}`;
 }
 
 export function formatSlotDateShort(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
+    timeZone: "Africa/Porto-Novo",
     weekday: "long",
     day: "numeric",
     month: "long",

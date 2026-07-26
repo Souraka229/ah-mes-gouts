@@ -1,20 +1,15 @@
-import { getSlotsForDate } from "@/lib/delivery/slots";
+import {
+  buildSlotKey,
+  getSlotsForDate,
+  parseSlotKey,
+} from "@/lib/delivery/slots";
 import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
 import { getPendingPaymentCutoff } from "@/lib/orders/payment-expiration";
-import { isTodayAtShop } from "@/lib/business-date";
+import { getShopDateKey, isTodayAtShop } from "@/lib/business-date";
 
-export function parseSlotKey(slotKey: string): {
-  type: string;
-  startIso: string;
-} {
-  const colon = slotKey.indexOf(":");
-  return {
-    type: slotKey.slice(0, colon),
-    startIso: slotKey.slice(colon + 1),
-  };
-}
+export { buildSlotKey, parseSlotKey };
 
 export async function countOrdersForSlot(slotKey: string): Promise<number> {
   const { type, startIso } = parseSlotKey(slotKey);
@@ -55,13 +50,6 @@ export async function isSlotAvailable(slotKey: string): Promise<boolean> {
   return usage < max;
 }
 
-export function buildSlotKey(
-  type: FulfillmentType,
-  startIso: string,
-): string {
-  return `${type}:${startIso}`;
-}
-
 export async function findNextAvailableSlot(
   type: FulfillmentType,
   afterStartIso: string,
@@ -73,9 +61,33 @@ export async function findNextAvailableSlot(
 
   const slots = getSlotsForDate(schedules, type, now, now);
   for (const slot of slots) {
-    if (new Date(slot.start) < after) continue;
+    // Inclut le créneau courant s'il est encore libre (réessai après sync TZ).
+    if (new Date(slot.start).getTime() < after.getTime()) continue;
     if (await isSlotAvailable(buildSlotKey(type, slot.start))) return slot;
   }
 
   return null;
+}
+
+/** Créneaux du jour encore libres (capacité restante > 0). */
+export async function getAvailableSlotsToday(
+  type: FulfillmentType,
+  now = new Date(),
+): Promise<TimeSlotOption[]> {
+  const { schedules, options } = await getDeliveryConfig();
+  const slots = getSlotsForDate(schedules, type, now, now);
+  const max = options.maxOrdersPerSlot;
+
+  const checked = await Promise.all(
+    slots.map(async (slot) => {
+      const usage = await getSlotUsageCount(buildSlotKey(type, slot.start));
+      return usage < max ? slot : null;
+    }),
+  );
+
+  return checked.filter((slot): slot is TimeSlotOption => slot !== null);
+}
+
+export function assertSlotIsToday(startIso: string, now = new Date()): boolean {
+  return getShopDateKey(startIso) === getShopDateKey(now);
 }

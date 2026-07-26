@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
       return NextResponse.json(
         {
-          error: "Ce créneau n'est plus disponible.",
+          error: "SLOT_UNAVAILABLE",
           nextSlot,
         },
         { status: 409 },
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
       const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
       return NextResponse.json(
         {
-          error: "Ce créneau vient d'être réservé.",
+          error: "SLOT_FULL",
           nextSlot,
         },
         { status: 409 },
@@ -249,7 +249,7 @@ export async function POST(request: Request) {
         const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
         return NextResponse.json(
           {
-            error: "Ce créneau vient d'être réservé.",
+            error: "SLOT_FULL",
             nextSlot,
           },
           { status: 409 },

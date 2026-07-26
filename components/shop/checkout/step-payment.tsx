@@ -132,12 +132,7 @@ export function StepPayment() {
   const totalUnits = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const showPackaging = totalUnits > 1;
   const [packaging, setPackaging] = useState<PackagingChoice>("together");
-  const [suggestedSlot, setSuggestedSlot] = useState<{
-    start: string;
-    end: string;
-    slotKey: string;
-    label?: string;
-  } | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const payingRef = useRef(false);
   const idempotencyRef = useRef<string | null>(null);
@@ -285,6 +280,7 @@ export function StepPayment() {
     payingRef.current = true;
     setUiState("loading");
     setErrorMessage(null);
+    setInfoMessage(null);
     setPendingMessage(null);
     stopPolling();
 
@@ -299,7 +295,9 @@ export function StepPayment() {
       packaging: showPackaging ? packaging : null,
     });
 
-    const order: SavedOrder = {
+    const buildOrder = (
+      slot: NonNullable<typeof scheduledSlot>,
+    ): SavedOrder => ({
       id: orderId,
       createdAt: new Date().toISOString(),
       status: "recue",
@@ -308,8 +306,8 @@ export function StepPayment() {
       zoneId: mode === "delivery" ? zone : null,
       deliveryZoneId: mode === "delivery" ? zone : null,
       zoneName: totals.zoneName,
-      scheduledSlotStart: scheduledSlot.start,
-      scheduledSlotEnd: scheduledSlot.end,
+      scheduledSlotStart: slot.start,
+      scheduledSlotEnd: slot.end,
       deliveryFee: totals.deliveryFee,
       client: isGift
         ? {
@@ -333,36 +331,84 @@ export function StepPayment() {
       })),
       subtotal: totals.subtotal,
       total: totals.total,
-    };
+    });
 
-    try {
-      const serverTotals = await persistOrderOnServer(
-        order,
-        idempotencyRef.current,
-      );
-      saveOrder({
-        ...order,
-        subtotal: serverTotals.subtotal,
-        deliveryFee: serverTotals.deliveryFee,
-        total: serverTotals.total,
-      });
-    } catch (error) {
-      setUiState("error");
-      payingRef.current = false;
-      const err = error as Error & {
-        nextSlot?: { start: string; end: string; slotKey: string; label?: string };
-      };
-      if (err.nextSlot) {
-        setSuggestedSlot(err.nextSlot);
-        setErrorMessage(
-          `${err.message} Un créneau alternatif est proposé ci-dessous.`,
-        );
-      } else {
+    let activeSlot = scheduledSlot;
+    let order = buildOrder(activeSlot);
+    let persisted = false;
+
+    for (let attempt = 0; attempt < 2 && !persisted; attempt++) {
+      try {
+        const key: string =
+          attempt === 0
+            ? (idempotencyRef.current ?? `pay-${orderId}-${crypto.randomUUID()}`)
+            : `pay-${orderId}-slot-${crypto.randomUUID()}`;
+        idempotencyRef.current = key;
+        const serverTotals = await persistOrderOnServer(order, key);
+        saveOrder({
+          ...order,
+          subtotal: serverTotals.subtotal,
+          deliveryFee: serverTotals.deliveryFee,
+          total: serverTotals.total,
+        });
+        persisted = true;
+      } catch (error) {
+        const err = error as Error & {
+          nextSlot?: {
+            start: string;
+            end: string;
+            slotKey: string;
+            label?: string;
+          };
+        };
+
+        // Course rare : bascule silencieuse sur le prochain créneau libre, sans alarmer.
+        if (attempt === 0 && err.nextSlot) {
+          activeSlot = {
+            start: err.nextSlot.start,
+            end: err.nextSlot.end,
+            slotKey: err.nextSlot.slotKey,
+          };
+          setScheduledSlot(activeSlot);
+          order = buildOrder(activeSlot);
+          setInfoMessage(
+            err.nextSlot.label
+              ? `Créneau ajusté : ${err.nextSlot.label}.`
+              : "Créneau ajusté automatiquement.",
+          );
+          continue;
+        }
+
+        const isSlotConflict =
+          err.message === "SLOT_FULL" ||
+          err.message === "SLOT_UNAVAILABLE" ||
+          Boolean(err.nextSlot);
+
+        if (isSlotConflict) {
+          // Plus de créneau libre : retour calmement à la sélection.
+          setUiState("idle");
+          payingRef.current = false;
+          setScheduledSlot(null);
+          setInfoMessage(null);
+          setErrorMessage(null);
+          setStep("commande");
+          return;
+        }
+
+        setUiState("error");
+        payingRef.current = false;
         setErrorMessage(
           err.message ||
             "Impossible d'enregistrer la commande. Vérifiez votre connexion.",
         );
+        return;
       }
+    }
+
+    if (!persisted) {
+      setUiState("idle");
+      payingRef.current = false;
+      setStep("commande");
       return;
     }
 
@@ -452,6 +498,15 @@ export function StepPayment() {
         </div>
       )}
 
+      {infoMessage && (
+        <div
+          role="status"
+          className="rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text"
+        >
+          {infoMessage}
+        </div>
+      )}
+
       {isGift && (
         <div className="rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
           Cadeau pour <strong>{gift.recipientName}</strong>
@@ -506,6 +561,7 @@ export function StepPayment() {
                 setPaymentMethod(method.id);
                 setUiState("idle");
                 setErrorMessage(null);
+                setInfoMessage(null);
               }}
               className={cn(
                 "flex min-h-11 min-w-11 cursor-pointer items-start gap-4 rounded-2xl border p-4 text-left transition-all duration-[250ms]",
@@ -553,26 +609,6 @@ export function StepPayment() {
             ) : null}
             <p>{errorMessage}</p>
           </div>
-          {suggestedSlot && (
-            <Button
-              type="button"
-              size="sm"
-              className="mt-3 cursor-pointer bg-accent text-text hover:bg-accent/90"
-              onClick={() => {
-                setScheduledSlot({
-                  start: suggestedSlot.start,
-                  end: suggestedSlot.end,
-                  slotKey: suggestedSlot.slotKey,
-                });
-                setSuggestedSlot(null);
-                setErrorMessage(null);
-                setUiState("idle");
-                setStep("commande");
-              }}
-            >
-              Choisir le créneau suivant
-            </Button>
-          )}
           <Button
             type="button"
             variant="outline"
@@ -581,7 +617,6 @@ export function StepPayment() {
             onClick={() => {
               setUiState("idle");
               setErrorMessage(null);
-              setSuggestedSlot(null);
             }}
           >
             <RefreshCw className="size-3.5" aria-hidden />

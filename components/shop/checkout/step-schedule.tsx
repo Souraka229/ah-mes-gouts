@@ -1,42 +1,77 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 
-import {
-  formatSlotDate,
-  getSlotsForDate,
-} from "@/lib/delivery/slots";
+import { formatSlotDate } from "@/lib/delivery/slots";
+import type { TimeSlotOption } from "@/lib/delivery/types";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
 import { cn } from "@/lib/utils";
-import { isTodayAtShop } from "@/lib/business-date";
 
 export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
   const mode = useCheckoutStore((state) => state.mode);
   const scheduledSlot = useCheckoutStore((state) => state.scheduledSlot);
   const setScheduledSlot = useCheckoutStore((state) => state.setScheduledSlot);
 
-  const { schedules, options, loading } = useDeliveryConfig();
+  const { options, loading: configLoading } = useDeliveryConfig();
 
   // « Sur place » et « À emporter » partagent les horaires boutique (pickup).
   const fulfillmentType = mode === "delivery" ? "delivery" : "pickup";
-  const now = useMemo(() => new Date(), []);
 
-  const slots = useMemo(() => {
-    if (!mode) return [];
-    return getSlotsForDate(schedules, fulfillmentType, now, now).slice(0, 2);
-  }, [schedules, fulfillmentType, mode, now]);
+  const [slots, setSlots] = useState<TimeSlotOption[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
+
+  const loadSlots = useCallback(async () => {
+    if (!mode) {
+      setSlots([]);
+      return;
+    }
+    setSlotsLoading(true);
+    setSlotsError(null);
+    try {
+      const response = await fetch(
+        `/api/delivery/slots?type=${fulfillmentType}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) {
+        throw new Error("Impossible de charger les créneaux.");
+      }
+      const data = (await response.json()) as { slots?: TimeSlotOption[] };
+      const nextSlots = data.slots ?? [];
+      setSlots(nextSlots);
+
+      // Si le créneau mémorisé n'est plus libre : bascule silencieuse sur le 1er dispo.
+      const currentKey = useCheckoutStore.getState().scheduledSlot?.slotKey;
+      if (nextSlots.length === 0) {
+        setScheduledSlot(null);
+        return;
+      }
+      const stillValid = nextSlots.some((slot) => slot.slotKey === currentKey);
+      if (!stillValid) {
+        const first = nextSlots[0]!;
+        setScheduledSlot({
+          start: first.start,
+          end: first.end,
+          slotKey: first.slotKey,
+        });
+      }
+    } catch {
+      setSlotsError("Créneaux temporairement inaccessibles. Réessayez.");
+      setSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, [fulfillmentType, mode, setScheduledSlot]);
 
   useEffect(() => {
-    if (!scheduledSlot) return;
-    const stillValid =
-      isTodayAtShop(scheduledSlot.start) &&
-      slots.some((slot) => slot.slotKey === scheduledSlot.slotKey);
-    if (!stillValid) setScheduledSlot(null);
-  }, [scheduledSlot, setScheduledSlot, slots]);
+    void loadSlots();
+  }, [loadSlots]);
 
   if (!mode) return null;
+
+  const loading = configLoading || slotsLoading;
 
   if (loading) {
     return (
@@ -76,7 +111,7 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
             Commande du jour
           </p>
           <p className="font-body text-sm font-semibold capitalize text-primary">
-            {formatSlotDate(now)}
+            {formatSlotDate(new Date())}
           </p>
         </div>
       </div>
@@ -84,16 +119,34 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
       <div className="space-y-3">
         <div className="flex items-center gap-2 font-body text-sm font-medium text-primary">
           <CalendarDays className="size-4" aria-hidden />
-          Deux créneaux aujourd&apos;hui
+          Créneaux disponibles aujourd&apos;hui
         </div>
 
-        {slots.length === 0 ? (
+        {slotsError ? (
+          <div className="space-y-3">
+            <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
+              {slotsError}
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadSlots()}
+              className="mx-auto block min-h-11 cursor-pointer font-body text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Actualiser
+            </button>
+          </div>
+        ) : slots.length === 0 ? (
           <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
-            Les créneaux d&apos;aujourd&apos;hui sont terminés. Le prochain menu
-            sera disponible demain.
+            Plus de créneau disponible aujourd&apos;hui. Le prochain menu sera
+            ouvert demain.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div
+            className={cn(
+              "grid gap-3",
+              slots.length === 1 ? "grid-cols-1" : "grid-cols-2",
+            )}
+          >
             {slots.map((slot) => {
               const selected = scheduledSlot?.slotKey === slot.slotKey;
               return (

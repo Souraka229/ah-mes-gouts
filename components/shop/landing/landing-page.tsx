@@ -1,92 +1,33 @@
-import dynamic from "next/dynamic";
-
+import { LandingClosing } from "@/components/shop/landing/landing-closing";
+import { LandingHero } from "@/components/shop/landing/landing-hero";
+import { LandingMenuSection } from "@/components/shop/landing/landing-menu-section";
 import { LandingShell } from "@/components/shop/landing/landing-shell";
-import { RadicalHeroSection } from "@/components/shop/landing/radical-hero-section";
-import { RadicalProductGridSection } from "@/components/shop/landing/radical-product-grid";
+import { LandingTrustBar } from "@/components/shop/landing/landing-trust-bar";
 import type { HomePageContent } from "@/lib/server/home-content";
 
-const RadicalSignatureMomentSection = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-signature-moment").then(
-      (m) => m.RadicalSignatureMomentSection,
-    ),
-);
-const RadicalFormatsSection = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-formats-section").then(
-      (m) => m.RadicalFormatsSection,
-    ),
-);
-const RadicalBoutiqueSection = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-boutique-section").then(
-      (m) => m.RadicalBoutiqueSection,
-    ),
-);
-const GiftUpsellBandSection = dynamic(
-  () =>
-    import("@/components/shop/landing/gift-upsell-band").then(
-      (m) => m.GiftUpsellBandSection,
-    ),
-);
-const RadicalValuesBand = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-values-band").then(
-      (m) => m.RadicalValuesBand,
-    ),
-);
-const RadicalSocialProofSection = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-social-proof-section").then(
-      (m) => m.RadicalSocialProofSection,
-    ),
-);
-const RadicalFooterWordmarkSection = dynamic(
-  () =>
-    import("@/components/shop/landing/radical-footer-wordmark").then(
-      (m) => m.RadicalFooterWordmarkSection,
-    ),
-);
-
 /**
- * Landing « écrin de nuit » — hero + menu du jour au-dessus du fold ;
- * le reste est code-splitté pour accélérer TTI.
+ * Accueil « écrin clair » — hero produit, menu du jour, confiance, CTA.
+ * Quatre sections, zéro JS client sur la landing.
  */
 export function LandingPage({ content }: { content: HomePageContent }) {
-  const v = content.visibleSectionKeys;
+  const featured = content.menuShowcase[0] ?? null;
+  const showMenuGrid = content.menuShowcase.length > 1;
+  const menuItems = content.menuShowcase.slice(0, 4);
 
   return (
     <LandingShell>
-      {v.has("hero") && <RadicalHeroSection content={content.hero} />}
+      <LandingHero
+        featured={featured}
+        fallbackImage={content.hero.imageUrl}
+        ctaHref={content.hero.ctaHref}
+        ctaLabel={content.hero.ctaLabel}
+      />
 
-      {v.has("product_grid") && (
-        <RadicalProductGridSection
-          content={content.productGrid}
-          showcase={content.menuShowcase}
-        />
-      )}
+      {showMenuGrid && <LandingMenuSection items={menuItems} />}
 
-      {v.has("signature_moment") && (
-        <RadicalSignatureMomentSection content={content.signatureMoment} />
-      )}
+      <LandingTrustBar />
 
-      <RadicalFormatsSection />
-
-      <RadicalBoutiqueSection />
-
-      {v.has("gift_teaser") && (
-        <GiftUpsellBandSection
-          content={content.giftTeaser}
-          products={content.giftProducts}
-        />
-      )}
-
-      <RadicalValuesBand />
-      <RadicalSocialProofSection />
-
-      {v.has("footer") && (
-        <RadicalFooterWordmarkSection content={content.footer} />
-      )}
+      <LandingClosing footer={content.footer} />
     </LandingShell>
   );
 }

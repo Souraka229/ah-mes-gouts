@@ -2,6 +2,7 @@ import { getSlotsForDate } from "@/lib/delivery/slots";
 import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
+import { getPendingPaymentCutoff } from "@/lib/orders/payment-expiration";
 
 export function parseSlotKey(slotKey: string): {
   type: string;
@@ -24,7 +25,13 @@ export async function countOrdersForSlot(slotKey: string): Promise<number> {
     where: {
       scheduledSlotStart: start,
       fulfillmentType: type,
-      status: { not: "ANNULEE" },
+      OR: [
+        { status: { notIn: ["RECUE", "ANNULEE"] } },
+        {
+          status: "RECUE",
+          createdAt: { gt: getPendingPaymentCutoff() },
+        },
+      ],
     },
   });
 }

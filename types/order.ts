@@ -42,13 +42,7 @@ export type DeliveryZone = {
   areas: string[];
 };
 
-export type CheckoutStep =
-  | "mode"
-  | "zone"
-  | "schedule"
-  | "client"
-  | "upsell"
-  | "payment";
+export type CheckoutStep = "commande" | "payment";
 
 export type ScheduledSlotSelection = {
   start: string;

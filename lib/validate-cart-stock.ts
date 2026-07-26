@@ -1,3 +1,5 @@
+import { isUnlimitedStockCategory } from "@/lib/admin/categories";
+import { getProductCategory } from "@/lib/catalog-utils";
 import type { CartLineItem } from "@/types/cart";
 import type { Product } from "@/types/product";
 
@@ -23,6 +25,9 @@ export function validateCartStockWithCatalog(
       });
       continue;
     }
+
+    const unlimited = isUnlimitedStockCategory(getProductCategory(product));
+    if (unlimited) continue;
 
     if (product.stockRemaining <= 0) {
       issues.push({

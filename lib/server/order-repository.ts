@@ -2,8 +2,13 @@ import { randomUUID } from "crypto";
 
 import { Prisma } from "@prisma/client";
 
+import type { StockClaim } from "@/lib/server/order-pricing";
 import { getPrisma } from "@/lib/prisma";
 import { buildDemoOrders } from "@/lib/server/demo-orders";
+import {
+  getPendingPaymentCutoff,
+  isPendingPaymentExpired,
+} from "@/lib/orders/payment-expiration";
 import {
   fromPrismaOrder,
   fromPrismaOrderStatus,
@@ -75,7 +80,13 @@ export async function saveServerOrderWithSlotReservation(
         where: {
           scheduledSlotStart: slot.scheduledSlotStart,
           fulfillmentType: slot.fulfillmentType,
-          status: { not: "ANNULEE" },
+          OR: [
+            { status: { notIn: ["RECUE", "ANNULEE"] } },
+            {
+              status: "RECUE",
+              createdAt: { gt: getPendingPaymentCutoff() },
+            },
+          ],
         },
       });
 
@@ -108,13 +119,15 @@ export class OrderStockError extends Error {
  */
 export async function createServerOrderWithStock(
   order: SavedOrder,
-  stockClaims: { slug: string; name: string; quantity: number }[],
+  stockClaims: StockClaim[],
 ): Promise<void> {
   const prisma = getPrisma();
   const data = toPrismaOrderCreateInput(order);
 
   await prisma.$transaction(async (tx) => {
     for (const claim of stockClaims) {
+      if (claim.unlimitedStock) continue;
+
       const tracked = await tx.product.findUnique({
         where: { slug: claim.slug },
         select: { id: true },
@@ -146,7 +159,7 @@ export async function createServerOrderWithStock(
  */
 export async function confirmServerOrderPayment(
   orderId: string,
-  stockClaims: { slug: string; name: string; quantity: number }[],
+  stockClaims: StockClaim[],
   paymentReference?: string,
 ): Promise<SavedOrder | undefined> {
   const prisma = getPrisma();
@@ -165,7 +178,18 @@ export async function confirmServerOrderPayment(
         return fromPrismaOrder(existing);
       }
 
+      if (isPendingPaymentExpired(existing.createdAt)) {
+        const expired = await tx.order.update({
+          where: { id: orderId },
+          data: { status: toPrismaOrderStatus("annulee") },
+          include: { items: true, driver: { select: { name: true } } },
+        });
+        return fromPrismaOrder(expired);
+      }
+
       for (const claim of stockClaims) {
+        if ("unlimitedStock" in claim && claim.unlimitedStock) continue;
+
         const tracked = await tx.product.findUnique({
           where: { slug: claim.slug },
           select: { id: true },
@@ -217,6 +241,37 @@ export async function getServerOrder(
   return row ? fromPrismaOrder(row) : undefined;
 }
 
+/**
+ * Annule paresseusement une commande non payée arrivée à expiration.
+ * Le updateMany rend l'opération atomique et sans effet sur une commande payée.
+ */
+export async function expirePendingOrder(
+  orderId: string,
+): Promise<boolean> {
+  const prisma = getPrisma();
+  const result = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      status: "RECUE",
+      createdAt: { lte: getPendingPaymentCutoff() },
+    },
+    data: { status: "ANNULEE" },
+  });
+  return result.count > 0;
+}
+
+export async function expireAllPendingOrders(): Promise<number> {
+  const prisma = getPrisma();
+  const result = await prisma.order.updateMany({
+    where: {
+      status: "RECUE",
+      createdAt: { lte: getPendingPaymentCutoff() },
+    },
+    data: { status: "ANNULEE" },
+  });
+  return result.count;
+}
+
 export async function getAllServerOrders(): Promise<SavedOrder[]> {
   return getServerOrdersForAdmin({ limit: 500 });
 }
@@ -238,6 +293,7 @@ export async function getServerOrdersForAdmin(
   since.setDate(since.getDate() - days);
 
   const prisma = getPrisma();
+  await expireAllPendingOrders();
   const rows = await prisma.order.findMany({
     where: { createdAt: { gte: since } },
     include: { items: true, driver: { select: { name: true } } },

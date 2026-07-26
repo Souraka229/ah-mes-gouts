@@ -13,7 +13,7 @@ import {
   loadSavedClient,
   saveClient,
 } from "@/lib/client-storage";
-import { getNextStep, useCheckoutStore } from "@/lib/checkout-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
 import { linkDeviceToPhone, trackActivity } from "@/lib/crm/track";
 import {
   clientInfoSchema,
@@ -25,7 +25,7 @@ import type { ClientInfo, GiftDetails } from "@/types/order";
 
 const GIFT_MESSAGE_MAX = 280;
 
-export function StepClientForm() {
+export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
   const client = useCheckoutStore((state) => state.client);
   const setClient = useCheckoutStore((state) => state.setClient);
   const isGift = useCheckoutStore((state) => state.isGift);
@@ -69,8 +69,7 @@ export function StepClientForm() {
     saveClient(saved);
     linkDeviceToPhone(saved.phone);
     trackActivity({ type: "checkout_start" });
-    const next = getNextStep("client", mode);
-    if (next) setStep(next);
+    if (!embedded) setStep("payment");
   };
 
   const handleContinue = () => {
@@ -164,30 +163,31 @@ export function StepClientForm() {
     saveClient(result.data);
     linkDeviceToPhone(result.data.phone);
     trackActivity({ type: "checkout_start" });
-    const next = getNextStep("client", mode);
-    if (next) setStep(next);
+    if (!embedded) setStep("payment");
   };
 
   const giftMessageLength = gift.giftMessage.length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-          Vos informations
-        </h1>
-        <p className="mt-2 font-body text-muted-foreground">
-          {isGift
-            ? "Préparez votre surprise — le destinataire ne verra que ce que vous choisissez de partager."
-            : mode === "delivery"
-              ? "Où devons-nous livrer votre commande ?"
-              : mode === "dinein"
-                ? "Comment pouvons-nous vous joindre pour votre venue en boutique ?"
-                : "Comment pouvons-nous vous joindre pour le retrait en boutique ?"}
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
+            Vos informations
+          </h1>
+          <p className="mt-2 font-body text-muted-foreground">
+            {isGift
+              ? "Préparez votre surprise — le destinataire ne verra que ce que vous choisissez de partager."
+              : mode === "delivery"
+                ? "Où devons-nous livrer votre commande ?"
+                : mode === "dinein"
+                  ? "Comment pouvons-nous vous joindre pour votre venue en boutique ?"
+                  : "Comment pouvons-nous vous joindre pour le retrait en boutique ?"}
+          </p>
+        </div>
+      )}
 
-      <CheckoutBusinessNotices variant="full" />
+      {!embedded && <CheckoutBusinessNotices variant="full" />}
 
       <GiftModeSelector isGift={isGift} onChange={setIsGift} />
 
@@ -402,12 +402,14 @@ export function StepClientForm() {
         </div>
       )}
 
-      <Button
-        className="h-11 cursor-pointer bg-accent text-text hover:bg-accent/90"
-        onClick={handleContinue}
-      >
-        Continuer
-      </Button>
+      {!embedded && (
+        <Button
+          className="h-11 cursor-pointer bg-accent text-text hover:bg-accent/90"
+          onClick={handleContinue}
+        >
+          Continuer
+        </Button>
+      )}
     </div>
   );
 }

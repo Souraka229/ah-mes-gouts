@@ -72,13 +72,24 @@ export function isFeexPayEnabled(): boolean {
   return process.env.FEEXPAY_ENABLE === "true" && getFeexPayConfig() !== null;
 }
 
-/** Mock autorisé uniquement en dev ou staging explicite — jamais en prod silencieux. */
+/**
+ * Paiement mock / démo.
+ * - Dev : activé par défaut
+ * - Prod : uniquement si DEMO_PAYMENTS=true (ou FEEXPAY_MOCK=true) ET FeexPay désactivé
+ * À retirer définitivement quand les clés FeexPay sont branchées.
+ */
 export function isMockPaymentAllowed(): boolean {
   if (isFeexPayEnabled()) return false;
+
+  const explicitDemo =
+    process.env.DEMO_PAYMENTS === "true" ||
+    process.env.FEEXPAY_MOCK === "true";
+
   if (process.env.NODE_ENV === "production") {
-    return process.env.FEEXPAY_MOCK === "true";
+    return explicitDemo;
   }
-  return true;
+
+  return process.env.FEEXPAY_MOCK !== "false";
 }
 
 function authHeaders(config: FeexPayConfig): HeadersInit {

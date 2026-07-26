@@ -1,8 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { fontVariables } from "@/lib/fonts";
 import { SITE_NAME, SITE_URL } from "@/lib/seo/site";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#FAF7F5",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

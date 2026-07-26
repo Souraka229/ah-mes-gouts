@@ -47,7 +47,7 @@ type CheckoutState = {
 };
 
 const initialState = {
-  step: "mode" as CheckoutStep,
+  step: "commande" as CheckoutStep,
   mode: null as ReceptionMode | null,
   zoneId: null as string | null,
   scheduledSlot: null as ScheduledSlotSelection | null,
@@ -57,28 +57,6 @@ const initialState = {
   paymentMethod: null as PaymentMethod | null,
   hasWelcomedBack: false,
 };
-
-function getPreviousStep(
-  step: CheckoutStep,
-  mode: ReceptionMode | null,
-): CheckoutStep | null {
-  switch (step) {
-    case "mode":
-      return null;
-    case "zone":
-      return "mode";
-    case "schedule":
-      return mode === "delivery" ? "zone" : "mode";
-    case "client":
-      return "schedule";
-    case "upsell":
-      return "client";
-    case "payment":
-      return "upsell";
-    default:
-      return null;
-  }
-}
 
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
@@ -107,9 +85,8 @@ export const useCheckoutStore = create<CheckoutState>()(
       setHasWelcomedBack: (hasWelcomedBack) => set({ hasWelcomedBack }),
 
       goBack: () => {
-        const { step, mode } = get();
-        const previous = getPreviousStep(step, mode);
-        if (previous) set({ step: previous });
+        const { step } = get();
+        if (step === "payment") set({ step: "commande" });
       },
 
       resetCheckout: () =>
@@ -132,28 +109,18 @@ export const useCheckoutStore = create<CheckoutState>()(
         paymentMethod: state.paymentMethod,
         hasWelcomedBack: state.hasWelcomedBack,
       }),
+      migrate: (persisted) => {
+        const p = persisted as Record<string, unknown> & { step?: string };
+        if (
+          p.step &&
+          p.step !== "commande" &&
+          p.step !== "payment"
+        ) {
+          return { ...p, step: "commande" as CheckoutStep };
+        }
+        return persisted as CheckoutState;
+      },
+      version: 2,
     },
   ),
 );
-
-export function getNextStep(
-  current: CheckoutStep,
-  mode: ReceptionMode | null,
-): CheckoutStep | null {
-  switch (current) {
-    case "mode":
-      return mode === "delivery" ? "zone" : "schedule";
-    case "zone":
-      return "schedule";
-    case "schedule":
-      return "client";
-    case "client":
-      return "upsell";
-    case "upsell":
-      return "payment";
-    case "payment":
-      return null;
-    default:
-      return null;
-  }
-}

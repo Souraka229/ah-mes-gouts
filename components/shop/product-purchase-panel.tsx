@@ -9,6 +9,7 @@ import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
+  getMaxOrderQuantity,
   isProductAvailable,
 } from "@/lib/catalog-utils";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
 
   const available = isProductAvailable(product);
   const baseUnitPrice = getProductPrice(product);
+  const maxQuantity = getMaxOrderQuantity(product);
 
   const unitPrice = baseUnitPrice;
   const totalPrice = unitPrice * quantity;
@@ -100,10 +102,10 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
               type="button"
               onClick={() =>
                 setQuantity((value) =>
-                  Math.min(product.stockRemaining, value + 1),
+                  Math.min(maxQuantity, value + 1),
                 )
               }
-              disabled={quantity >= product.stockRemaining}
+              disabled={quantity >= maxQuantity}
               className="flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Augmenter la quantité"
             >

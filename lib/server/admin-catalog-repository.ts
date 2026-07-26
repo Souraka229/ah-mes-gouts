@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { revalidateTag } from "next/cache";
 
+import { inferCategoryFromSlug } from "@/lib/admin/categories";
 import { products as seedProducts } from "@/lib/mock-data";
 import { normalizeProductImages, GIFT_CATALOG_OVERRIDE } from "@/lib/product-images";
 import { getPrisma } from "@/lib/prisma";
@@ -34,17 +35,7 @@ function seedCatalog(): AdminCatalogProduct[] {
 
     imageUrls: product.imageUrls ?? [product.imageUrl],
 
-    category:
-
-      product.isGiftCard ||
-
-      product.slug === "nounours-beige" ||
-
-      product.slug === "bouquet-roses"
-
-        ? "Cadeaux"
-
-        : "Entremets",
+    category: inferCategoryFromSlug(product.slug),
 
   }));
 

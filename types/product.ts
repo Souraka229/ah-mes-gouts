@@ -22,6 +22,8 @@ export type Product = {
   /** Produit carte cadeau — message pré-rempli en mode cadeau */
   isGiftCard?: boolean;
   giftCardMessage?: string;
+  /** Catégorie back-office (Entremets, Nounours, Carte…) */
+  category?: string;
 };
 
 export type CatalogueFilters = {

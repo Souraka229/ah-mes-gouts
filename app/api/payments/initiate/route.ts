@@ -8,7 +8,12 @@ import {
   initiateFeexPayPayment,
   isMockPaymentAllowed,
 } from "@/lib/payments/feexpay";
-import { getServerOrder } from "@/lib/server/order-repository";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  expirePendingOrder,
+  getServerOrder,
+} from "@/lib/server/order-repository";
+import { isPendingPaymentExpired } from "@/lib/orders/payment-expiration";
 import type { PaymentMethod } from "@/types/order";
 
 const bodySchema = z.object({
@@ -45,6 +50,19 @@ async function mockPayment(
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { allowed, retryAfterSec } = await checkRateLimit(
+    `payments:initiate:${ip}`,
+    10,
+    60_000,
+  );
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez dans quelques instants." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+    );
+  }
+
   let json: unknown;
   try {
     json = await request.json();
@@ -62,6 +80,20 @@ export async function POST(request: Request) {
 
   if (!order) {
     return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+  }
+
+  if (
+    order.status === "recue" &&
+    isPendingPaymentExpired(order.createdAt)
+  ) {
+    await expirePendingOrder(orderId);
+    return NextResponse.json(
+      {
+        error:
+          "Le délai de paiement a expiré. Veuillez reprendre votre commande.",
+      },
+      { status: 410 },
+    );
   }
 
   if (order.status !== "recue") {

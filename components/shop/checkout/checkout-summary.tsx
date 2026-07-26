@@ -9,6 +9,7 @@ import {
 } from "@/lib/hooks/use-delivery-config";
 import { useCartTotals } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
+import { useCheckoutQuoteStore } from "@/lib/checkout-quote-store";
 import { RECEPTION_MODE_LABELS, type ReceptionMode } from "@/types/order";
 
 export function CheckoutSummary() {
@@ -17,10 +18,15 @@ export function CheckoutSummary() {
   const scheduledSlot = useCheckoutStore((state) => state.scheduledSlot);
   const cartTotals = useCartTotals();
   const { zones } = useDeliveryConfig();
+  const quote = useCheckoutQuoteStore((state) => state.quote);
+  const quoteLoading = useCheckoutQuoteStore((state) => state.loading);
+  const quoteError = useCheckoutQuoteStore((state) => state.error);
 
-  const zoneName = getZoneName(zones, zoneId);
-  const deliveryFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
-  const total = cartTotals.subtotal + deliveryFee;
+  const zoneName = quote?.zoneName ?? getZoneName(zones, zoneId);
+  const fallbackFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
+  const subtotal = quote?.subtotal ?? cartTotals.subtotal;
+  const deliveryFee = quote?.deliveryFee ?? fallbackFee;
+  const total = quote?.total ?? subtotal + deliveryFee;
 
   const fulfillmentLine =
     scheduledSlot && mode
@@ -40,7 +46,7 @@ export function CheckoutSummary() {
       <dl className="mt-4 space-y-3 font-body text-sm">
         <div className="flex justify-between text-muted-foreground">
           <dt>Sous-total</dt>
-          <dd>{formatPrice(cartTotals.subtotal)}</dd>
+          <dd>{formatPrice(subtotal)}</dd>
         </div>
         <div className="flex justify-between text-muted-foreground">
           <dt>Mode</dt>
@@ -64,6 +70,13 @@ export function CheckoutSummary() {
           <dt>Total</dt>
           <dd>{formatPrice(total)}</dd>
         </div>
+        <p className="text-xs text-muted-foreground">
+          {quoteLoading
+            ? "Actualisation du montant…"
+            : quoteError
+              ? "Montant estimé — vérification finale au paiement"
+              : "Montant vérifié par le serveur"}
+        </p>
       </dl>
     </aside>
   );
@@ -82,14 +95,19 @@ export function useCheckoutTotal() {
   const zoneId = useCheckoutStore((state) => state.zoneId);
   const cartTotals = useCartTotals();
   const { zones } = useDeliveryConfig();
-  const deliveryFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
+  const quote = useCheckoutQuoteStore((state) => state.quote);
+  const quoteLoading = useCheckoutQuoteStore((state) => state.loading);
+  const fallbackFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
+  const deliveryFee = quote?.deliveryFee ?? fallbackFee;
+  const subtotal = quote?.subtotal ?? cartTotals.subtotal;
 
   return {
-    subtotal: cartTotals.subtotal,
+    subtotal,
     deliveryFee,
     tax: 0,
-    total: cartTotals.subtotal + deliveryFee,
+    total: quote?.total ?? subtotal + deliveryFee,
     itemCount: cartTotals.itemCount,
-    zoneName: getZoneName(zones, zoneId),
+    zoneName: quote?.zoneName ?? getZoneName(zones, zoneId),
+    quoteLoading,
   };
 }

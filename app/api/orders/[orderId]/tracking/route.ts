@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 
 import { toPublicTrackingOrder } from "@/lib/orders/tracking-dto";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { getServerOrder } from "@/lib/server/order-repository";
+import {
+  expirePendingOrder,
+  getServerOrder,
+} from "@/lib/server/order-repository";
 
 type RouteContext = {
   params: Promise<{ orderId: string }>;
@@ -30,6 +33,7 @@ export async function GET(request: Request, context: RouteContext) {
   }
 
   const { orderId } = await context.params;
+  await expirePendingOrder(orderId);
   const order = await getServerOrder(orderId);
 
   if (!order) {

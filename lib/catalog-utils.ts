@@ -1,4 +1,8 @@
 import { GIFT_CARD_SLUG } from "@/lib/constants/products";
+import {
+  inferCategoryFromSlug,
+  isUnlimitedStockCategory,
+} from "@/lib/admin/categories";
 import type { Product } from "@/types/product";
 
 /** Prix effectif (promo incluse) — source unique côté shop. */
@@ -9,7 +13,24 @@ export function getProductPrice(product: Product): number {
   return product.price;
 }
 
+export function getProductCategory(product: Product): string {
+  return product.category?.trim() || inferCategoryFromSlug(product.slug);
+}
+
+/** Plafond UI pour catégories sans limite de stock (Nounours, Carte…). */
+export const UNLIMITED_CART_MAX_QTY = 99;
+
+export function getMaxOrderQuantity(product: Product): number {
+  if (isUnlimitedStockCategory(getProductCategory(product))) {
+    return UNLIMITED_CART_MAX_QTY;
+  }
+  return Math.max(0, product.stockRemaining);
+}
+
 export function isProductAvailable(product: Product): boolean {
+  if (isUnlimitedStockCategory(getProductCategory(product))) {
+    return true;
+  }
   return product.stockRemaining > 0;
 }
 

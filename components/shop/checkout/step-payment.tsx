@@ -2,7 +2,7 @@
 
 import { CreditCard, Loader2, RefreshCw, Smartphone, WifiOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useCheckoutTotal } from "@/components/shop/checkout/checkout-summary";
@@ -69,7 +69,11 @@ type PaymentUiState = "idle" | "loading" | "pending" | "error";
 async function persistOrderOnServer(
   order: SavedOrder,
   idempotencyKey: string,
-): Promise<void> {
+): Promise<{
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+}> {
   const deviceKey = getOrCreateDeviceKey();
   const response = await fetch("/api/orders", {
     method: "POST",
@@ -95,6 +99,13 @@ async function persistOrderOnServer(
     }
     throw err;
   }
+
+  const payload = (await response.json()) as {
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
+  };
+  return payload;
 }
 
 export function StepPayment() {
@@ -116,6 +127,7 @@ export function StepPayment() {
 
   const [uiState, setUiState] = useState<PaymentUiState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [demoPayments, setDemoPayments] = useState(false);
   // Emballage : proposé seulement si plusieurs articles (sinon sans objet).
   const totalUnits = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const showPackaging = totalUnits > 1;
@@ -130,6 +142,21 @@ export function StepPayment() {
   const payingRef = useRef(false);
   const idempotencyRef = useRef<string | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/payments/config")
+      .then((res) => res.json())
+      .then((data: { provider?: string }) => {
+        if (!cancelled) setDemoPayments(data.provider === "mock");
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stopPolling = () => {
     if (pollTimerRef.current) {
@@ -308,10 +335,17 @@ export function StepPayment() {
       total: totals.total,
     };
 
-    saveOrder(order);
-
     try {
-      await persistOrderOnServer(order, idempotencyRef.current);
+      const serverTotals = await persistOrderOnServer(
+        order,
+        idempotencyRef.current,
+      );
+      saveOrder({
+        ...order,
+        subtotal: serverTotals.subtotal,
+        deliveryFee: serverTotals.deliveryFee,
+        total: serverTotals.total,
+      });
     } catch (error) {
       setUiState("error");
       payingRef.current = false;
@@ -410,6 +444,13 @@ export function StepPayment() {
             : "Choisissez votre méthode de paiement préférée."}
         </p>
       </div>
+
+      {demoPayments && (
+        <div className="rounded-2xl border border-accent/40 bg-accent/15 px-4 py-3 font-body text-sm text-text">
+          <strong>Mode démo</strong> — le paiement est simulé (pas de débit réel).
+          FeexPay sera branché ensuite.
+        </div>
+      )}
 
       {isGift && (
         <div className="rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
@@ -526,7 +567,7 @@ export function StepPayment() {
                 setSuggestedSlot(null);
                 setErrorMessage(null);
                 setUiState("idle");
-                setStep("schedule");
+                setStep("commande");
               }}
             >
               Choisir le créneau suivant

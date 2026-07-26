@@ -3,37 +3,90 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Gift } from "lucide-react";
+import { CheckCircle2, Clock3, Gift, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { buttonVariants } from "@/components/ui/button";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
-import { getOrderById } from "@/lib/order-storage";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { PAYMENT_METHOD_LABELS, type SavedOrder } from "@/types/order";
+import {
+  PAYMENT_METHOD_LABELS,
+  type PublicTrackingOrder,
+} from "@/types/order";
 
 export default function ConfirmationContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
-  const [order, setOrder] = useState<SavedOrder | null>(null);
+  const [order, setOrder] = useState<PublicTrackingOrder | null>(null);
+  const [loading, setLoading] = useState(Boolean(orderId));
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!orderId) return;
-    setOrder(getOrderById(orderId) ?? null);
+    const controller = new AbortController();
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `/api/orders/${encodeURIComponent(orderId)}/tracking`,
+          { cache: "no-store", signal: controller.signal },
+        );
+        const data = (await response.json()) as
+          | PublicTrackingOrder
+          | { error?: string };
+        if (!response.ok || !("status" in data)) {
+          throw new Error(
+            "error" in data && data.error
+              ? data.error
+              : "Commande introuvable.",
+          );
+        }
+        setOrder(data);
+      } catch (loadError) {
+        if (controller.signal.aborted) return;
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Impossible de vérifier la commande.",
+        );
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => controller.abort();
   }, [orderId]);
 
   if (!orderId) {
     return <EmptyState message="Aucune commande à afficher." />;
   }
 
-  if (!order) {
+  if (loading) {
     return (
-      <EmptyState message="Commande introuvable. Vérifiez votre numéro de suivi." />
+      <div className="mx-auto flex max-w-lg items-center justify-center gap-3 px-4 py-20 font-body text-muted-foreground">
+        <Loader2 className="size-5 animate-spin" aria-hidden />
+        Vérification du paiement…
+      </div>
     );
   }
 
+  if (error || !order) {
+    return <EmptyState message={error ?? "Commande introuvable."} />;
+  }
+
   const isGift = order.isGift;
+  const isPaid = [
+    "paiement_confirme",
+    "preparation",
+    "prete",
+    "en_livraison",
+    "livree",
+  ].includes(order.status);
+  const isCancelled = order.status === "annulee";
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
@@ -43,13 +96,21 @@ export default function ConfirmationContent() {
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         className={cn(
           "mx-auto flex size-20 items-center justify-center rounded-full",
-          isGift ? "bg-secondary/50 text-primary" : "bg-success/20 text-success",
+          isPaid
+            ? isGift
+              ? "bg-secondary/50 text-primary"
+              : "bg-success/20 text-success"
+            : isCancelled
+              ? "bg-muted text-muted-foreground"
+              : "bg-accent/20 text-primary",
         )}
       >
-        {isGift ? (
+        {isPaid && isGift ? (
           <Gift className="size-10" aria-hidden />
-        ) : (
+        ) : isPaid ? (
           <CheckCircle2 className="size-10" aria-hidden />
+        ) : (
+          <Clock3 className="size-10" aria-hidden />
         )}
       </motion.div>
 
@@ -59,7 +120,13 @@ export default function ConfirmationContent() {
         transition={{ delay: 0.15, duration: 0.4 }}
         className="mt-6 font-display text-4xl font-semibold text-primary"
       >
-        {isGift ? "Cadeau confirmé !" : "Commande confirmée !"}
+        {isCancelled
+          ? "Commande expirée"
+          : isPaid
+            ? isGift
+              ? "Cadeau confirmé !"
+              : "Commande confirmée !"
+            : "Paiement en vérification"}
       </motion.h1>
       <motion.p
         initial={{ opacity: 0, y: 12 }}
@@ -67,9 +134,13 @@ export default function ConfirmationContent() {
         transition={{ delay: 0.25, duration: 0.4 }}
         className="mt-3 font-body text-muted-foreground"
       >
-        {isGift
-          ? `Merci ${order.client.firstName}. Votre surprise pour ${order.gift?.recipientName ?? "votre proche"} est en préparation.`
-          : `Merci ${order.client.firstName}. Votre commande est en cours de préparation.`}
+        {isCancelled
+          ? "Le délai de paiement est dépassé. Vous pouvez recommencer sans être débité."
+          : isPaid
+            ? isGift
+              ? `Votre surprise pour ${order.recipientName ?? "votre proche"} est confirmée.`
+              : `Merci ${order.client?.firstName ?? ""}. Votre commande est confirmée.`
+            : "Nous attendons la confirmation sécurisée de l’opérateur."}
       </motion.p>
 
       <motion.div
@@ -86,7 +157,9 @@ export default function ConfirmationContent() {
         </p>
         <dl className="mt-4 space-y-2 font-body text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Total payé</dt>
+            <dt className="text-muted-foreground">
+              {isPaid ? "Total payé" : "Total"}
+            </dt>
             <dd className="font-semibold">{formatPrice(order.total)}</dd>
           </div>
           <div className="flex justify-between">

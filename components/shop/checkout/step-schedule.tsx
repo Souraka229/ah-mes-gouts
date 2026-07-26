@@ -3,23 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   formatSlotDate,
   getSelectableDates,
   getSlotsForDate,
   isDateClosed,
 } from "@/lib/delivery/slots";
-import { getNextStep, useCheckoutStore } from "@/lib/checkout-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
 import { useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
 import { cn } from "@/lib/utils";
 
-export function StepSchedule() {
+export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
   const mode = useCheckoutStore((state) => state.mode);
-  const zoneId = useCheckoutStore((state) => state.zoneId);
   const scheduledSlot = useCheckoutStore((state) => state.scheduledSlot);
   const setScheduledSlot = useCheckoutStore((state) => state.setScheduledSlot);
-  const setStep = useCheckoutStore((state) => state.setStep);
 
   const { schedules, options, loading } = useDeliveryConfig();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -53,13 +50,6 @@ export function StepSchedule() {
     return getSlotsForDate(schedules, fulfillmentType, selectedDate, now);
   }, [selectedDate, schedules, fulfillmentType, mode, now]);
 
-  const handleContinue = () => {
-    if (!scheduledSlot || !mode) return;
-    if (mode === "delivery" && !zoneId) return;
-    const next = getNextStep("schedule", mode);
-    if (next) setStep(next);
-  };
-
   if (!mode) return null;
 
   if (loading) {
@@ -72,18 +62,20 @@ export function StepSchedule() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-          Choisissez votre créneau
-        </h1>
-        <p className="mt-2 font-body text-muted-foreground">
-          {mode === "delivery"
-            ? "Choisissez le jour et la vague de livraison (13h–15h30 ou 16h–18h30)."
-            : mode === "dinein"
-              ? "Choisissez le jour de votre venue — vous passez quand vous voulez (jusqu'à 19h)."
-              : "Choisissez le jour — vous passez chercher quand vous voulez (jusqu'à 19h)."}
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
+            Choisissez votre créneau
+          </h1>
+          <p className="mt-2 font-body text-muted-foreground">
+            {mode === "delivery"
+              ? "Choisissez le jour et la vague de livraison (13h–15h30 ou 16h–18h30)."
+              : mode === "dinein"
+                ? "Choisissez le jour de votre venue — vous passez quand vous voulez (jusqu'à 19h)."
+                : "Choisissez le jour — vous passez chercher quand vous voulez (jusqu'à 19h)."}
+          </p>
+        </div>
+      )}
 
       {mode !== "delivery" && (
         <div className="flex items-start gap-3 rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
@@ -198,16 +190,6 @@ export function StepSchedule() {
           {slotError}
         </p>
       )}
-
-      <Button
-        className="h-11 cursor-pointer bg-accent text-text hover:bg-accent/90"
-        disabled={
-          !scheduledSlot || (mode === "delivery" && !zoneId) || slots.length === 0
-        }
-        onClick={handleContinue}
-      >
-        Continuer
-      </Button>
     </div>
   );
 }

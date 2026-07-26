@@ -3,9 +3,8 @@
 import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { getNextStep, useCheckoutStore } from "@/lib/checkout-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
 import {
   getDeliveryLocalityOptions,
   getDeliveryZoneById,
@@ -15,11 +14,9 @@ import { formatPrice } from "@/lib/format";
 import { useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
 import { cn } from "@/lib/utils";
 
-export function StepDeliveryZone() {
+export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
   const zoneId = useCheckoutStore((state) => state.zoneId);
   const setZoneId = useCheckoutStore((state) => state.setZoneId);
-  const setStep = useCheckoutStore((state) => state.setStep);
-  const mode = useCheckoutStore((state) => state.mode);
   const client = useCheckoutStore((state) => state.client);
   const setClient = useCheckoutStore((state) => state.setClient);
 
@@ -61,23 +58,19 @@ export function StepDeliveryZone() {
     }
   };
 
-  const handleContinue = () => {
-    if (!zoneId || !mode) return;
-    const next = getNextStep("zone", mode);
-    if (next) setStep(next);
-  };
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-          Où livrer ?
-        </h1>
-        <p className="mt-2 font-body text-muted-foreground">
-          Choisissez votre quartier — les frais suivent la grille officielle
-          (500 F à 1 500 F).
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
+            Où livrer ?
+          </h1>
+          <p className="mt-2 font-body text-muted-foreground">
+            Choisissez votre quartier — les frais suivent la grille officielle
+            (500 F à 1 500 F).
+          </p>
+        </div>
+      )}
 
       {loading && (
         <p className="font-body text-sm text-muted-foreground">
@@ -158,14 +151,6 @@ export function StepDeliveryZone() {
           )}
         </div>
       )}
-
-      <Button
-        className="h-11 cursor-pointer bg-accent text-text hover:bg-accent/90"
-        disabled={!zoneId || localityOptions.length === 0}
-        onClick={handleContinue}
-      >
-        Continuer
-      </Button>
     </div>
   );
 }

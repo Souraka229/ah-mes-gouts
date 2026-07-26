@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 
 import { useCartItemCount, useCartStore, useCartTotals } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 export function StickyCartBar() {
   const itemCount = useCartItemCount();

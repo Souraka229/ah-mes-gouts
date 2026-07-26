@@ -1,11 +1,19 @@
-import { getProductPrice } from "@/lib/catalog-utils";
+import { getProductPrice, getProductCategory } from "@/lib/catalog-utils";
+import { isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { getFullCatalog } from "@/lib/server/shop-catalog";
+import { getPrisma } from "@/lib/prisma";
 import { supplementOptions } from "@/lib/supplements";
 import type { SavedOrder } from "@/types/order";
 
 export type PricingIssue = { name: string; message: string };
 
-export type StockClaim = { slug: string; name: string; quantity: number };
+export type StockClaim = {
+  slug: string;
+  name: string;
+  quantity: number;
+  category?: string;
+  unlimitedStock?: boolean;
+};
 
 export type PricedOrder = {
   /** Articles avec prix unitaires recalculés côté serveur. */
@@ -49,6 +57,22 @@ export async function priceOrderItems(
   const bySlug = new Map(catalog.map((product) => [product.slug, product]));
   const byName = new Map(catalog.map((product) => [product.name, product]));
 
+  const slugs = rawItems
+    .map((item) => item.slug)
+    .filter((slug): slug is string => Boolean(slug));
+
+  const liveStock = new Map<string, number>();
+  if (slugs.length > 0) {
+    const prisma = getPrisma();
+    const rows = await prisma.product.findMany({
+      where: { slug: { in: slugs } },
+      select: { slug: true, stockRemaining: true },
+    });
+    for (const row of rows) {
+      liveStock.set(row.slug, row.stockRemaining);
+    }
+  }
+
   const issues: PricingIssue[] = [];
   const items: SavedOrder["items"] = [];
   const stockClaims: StockClaim[] = [];
@@ -66,22 +90,41 @@ export async function priceOrderItems(
       continue;
     }
 
-    if (product.stockRemaining <= 0) {
-      issues.push({
-        name: product.name,
-        message: "Ce produit vient d'être épuisé.",
-      });
-      continue;
-    }
+    const category = getProductCategory(product);
+    const unlimitedStock = isUnlimitedStockCategory(category);
 
-    if (raw.quantity > product.stockRemaining) {
-      issues.push({
-        name: product.name,
-        message: `Stock insuffisant (${product.stockRemaining} restant${
-          product.stockRemaining > 1 ? "s" : ""
-        }).`,
-      });
-      continue;
+    if (!unlimitedStock) {
+      const stockRemaining =
+        liveStock.get(product.slug) ?? product.stockRemaining;
+
+      if (
+        process.env.NODE_ENV === "production" &&
+        !liveStock.has(product.slug)
+      ) {
+        issues.push({
+          name: product.name,
+          message: "Ce produit n'est plus disponible.",
+        });
+        continue;
+      }
+
+      if (stockRemaining <= 0) {
+        issues.push({
+          name: product.name,
+          message: "Ce produit vient d'être épuisé.",
+        });
+        continue;
+      }
+
+      if (raw.quantity > stockRemaining) {
+        issues.push({
+          name: product.name,
+          message: `Stock insuffisant (${stockRemaining} restant${
+            stockRemaining > 1 ? "s" : ""
+          }).`,
+        });
+        continue;
+      }
     }
 
     let supplementsPrice = 0;
@@ -114,6 +157,8 @@ export async function priceOrderItems(
       slug: product.slug,
       name: product.name,
       quantity: raw.quantity,
+      category,
+      unlimitedStock,
     });
   }
 

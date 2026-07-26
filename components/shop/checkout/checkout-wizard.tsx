@@ -2,44 +2,24 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
 import { CheckoutStepIndicator } from "@/components/shop/checkout/checkout-step-indicator";
 import { CheckoutSummary } from "@/components/shop/checkout/checkout-summary";
+import { CheckoutMobileTotalBar } from "@/components/shop/checkout/checkout-mobile-total-bar";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
+import { useServerCheckoutQuote } from "@/lib/hooks/use-server-checkout-quote";
 import { cn } from "@/lib/utils";
-import type { CheckoutStep } from "@/types/order";
 import type { Product } from "@/types/product";
 
-const StepMode = dynamic(
+const StepCommande = dynamic(
   () =>
-    import("@/components/shop/checkout/step-mode").then((m) => m.StepMode),
-);
-const StepDeliveryZone = dynamic(
-  () =>
-    import("@/components/shop/checkout/step-delivery-zone").then(
-      (m) => m.StepDeliveryZone,
+    import("@/components/shop/checkout/step-commande").then(
+      (m) => m.StepCommande,
     ),
-);
-const StepSchedule = dynamic(
-  () =>
-    import("@/components/shop/checkout/step-schedule").then(
-      (m) => m.StepSchedule,
-    ),
-);
-const StepClientForm = dynamic(
-  () =>
-    import("@/components/shop/checkout/step-client-form").then(
-      (m) => m.StepClientForm,
-    ),
-);
-const StepUpsell = dynamic(
-  () =>
-    import("@/components/shop/checkout/step-upsell").then((m) => m.StepUpsell),
 );
 const StepPayment = dynamic(
   () =>
@@ -48,35 +28,18 @@ const StepPayment = dynamic(
     ),
 );
 
-const stepComponents: Record<
-  Exclude<CheckoutStep, "upsell">,
-  React.ComponentType
-> = {
-  mode: StepMode,
-  zone: StepDeliveryZone,
-  schedule: StepSchedule,
-  client: StepClientForm,
-  payment: StepPayment,
-};
-
 type CheckoutWizardProps = {
   upsellCandidates?: Product[];
 };
 
 export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
+  useServerCheckoutQuote();
+
   const step = useCheckoutStore((state) => state.step);
-  const mode = useCheckoutStore((state) => state.mode);
   const goBack = useCheckoutStore((state) => state.goBack);
   const cartItems = useCartStore((state) => state.items);
 
-  useEffect(() => {
-    if (step === "zone" && mode && mode !== "delivery") {
-      useCheckoutStore.getState().setStep("schedule");
-    }
-  }, [step, mode]);
-
-  const canGoBack = step !== "mode";
-  const showZone = mode === "delivery";
+  const canGoBack = step === "payment";
 
   if (cartItems.length === 0) {
     return (
@@ -98,9 +61,9 @@ export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div className="mx-auto max-w-7xl px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:px-8 lg:py-12 lg:pb-12">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <CheckoutStepIndicator currentStep={step} showZone={showZone} />
+        <CheckoutStepIndicator currentStep={step} />
         {canGoBack && (
           <Button
             variant="ghost"
@@ -114,24 +77,20 @@ export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div
-          key={step}
-          className="checkout-step-enter"
-        >
-          {step === "upsell" ? (
-            <StepUpsell candidates={upsellCandidates} />
+        <div key={step} className="checkout-step-enter">
+          {step === "payment" ? (
+            <StepPayment />
           ) : (
-            (() => {
-              const StepComponent = stepComponents[step];
-              return <StepComponent />;
-            })()
+            <StepCommande upsellCandidates={upsellCandidates} />
           )}
         </div>
 
-        <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
           <CheckoutSummary />
         </div>
       </div>
+
+      <CheckoutMobileTotalBar />
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { PRODUCT_CATEGORIES } from "@/lib/admin/categories";
+import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +26,12 @@ type AdminProduct = Product & { category?: string };
 const emptyForm = {
   name: "",
   price: "5000",
-  category: "Entremets",
-  description: "",
-  keyword: "",
-  stock: "10",
+  category: "Entremets" as string,
   imageUrl: "",
 };
+
+const ADMIN_TABS = ["Tous", "Entremets", "Nounours", "Carte", "Menu du jour"] as const;
+type AdminTab = (typeof ADMIN_TABS)[number];
 
 export function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -43,6 +43,14 @@ export function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("Tous");
+
+  const filteredProducts = products.filter((product) => {
+    if (activeTab === "Tous") return true;
+    return (product.category ?? "Entremets") === activeTab;
+  });
+
+  const stocklessCategory = isUnlimitedStockCategory(form.category);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -139,7 +147,6 @@ export function AdminProductsPage() {
 
   const createProduct = async () => {
     const price = Number(form.price);
-    const stock = Number(form.stock);
     if (!form.name.trim()) {
       toast.error("Nom requis");
       return;
@@ -157,9 +164,7 @@ export function AdminProductsPage() {
           name: form.name.trim(),
           price: Math.round(price),
           category: form.category,
-          description: form.description.trim(),
-          keyword: form.keyword.trim() || undefined,
-          stock: Number.isFinite(stock) ? Math.round(stock) : 10,
+          stock: stocklessCategory ? 9999 : 10,
           imageUrl: form.imageUrl || undefined,
           imageUrls: form.imageUrl ? [form.imageUrl] : undefined,
         }),
@@ -215,7 +220,7 @@ export function AdminProductsPage() {
             Produits
           </h1>
           <p className="mt-2 font-body text-sm text-muted-foreground">
-            Ajoute, importe tes photos Gift, gère prix et disponibilité.
+            4 champs : nom, catégorie, prix, photo. Simple et rapide.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -249,6 +254,9 @@ export function AdminProductsPage() {
           <h2 className="font-display text-xl font-semibold text-primary">
             Nouveau produit
           </h2>
+          <p className="mt-1 font-body text-sm text-muted-foreground">
+            La photo est optimisée automatiquement à l&apos;upload.
+          </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Nom</Label>
@@ -286,40 +294,11 @@ export function AdminProductsPage() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock</Label>
-              <Input
-                id="stock"
-                type="number"
-                min={0}
-                value={form.stock}
-                onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="keyword">Mot-clé (carte)</Label>
-              <Input
-                id="keyword"
-                value={form.keyword}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, keyword: e.target.value }))
-                }
-                placeholder="Ex: Signature, Fruité…"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                rows={3}
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-                className="w-full rounded-lg border border-border px-3 py-2 font-body text-sm"
-                placeholder="Courte description gourmande…"
-              />
+              {stocklessCategory && (
+                <p className="font-body text-xs text-muted-foreground">
+                  Stock illimité — toujours commandable.
+                </p>
+              )}
             </div>
             <div className="sm:col-span-2">
               <Label>Image</Label>
@@ -390,16 +369,34 @@ export function AdminProductsPage() {
         </section>
       )}
 
+      <div className="flex flex-wrap gap-2">
+        {ADMIN_TABS.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+              "cursor-pointer rounded-full px-4 py-2 font-body text-sm font-medium transition-colors",
+              activeTab === tab
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80",
+            )}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
           Chargement…
         </div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <AdminEmptyState
           variant="products"
-          title="Catalogue vide"
-          description="Ajoute un entremets ou importe les photos Gift pour démarrer."
+          title={activeTab === "Tous" ? "Catalogue vide" : `Aucun produit « ${activeTab} »`}
+          description="Ajoute un produit avec le bouton ci-dessus."
           action={
             <>
               <Button
@@ -432,8 +429,11 @@ export function AdminProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => {
-                const available = product.stockRemaining > 0;
+              {filteredProducts.map((product) => {
+                const unlimited = isUnlimitedStockCategory(
+                  product.category ?? "Entremets",
+                );
+                const available = unlimited || product.stockRemaining > 0;
                 return (
                   <tr
                     key={product.id}
@@ -457,7 +457,6 @@ export function AdminProductsPage() {
                           <p className="font-medium text-text">{product.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {product.category}
-                            {product.keyword ? ` · ${product.keyword}` : ""}
                           </p>
                         </div>
                       </div>
@@ -491,26 +490,32 @@ export function AdminProductsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {product.stockRemaining}
+                      {unlimited ? "∞" : product.stockRemaining}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        title={
-                          available
-                            ? "Masquer du catalogue"
-                            : "Rendre disponible"
-                        }
-                        onClick={() => toggleAvailable(product)}
-                        className={cn(
-                          "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold",
-                          available
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {available ? "Oui" : "Non"}
-                      </button>
+                      {unlimited ? (
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                          Toujours
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          title={
+                            available
+                              ? "Masquer du catalogue"
+                              : "Rendre disponible"
+                          }
+                          onClick={() => toggleAvailable(product)}
+                          className={cn(
+                            "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold",
+                            available
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {available ? "Oui" : "Non"}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

@@ -30,11 +30,17 @@ type NavItem = {
   secondary?: boolean;
 };
 
-// L'essentiel au quotidien en premier ; le reste sous « Plus ».
+// L'essentiel au quotidien — 4 écrans du plan de cadrage.
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/commandes", label: "Commandes", icon: Package },
   { href: "/admin/produits", label: "Produits", icon: IceCreamCone },
-  { href: "/admin/livreurs", label: "Livreurs", icon: UserRound },
+  { href: "/admin/menus", label: "Menu du jour", icon: Calendar },
+  {
+    href: "/admin/parametres/livraison",
+    label: "Livraison",
+    icon: Truck,
+  },
+  { href: "/admin/livreurs", label: "Livreurs", icon: UserRound, secondary: true },
   {
     href: "/admin/cockpit",
     label: "Cockpit",
@@ -42,13 +48,6 @@ const NAV_ITEMS: NavItem[] = [
     secondary: true,
   },
   { href: "/admin/clients", label: "Clients", icon: Users, secondary: true },
-  { href: "/admin/menus", label: "Menu du jour", icon: Calendar, secondary: true },
-  {
-    href: "/admin/parametres/livraison",
-    label: "Créneaux",
-    icon: Truck,
-    secondary: true,
-  },
   {
     href: "/admin/parametres",
     label: "Paramètres",

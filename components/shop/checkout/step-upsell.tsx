@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { Gift, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { getNextStep, useCheckoutStore } from "@/lib/checkout-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import {
@@ -30,9 +30,8 @@ type StepUpsellProps = {
   candidates?: Product[];
 };
 
-export function StepUpsell({ candidates }: StepUpsellProps) {
+export function StepUpsell({ candidates, embedded = false }: StepUpsellProps & { embedded?: boolean }) {
   const setStep = useCheckoutStore((state) => state.setStep);
-  const mode = useCheckoutStore((state) => state.mode);
   const isGift = useCheckoutStore((state) => state.isGift);
   const gift = useCheckoutStore((state) => state.gift);
   const setGiftMessage = useCheckoutStore((state) => state.setGiftMessage);
@@ -81,14 +80,13 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
             subtitle: "Une carte cadeau ou une douceur en plus pour marquer le coup.",
           }
         : {
-            title: "Et si vous vous faisiez plaisir ?",
+            title: "Nounours & cartes cadeau",
             subtitle:
-              "Quelques créations qui accompagnent parfaitement votre commande.",
+              "Ajoutez un nounours ou une carte — toujours disponibles, sans limite de stock.",
           };
 
   const handleSkip = () => {
-    const next = getNextStep("upsell", mode);
-    if (next) setStep(next);
+    if (!embedded) setStep("payment");
   };
 
   const handleAdd = (product: Product) => {
@@ -113,6 +111,14 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
   };
 
   if (suggestions.length === 0) {
+    if (embedded) {
+      return (
+        <p className="font-body text-sm text-muted-foreground">
+          Aucune suggestion pour le moment — vous pourrez ajouter des nounours ou
+          cartes depuis le catalogue.
+        </p>
+      );
+    }
     return (
       <div className="space-y-6">
         <div>
@@ -135,12 +141,18 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-          {heading.title}
-        </h1>
-        <p className="mt-2 font-body text-muted-foreground">{heading.subtitle}</p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="font-display text-3xl font-semibold text-primary sm:text-4xl">
+            {heading.title}
+          </h1>
+          <p className="mt-2 font-body text-muted-foreground">{heading.subtitle}</p>
+        </div>
+      )}
+
+      {embedded && (
+        <p className="font-body text-sm text-muted-foreground">{heading.subtitle}</p>
+      )}
 
       {isGift && gift.giftMessage.trim() && (
         <div className="rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
@@ -212,21 +224,23 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
         })}
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Button
-          className="h-11 flex-1 cursor-pointer bg-accent text-text hover:bg-accent/90"
-          onClick={handleSkip}
-        >
-          Continuer vers le paiement
-        </Button>
-        <Button
-          variant="ghost"
-          className="h-11 cursor-pointer font-body text-muted-foreground"
-          onClick={handleSkip}
-        >
-          Passer cette étape
-        </Button>
-      </div>
+      {!embedded && (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            className="h-11 flex-1 cursor-pointer bg-accent text-text hover:bg-accent/90"
+            onClick={handleSkip}
+          >
+            Continuer vers le paiement
+          </Button>
+          <Button
+            variant="ghost"
+            className="h-11 cursor-pointer font-body text-muted-foreground"
+            onClick={handleSkip}
+          >
+            Passer cette étape
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,26 +3,22 @@ import { z } from "zod";
 
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { getSlotsForDate } from "@/lib/delivery/slots";
-import { sendOrderNotifications } from "@/lib/notifications/order-notifications";
-import {
-  formatNewOrderAlert,
-  notifyTelegramSafe,
-} from "@/lib/notifications/telegram";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import { attachOrderToCustomer } from "@/lib/server/crm/customer-service";
 import { getDeliveryConfig, getZoneById } from "@/lib/server/delivery-config-repository";
 import {
   rememberIdempotentOrder,
   resolveIdempotentOrder,
 } from "@/lib/server/order-idempotency";
+import { priceOrderItems } from "@/lib/server/order-pricing";
 import {
-  createServerOrderWithStock,
   getServerOrder,
-  OrderStockError,
   saveServerOrderWithSlotReservation,
   SlotFullError,
 } from "@/lib/server/order-repository";
-import { priceOrderItems } from "@/lib/server/order-pricing";
+import {
+  orderPaymentMethodSchema,
+  validateOrderClientPayload,
+} from "@/lib/validation/order-server";
 import { withRetry } from "@/lib/server/retry";
 import {
   buildSlotKey,
@@ -110,9 +106,29 @@ export async function POST(request: Request) {
     );
   }
 
+  const mode = order.mode ?? order.fulfillmentType;
+  if (mode !== "delivery" && mode !== "pickup" && mode !== "dinein") {
+    return NextResponse.json({ error: "Mode invalide" }, { status: 400 });
+  }
+
+  const clientValidation = validateOrderClientPayload({
+    mode,
+    client: order.client,
+    isGift: order.isGift,
+    gift: order.gift,
+  });
+  if (!clientValidation.ok) {
+    return NextResponse.json({ error: clientValidation.error }, { status: 400 });
+  }
+
+  const paymentParsed = orderPaymentMethodSchema.safeParse(order.paymentMethod);
+  if (!paymentParsed.success) {
+    return NextResponse.json({ error: "Mode de paiement invalide" }, { status: 400 });
+  }
+
   const slotStart = order.scheduledSlotStart;
   const slotEnd = order.scheduledSlotEnd;
-  const fulfillmentType = order.fulfillmentType ?? order.mode;
+  const fulfillmentType = mode;
   const scheduleType = fulfillmentType === "delivery" ? "delivery" : "pickup";
 
   try {
@@ -189,6 +205,7 @@ export async function POST(request: Request) {
 
     order = {
       ...order,
+      mode,
       fulfillmentType,
       items: priced.data.items,
       subtotal,
@@ -197,38 +214,25 @@ export async function POST(request: Request) {
       zoneId,
       deliveryZoneId: zoneId,
       zoneName,
-      status: order.status === "paiement_confirme" ? "paiement_confirme" : "recue",
+      paymentMethod: paymentParsed.data,
+      status: "recue",
     };
 
-    const awaitingPayment = order.status === "recue";
-
     try {
-      if (awaitingPayment) {
-        await withRetry(
-          () =>
-            saveServerOrderWithSlotReservation(order, {
-              scheduledSlotStart: new Date(slotStart),
-              fulfillmentType: scheduleType,
-              maxOrdersPerSlot: options.maxOrdersPerSlot,
-            }),
-          {
-            label: "saveServerOrderWithSlotReservation",
-            maxAttempts: 3,
-            baseDelayMs: 150,
-            shouldRetry: (err) => !(err instanceof SlotFullError),
-          },
-        );
-      } else {
-        await withRetry(
-          () => createServerOrderWithStock(order, priced.data.stockClaims),
-          {
-            label: "createServerOrderWithStock",
-            maxAttempts: 3,
-            baseDelayMs: 200,
-            shouldRetry: (err) => !(err instanceof OrderStockError),
-          },
-        );
-      }
+      await withRetry(
+        () =>
+          saveServerOrderWithSlotReservation(order, {
+            scheduledSlotStart: new Date(slotStart),
+            fulfillmentType: scheduleType,
+            maxOrdersPerSlot: options.maxOrdersPerSlot,
+          }),
+        {
+          label: "saveServerOrderWithSlotReservation",
+          maxAttempts: 3,
+          baseDelayMs: 150,
+          shouldRetry: (err) => !(err instanceof SlotFullError),
+        },
+      );
     } catch (err) {
       if (err instanceof SlotFullError) {
         const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
@@ -240,17 +244,6 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
-      if (err instanceof OrderStockError) {
-        return NextResponse.json(
-          {
-            error: err.issues
-              .map((i) => `${i.name} : ${i.message}`)
-              .join(" — "),
-            issues: err.issues,
-          },
-          { status: 409 },
-        );
-      }
       throw err;
     }
 
@@ -258,41 +251,13 @@ export async function POST(request: Request) {
       await rememberIdempotentOrder(idempotencyKey, order.id);
     }
 
-    if (!awaitingPayment) {
-      const deviceKey =
-        request.headers.get("x-amg-device-key")?.trim() ||
-        (typeof (order as { deviceKey?: string }).deviceKey === "string"
-          ? (order as { deviceKey?: string }).deviceKey
-          : null);
-
-      await attachOrderToCustomer({
-        orderId: order.id,
-        phone: order.client.phone,
-        firstName: order.client.firstName,
-        lastName: order.client.lastName,
-        total: order.total,
-        createdAt: new Date(order.createdAt),
-        deviceKey,
-      });
-
-      await sendOrderNotifications(order).catch((err) => {
-        console.error("[orders] Notification échouée:", err);
-      });
-
-      notifyTelegramSafe(
-        formatNewOrderAlert({
-          orderId: order.id,
-          total: order.total,
-          mode: order.mode,
-          clientName: `${order.client.firstName} ${order.client.lastName}`.trim(),
-        }),
-      );
-    }
-
     return NextResponse.json({
       ok: true,
       orderId: order.id,
       status: order.status,
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
+      total: order.total,
       fulfillmentSummary: formatFulfillmentSummary(order),
     });
   } catch (error) {

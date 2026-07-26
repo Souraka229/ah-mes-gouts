@@ -1,6 +1,8 @@
 /**
- * Seed minimal Postgres (produits, livreurs démo, menus).
- * Usage : npm run seed:db
+ * Seed démo Postgres (produits, livreurs, menus).
+ * Usage :
+ *   npm run seed:db
+ *   node scripts/seed-db.mjs --force   # réécrit les produits démo
  */
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
@@ -9,6 +11,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const FORCE = process.argv.includes("--force");
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return;
@@ -36,68 +39,140 @@ const prisma = new PrismaClient();
 
 const DEMO_PRODUCTS = [
   {
-    id: "seed-1",
+    id: "demo-mango-passion",
     slug: "mango-passion",
     name: "Mango Passion",
     description: "Mangue Alphonso, fruit de la passion.",
     price: 5000,
-    imageUrl: "/images/produits/mangue-passion.webp",
-    imageUrls: ["/images/produits/mangue-passion.webp"],
+    imageUrl: "/images/produits/gift/mangue-passion-11.20.47-1.webp",
+    imageUrls: ["/images/produits/gift/mangue-passion-11.20.47-1.webp"],
     keyword: "Solaire",
     stockRemaining: 12,
-    stockMinimum: 5,
-    category: "Glaces",
+    stockMinimum: 3,
+    category: "Entremets",
     isNew: true,
     isMenuDuJour: true,
     isPopular: true,
+    isGiftCard: false,
   },
   {
-    id: "seed-2",
+    id: "demo-goyave-vanille",
     slug: "goyave-vanille",
     name: "Goyave Vanille",
     description: "Goyave rose, vanille de Madagascar.",
     price: 5000,
-    imageUrl: "/images/produits/goyave-vanille.webp",
-    imageUrls: ["/images/produits/goyave-vanille.webp"],
+    imageUrl: "/images/produits/gift/goyave-vanille-11.20.48.webp",
+    imageUrls: ["/images/produits/gift/goyave-vanille-11.20.48.webp"],
     keyword: "Floral",
     stockRemaining: 10,
-    stockMinimum: 5,
-    category: "Glaces",
+    stockMinimum: 3,
+    category: "Entremets",
     isNew: true,
     isMenuDuJour: true,
     isPopular: false,
+    isGiftCard: false,
   },
   {
-    id: "seed-3",
+    id: "demo-tiramisu",
     slug: "tiramisu",
     name: "Tiramisu",
     description: "Mascarpone onctueux, biscuit café.",
     price: 5000,
-    imageUrl: "/images/produits/tiramisu-rose.webp",
-    imageUrls: ["/images/produits/tiramisu-rose.webp"],
+    imageUrl: "/images/produits/gift/tiramisu-11.20.50.webp",
+    imageUrls: ["/images/produits/gift/tiramisu-11.20.50.webp"],
     keyword: "Onctueux",
     stockRemaining: 8,
-    stockMinimum: 5,
+    stockMinimum: 3,
     category: "Entremets",
+    isNew: false,
+    isMenuDuJour: true,
+    isPopular: true,
+    isGiftCard: false,
+  },
+  {
+    id: "demo-fraisier",
+    slug: "fraisier",
+    name: "Fraisier",
+    description: "Fraises fraîches, crème légère.",
+    price: 5500,
+    imageUrl: "/images/produits/gift/fraisier-11.20.42-1.webp",
+    imageUrls: ["/images/produits/gift/fraisier-11.20.42-1.webp"],
+    keyword: "Fruité",
+    stockRemaining: 9,
+    stockMinimum: 3,
+    category: "Entremets",
+    isNew: false,
+    isMenuDuJour: true,
+    isPopular: true,
+    isGiftCard: false,
+  },
+  {
+    id: "demo-nounours-beige",
+    slug: "nounours-beige",
+    name: "Nounours beige",
+    description: "Peluche douce — toujours disponible.",
+    price: 3500,
+    imageUrl: "/images/produits/gift/la-corbeille-a-fruits-11.20.44.webp",
+    imageUrls: ["/images/produits/gift/la-corbeille-a-fruits-11.20.44.webp"],
+    keyword: "Cadeau",
+    stockRemaining: 9999,
+    stockMinimum: 0,
+    category: "Nounours",
     isNew: false,
     isMenuDuJour: false,
     isPopular: true,
+    isGiftCard: false,
+  },
+  {
+    id: "demo-nounours-rose",
+    slug: "nounours-rose",
+    name: "Nounours rose",
+    description: "Le compagnon parfait pour un entremets.",
+    price: 3500,
+    imageUrl: "/images/produits/gift/cheesecake-framboise-11.20.42.webp",
+    imageUrls: ["/images/produits/gift/cheesecake-framboise-11.20.42.webp"],
+    keyword: "Cadeau",
+    stockRemaining: 9999,
+    stockMinimum: 0,
+    category: "Nounours",
+    isNew: true,
+    isMenuDuJour: false,
+    isPopular: false,
+    isGiftCard: false,
+  },
+  {
+    id: "demo-carte-cadeau",
+    slug: "carte-cadeau",
+    name: "Carte cadeau",
+    description: "Un mot doux accompagné de votre commande.",
+    price: 1500,
+    imageUrl: "/images/produits/gift/foret-blanche-11.20.50-2.webp",
+    imageUrls: ["/images/produits/gift/foret-blanche-11.20.50-2.webp"],
+    keyword: "Message",
+    stockRemaining: 9999,
+    stockMinimum: 0,
+    category: "Carte",
+    isNew: false,
+    isMenuDuJour: false,
+    isPopular: true,
+    isGiftCard: true,
+    giftCardMessage: "Une douceur préparée rien que pour toi.",
   },
 ];
 
 const DEMO_DRIVERS = [
   {
-    id: randomUUID(),
+    id: "demo-driver-kossi",
     name: "Kossi Mensah",
     phone: "+22997000001",
-    accessToken: randomUUID(),
+    accessToken: "demo-driver-kossi-token",
     isActive: true,
   },
   {
-    id: randomUUID(),
+    id: "demo-driver-afi",
     name: "Afi Dossou",
     phone: "+22997000002",
-    accessToken: randomUUID(),
+    accessToken: "demo-driver-afi-token",
     isActive: true,
   },
 ];
@@ -109,93 +184,195 @@ function defaultActivateAt(date, hour = 8, minute = 0) {
 }
 
 async function seedProducts() {
-  const count = await prisma.product.count();
-  if (count > 0) {
-    console.log(`SKIP products (${count} déjà en base)`);
-    return count;
-  }
-
+  let upserted = 0;
   for (const p of DEMO_PRODUCTS) {
-    await prisma.product.create({
-      data: {
-        ...p,
+    const { giftCardMessage, ...rest } = p;
+    await prisma.product.upsert({
+      where: { slug: p.slug },
+      create: {
+        ...rest,
+        giftCardMessage: giftCardMessage ?? null,
         isPromotion: false,
-        isGiftCard: false,
       },
+      update: FORCE
+        ? {
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            imageUrl: p.imageUrl,
+            imageUrls: p.imageUrls,
+            keyword: p.keyword,
+            stockRemaining: p.stockRemaining,
+            stockMinimum: p.stockMinimum,
+            category: p.category,
+            isNew: p.isNew,
+            isMenuDuJour: p.isMenuDuJour,
+            isPopular: p.isPopular,
+            isGiftCard: p.isGiftCard,
+            giftCardMessage: giftCardMessage ?? null,
+          }
+        : {
+            category: p.category,
+            isGiftCard: p.isGiftCard,
+            ...(p.isGiftCard
+              ? { giftCardMessage: giftCardMessage ?? null }
+              : {}),
+          },
     });
+    upserted += 1;
   }
-  console.log(`OK products (${DEMO_PRODUCTS.length} insérés)`);
-  return DEMO_PRODUCTS.length;
+  console.log(`OK products (${upserted} démo)`);
+  return upserted;
 }
 
 async function seedDrivers() {
-  const count = await prisma.driver.count();
-  if (count > 0) {
-    console.log(`SKIP drivers (${count} déjà en base)`);
-    return prisma.driver.findMany({ take: 2 });
-  }
-
-  const created = [];
   for (const d of DEMO_DRIVERS) {
-    const row = await prisma.driver.create({ data: d });
-    created.push(row);
+    await prisma.driver.upsert({
+      where: { phone: d.phone },
+      create: d,
+      update: FORCE
+        ? { name: d.name, isActive: true, accessToken: d.accessToken }
+        : { isActive: true },
+    });
   }
-  console.log(`OK drivers (${created.length} insérés)`);
-  return created;
+  console.log(`OK drivers (${DEMO_DRIVERS.length})`);
 }
 
-async function seedMenus(productIds) {
-  const count = await prisma.menu.count();
-  if (count > 0) {
-    console.log(`SKIP menus (${count} déjà en base)`);
-    return count;
+async function seedMenus() {
+  const menuProducts = await prisma.product.findMany({
+    where: {
+      OR: [{ isMenuDuJour: true }, { category: "Entremets" }],
+    },
+    take: 8,
+    orderBy: { name: "asc" },
+    select: { id: true },
+  });
+  const productIds = menuProducts.map((p) => p.id);
+  if (productIds.length === 0) {
+    console.log("SKIP menus (aucun entremets)");
+    return;
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const displayOrder = productIds.map((_, i) => i);
+  const existingActive = await prisma.menu.findFirst({
+    where: { status: "ACTIVE", date: today },
+  });
 
-  await prisma.menu.createMany({
-    data: [
-      {
+  if (existingActive && !FORCE) {
+    console.log("SKIP menus (menu actif déjà présent)");
+    return;
+  }
+
+  if (FORCE) {
+    await prisma.menu.updateMany({
+      where: { status: "ACTIVE" },
+      data: { status: "EXPIRED" },
+    });
+  }
+
+  if (!existingActive || FORCE) {
+    await prisma.menu.create({
+      data: {
         id: randomUUID(),
         date: today,
         activateAt: defaultActivateAt(today, 8, 0),
         status: "ACTIVE",
         productIds,
-        displayOrder,
+        displayOrder: productIds.map((_, i) => i),
       },
-      {
-        id: randomUUID(),
-        date: tomorrow,
-        activateAt: defaultActivateAt(tomorrow, 20, 0),
-        status: "SCHEDULED",
-        productIds,
-        displayOrder,
-      },
-    ],
+    });
+    console.log("OK menu du jour (ACTIVE)");
+  }
+}
+
+async function seedDeliveryBasics() {
+  const zones = [
+    { id: "zone-a", name: "Zone A", cost: 500 },
+    { id: "zone-b", name: "Zone B", cost: 800 },
+    { id: "zone-c", name: "Zone C", cost: 1000 },
+    { id: "zone-d", name: "Zone D", cost: 1200 },
+    { id: "zone-e", name: "Zone E", cost: 1500 },
+  ];
+
+  for (const zone of zones) {
+    await prisma.deliveryZone.upsert({
+      where: { id: zone.id },
+      create: { ...zone, isActive: true },
+      update: { name: zone.name, cost: zone.cost, isActive: true },
+    });
+  }
+
+  await prisma.deliveryOptions.upsert({
+    where: { id: "default" },
+    create: {
+      id: "default",
+      maxOrdersPerSlot: 8,
+      bookingDaysAhead: 7,
+      pickupAddress: "Gift & ENTREMETS — Cotonou, Bénin",
+    },
+    update: {
+      maxOrdersPerSlot: 8,
+      bookingDaysAhead: 7,
+    },
   });
-  console.log("OK menus (2 insérés : actif + programmé)");
-  return 2;
+
+  const scheduleCount = await prisma.deliverySchedule.count();
+  if (scheduleCount === 0 || FORCE) {
+    if (FORCE && scheduleCount > 0) {
+      await prisma.deliverySchedule.deleteMany();
+    }
+    const rows = [];
+    for (let day = 1; day <= 6; day++) {
+      rows.push(
+        {
+          id: randomUUID(),
+          dayOfWeek: day,
+          startTime: "13:00",
+          endTime: "15:30",
+          slotDuration: 150,
+          type: "delivery",
+          isActive: true,
+        },
+        {
+          id: randomUUID(),
+          dayOfWeek: day,
+          startTime: "16:00",
+          endTime: "18:30",
+          slotDuration: 150,
+          type: "delivery",
+          isActive: true,
+        },
+        {
+          id: randomUUID(),
+          dayOfWeek: day,
+          startTime: "10:00",
+          endTime: "19:00",
+          slotDuration: 60,
+          type: "pickup",
+          isActive: true,
+        },
+      );
+    }
+    await prisma.deliverySchedule.createMany({ data: rows });
+  }
+
+  console.log("OK delivery zones + créneaux");
 }
 
 async function main() {
+  console.log(FORCE ? "SEED mode --force" : "SEED mode soft upsert");
   await seedProducts();
-  const products = await prisma.product.findMany({
-    take: 8,
-    orderBy: { name: "asc" },
-    select: { id: true },
-  });
   await seedDrivers();
-  await seedMenus(products.map((p) => p.id));
+  await seedMenus();
+  await seedDeliveryBasics();
 
   const summary = {
     Product: await prisma.product.count(),
     Driver: await prisma.driver.count(),
     Menu: await prisma.menu.count(),
+    DeliveryZone: await prisma.deliveryZone.count(),
     Order: await prisma.order.count(),
   };
   console.log("SEED_DONE", summary);

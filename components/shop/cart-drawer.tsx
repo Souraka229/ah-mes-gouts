@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
@@ -18,6 +19,106 @@ import { getLineUnitPrice, getLineTotal } from "@/lib/cart-utils";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+function useIsMobileSheet() {
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  return mobile;
+}
+
+function CartLineItem({
+  item,
+  onRemove,
+  onDecrease,
+  onIncrease,
+}: {
+  item: ReturnType<typeof useCartStore.getState>["items"][number];
+  onRemove: () => void;
+  onDecrease: () => void;
+  onIncrease: () => void;
+}) {
+  const unitPrice = getLineUnitPrice(item);
+
+  return (
+    <li className="rounded-xl border border-border bg-card p-3 sm:p-4">
+      <div className="flex gap-3">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-bg sm:size-20">
+          <Image
+            src={item.imageUrl}
+            alt={item.name}
+            fill
+            sizes="80px"
+            className="object-contain object-center"
+          />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate font-display text-base font-semibold text-primary sm:text-lg">
+                {item.name}
+              </p>
+              <p className="font-body text-xs text-muted-foreground sm:text-sm">
+                {formatPrice(unitPrice)} / unité
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              aria-label={`Retirer ${item.name}`}
+            >
+              <Trash2 className="size-4" />
+            </button>
+          </div>
+
+          {item.supplements.length > 0 && (
+            <p className="mt-1 font-body text-xs text-muted-foreground">
+              {item.supplements
+                .map((s) => `+ ${s.name} (${formatPrice(s.price)})`)
+                .join(" · ")}
+            </p>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex items-center rounded-full border border-border bg-bg">
+              <button
+                type="button"
+                onClick={onDecrease}
+                className="flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted active:bg-muted"
+                aria-label="Diminuer"
+              >
+                <Minus className="size-4" />
+              </button>
+              <span className="min-w-8 text-center font-body text-sm font-semibold">
+                {item.quantity}
+              </span>
+              <button
+                type="button"
+                onClick={onIncrease}
+                className="flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted active:bg-muted"
+                aria-label="Augmenter"
+              >
+                <Plus className="size-4" />
+              </button>
+            </div>
+            <p className="font-body text-sm font-semibold text-text tabular-nums">
+              {formatPrice(getLineTotal(item))}
+            </p>
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+}
+
 export function CartDrawer() {
   const items = useCartStore((state) => state.items);
   const isOpen = useCartStore((state) => state.isOpen);
@@ -25,169 +126,90 @@ export function CartDrawer() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const totals = useCartTotals();
+  const isMobile = useIsMobileSheet();
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
       <SheetContent
-        side="right"
+        side={isMobile ? "bottom" : "right"}
         className={cn(
-          "glass flex h-dvh max-h-dvh w-full flex-col justify-between border-l border-white/40 p-0 shadow-2xl sm:max-w-md gap-0 overflow-hidden",
+          "flex flex-col gap-0 overflow-hidden border-border bg-bg p-0 shadow-2xl",
+          isMobile
+            ? "inset-x-0 bottom-0 top-auto h-[min(88dvh,100%)] max-h-[88dvh] w-full rounded-t-2xl border-t"
+            : "h-dvh max-h-dvh w-full sm:max-w-md",
         )}
       >
-        <SheetHeader className="shrink-0 border-b border-border/60 px-6 py-5 bg-white/60">
-          <SheetTitle className="font-display text-2xl text-primary">
+        <SheetHeader className="shrink-0 border-b border-border px-4 py-4 pr-14 sm:px-6">
+          <SheetTitle className="font-display text-xl text-primary sm:text-2xl">
             Votre panier
           </SheetTitle>
-          <SheetDescription className="font-body">
+          <SheetDescription className="font-body text-sm">
             {totals.itemCount === 0
               ? "Votre panier est vide pour l'instant."
               : `${totals.itemCount} article${totals.itemCount > 1 ? "s" : ""}`}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4">
           {items.length === 0 ? (
             <EmptyState
               icon={ShoppingBag}
               title="Votre panier attend ses premières douceurs"
-              description="Parcourez notre carte et composez l'assortiment qui fera plaisir — livraison rapide à Cotonou."
-              className="border-0 bg-transparent"
+              description="Parcourez la carte et composez votre assortiment."
+              className="border-0 bg-transparent py-8"
             >
               <Link
                 href="/catalogue"
                 onClick={closeCart}
-                className={cn(buttonVariants(), "cursor-pointer")}
+                className={cn(buttonVariants(), "min-h-11 cursor-pointer")}
               >
                 Découvrir la carte
               </Link>
             </EmptyState>
           ) : (
-            <ul className="space-y-4">
-              {items.map((item) => {
-                const unitPrice = getLineUnitPrice(item);
-                return (
-                  <li
-                    key={item.lineId}
-                    className="rounded-2xl border border-border/70 bg-white/70 p-4 shadow-sm"
-                  >
-                    <div className="flex gap-3">
-                      <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-bg">
-                        <Image
-                          src={item.imageUrl}
-                          alt={item.name}
-                          fill
-                          sizes="80px"
-                          className="object-contain object-center"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-display text-lg font-semibold text-primary">
-                              {item.name}
-                            </p>
-                            <p className="font-body text-sm text-muted-foreground">
-                              {formatPrice(unitPrice)} / unité
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeItem(item.lineId)}
-                            className="flex size-9 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
-                            aria-label={`Retirer ${item.name} du panier`}
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-
-                        {item.supplements.length > 0 && (
-                          <ul className="mt-2 space-y-1">
-                            {item.supplements.map((supplement) => (
-                              <li
-                                key={supplement.id}
-                                className="font-body text-xs text-muted-foreground"
-                              >
-                                + {supplement.name} ({formatPrice(supplement.price)})
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        <div className="mt-3 flex items-center justify-between">
-                          <div className="flex items-center rounded-full border border-border bg-bg">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateQuantity(item.lineId, item.quantity - 1)
-                              }
-                              className="flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
-                              aria-label="Diminuer la quantité"
-                            >
-                              <Minus className="size-3.5" />
-                            </button>
-                            <span className="min-w-8 text-center font-body text-sm font-semibold">
-                              {item.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateQuantity(item.lineId, item.quantity + 1)
-                              }
-                              className="flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
-                              aria-label="Augmenter la quantité"
-                            >
-                              <Plus className="size-3.5" />
-                            </button>
-                          </div>
-                          <p className="font-body text-sm font-semibold text-text">
-                            {formatPrice(getLineTotal(item))}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
+            <ul className="space-y-3">
+              {items.map((item) => (
+                <CartLineItem
+                  key={item.lineId}
+                  item={item}
+                  onRemove={() => removeItem(item.lineId)}
+                  onDecrease={() =>
+                    updateQuantity(item.lineId, item.quantity - 1)
+                  }
+                  onIncrease={() =>
+                    updateQuantity(item.lineId, item.quantity + 1)
+                  }
+                />
+              ))}
             </ul>
           )}
         </div>
 
         {items.length > 0 && (
-          <div className="shrink-0 border-t border-border/80 bg-white/95 px-6 py-5 shadow-2xl backdrop-blur-md">
-            <dl className="space-y-2 font-body text-sm">
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Sous-total</dt>
-                <dd>{formatPrice(totals.subtotal)}</dd>
+          <div className="shrink-0 border-t border-border bg-bg px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(36,23,38,0.08)] sm:px-6">
+            <div className="flex items-baseline justify-between gap-4">
+              <div>
+                <p className="font-body text-xs text-muted-foreground">
+                  Sous-total · livraison au checkout
+                </p>
+                <p className="font-display text-2xl font-semibold text-primary tabular-nums">
+                  {formatPrice(totals.subtotal)}
+                </p>
               </div>
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Livraison</dt>
-                <dd>
-                  {totals.delivery === 0
-                    ? "Selon le mode choisi"
-                    : formatPrice(totals.delivery)}
-                </dd>
-              </div>
-              {totals.tax > 0 && (
-                <div className="flex justify-between text-muted-foreground">
-                  <dt>TVA</dt>
-                  <dd>{formatPrice(totals.tax)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-border pt-3 text-base font-semibold text-text">
-                <dt>Total</dt>
-                <dd>{formatPrice(totals.total)}</dd>
-              </div>
-            </dl>
+              <p className="max-w-[40%] text-right font-body text-[11px] leading-snug text-muted-foreground">
+                {totals.itemCount} article{totals.itemCount > 1 ? "s" : ""}
+              </p>
+            </div>
 
             <Link
               href="/checkout"
               onClick={closeCart}
               className={cn(
                 buttonVariants(),
-                "mt-4 flex h-12 w-full cursor-pointer items-center justify-center bg-accent text-text font-bold hover:bg-accent/90 shadow-md transition-transform active:scale-[0.99]",
+                "mt-4 flex min-h-12 w-full cursor-pointer items-center justify-center bg-accent text-base font-bold text-text hover:bg-accent/90 active:scale-[0.99]",
               )}
             >
-              Passer commande ({formatPrice(totals.total)})
+              Passer commande
             </Link>
           </div>
         )}

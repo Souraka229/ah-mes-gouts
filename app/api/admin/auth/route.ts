@@ -29,7 +29,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterSec } = checkRateLimit(
+  const { allowed, retryAfterSec } = await checkRateLimit(
     `admin:auth:${ip}`,
     8,
     15 * 60_000,
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   const token = body.token?.trim();
   const entry = findAdminTokenEntry(token);
   if (!entry) {
-    const fails = checkRateLimit(`admin:auth:fail:${ip}`, 5, 15 * 60_000);
+    const fails = await checkRateLimit(`admin:auth:fail:${ip}`, 5, 15 * 60_000);
     if (!fails.allowed) {
       notifyTelegramSafe(
         formatSecurityAlert(

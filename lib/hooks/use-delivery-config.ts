@@ -20,20 +20,54 @@ const DEFAULT_OPTIONS: DeliveryOptions = {
   pickupAddress: "Gift & ENTREMETS — Cotonou, Bénin",
 };
 
+/** Une seule requête partagée entre tous les hooks checkout montés. */
+let sharedPromise: Promise<DeliveryConfigResponse> | null = null;
+let sharedCache: DeliveryConfigResponse | null = null;
+
+async function fetchDeliveryConfig(
+  force = false,
+): Promise<DeliveryConfigResponse> {
+  if (!force && sharedCache) return sharedCache;
+  if (!force && sharedPromise) return sharedPromise;
+
+  sharedPromise = fetch("/api/delivery/config")
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error("Impossible de charger la configuration");
+      }
+      const data = (await response.json()) as DeliveryConfigResponse;
+      sharedCache = {
+        zones: data.zones,
+        schedules: data.schedules,
+        options: data.options ?? DEFAULT_OPTIONS,
+      };
+      return sharedCache;
+    })
+    .finally(() => {
+      sharedPromise = null;
+    });
+
+  return sharedPromise;
+}
+
 export function useDeliveryConfig() {
-  const [zones, setZones] = useState<DeliveryZoneConfig[]>([]);
-  const [schedules, setSchedules] = useState<DeliveryScheduleConfig[]>([]);
-  const [options, setOptions] = useState<DeliveryOptions>(DEFAULT_OPTIONS);
-  const [loading, setLoading] = useState(true);
+  const [zones, setZones] = useState<DeliveryZoneConfig[]>(
+    () => sharedCache?.zones ?? [],
+  );
+  const [schedules, setSchedules] = useState<DeliveryScheduleConfig[]>(
+    () => sharedCache?.schedules ?? [],
+  );
+  const [options, setOptions] = useState<DeliveryOptions>(
+    () => sharedCache?.options ?? DEFAULT_OPTIONS,
+  );
+  const [loading, setLoading] = useState(!sharedCache);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("/api/delivery/config", { cache: "no-store" });
-      if (!response.ok) throw new Error("Impossible de charger la configuration");
-      const data = (await response.json()) as DeliveryConfigResponse;
+      const data = await fetchDeliveryConfig(force);
       setZones(data.zones);
       setSchedules(data.schedules);
       setOptions(data.options ?? DEFAULT_OPTIONS);
@@ -45,10 +79,17 @@ export function useDeliveryConfig() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    void refresh(false);
   }, [refresh]);
 
-  return { zones, schedules, options, loading, error, refresh };
+  return {
+    zones,
+    schedules,
+    options,
+    loading,
+    error,
+    refresh: () => refresh(true),
+  };
 }
 
 export function getZoneCost(

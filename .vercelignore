@@ -10,3 +10,8 @@ coverage
 .turbo
 data/*.json
 !.gitkeep
+
+# Assets morts / hors catalogue live — ~40 Mo exclus du deploy
+public/images/catalog
+public/images/generated
+public/images/landing/hero-gift-entremets.png

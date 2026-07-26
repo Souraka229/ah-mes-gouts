@@ -36,6 +36,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       activateAt?: string;
       productIds?: string[];
       displayOrder?: number[];
+      dailyStock?: number[];
       forceActiveEdit?: boolean;
     };
 
@@ -46,6 +47,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         activateAt: body.activateAt,
         productIds: body.productIds,
         displayOrder: body.displayOrder,
+        dailyStock: body.dailyStock,
       },
       { forceActiveEdit: body.forceActiveEdit },
     );

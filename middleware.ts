@@ -23,18 +23,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/?admin=locked", request.url));
   }
 
-  if (
-    pathname.startsWith("/admin/assistant") &&
-    !isAdministratorFromRequest(request)
-  ) {
-    return NextResponse.redirect(
-      new URL("/admin?assistant=forbidden", request.url),
-    );
-  }
-
   const adminOnlyPrefixes = [
-    "/admin/site-builder",
-    "/admin/parametres/general",
+    "/admin/parametres/boutique",
     "/admin/parametres/journal",
     "/admin/parametres/notifications",
     "/admin/parametres/promotions",

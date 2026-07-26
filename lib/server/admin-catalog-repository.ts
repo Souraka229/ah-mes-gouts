@@ -1,13 +1,9 @@
 import { randomUUID } from "crypto";
-
-
+import { revalidateTag } from "next/cache";
 
 import { products as seedProducts } from "@/lib/mock-data";
-
 import { normalizeProductImages, GIFT_CATALOG_OVERRIDE } from "@/lib/product-images";
-
 import { getPrisma } from "@/lib/prisma";
-
 import type { Product } from "@/types/product";
 
 
@@ -291,15 +287,11 @@ export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
 
 
 export async function saveAdminCatalog(
-
   catalog: AdminCatalogProduct[],
-
 ): Promise<void> {
-
   globalThis.__amgAdminCatalog = catalog;
-
   await writeCatalogToDb(catalog);
-
+  revalidateTag("catalog");
 }
 
 
@@ -435,6 +427,7 @@ export async function createCatalogProduct(input: {
   const prisma = getPrisma();
   await prisma.product.create({ data: toProductRow(product) });
   globalThis.__amgAdminCatalog = undefined;
+  revalidateTag("catalog");
   return product;
 }
 
@@ -523,6 +516,7 @@ export async function updateCatalogProduct(
   });
 
   globalThis.__amgAdminCatalog = undefined;
+  revalidateTag("catalog");
 
   return updated;
 

@@ -1,4 +1,4 @@
-import type { AdminRole } from "@/lib/admin-assistant/types";
+import type { AdminRole } from "@/lib/admin/types";
 import type { NextRequest } from "next/server";
 
 import {

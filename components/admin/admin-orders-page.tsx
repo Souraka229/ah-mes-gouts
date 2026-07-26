@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Bell, BellOff, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   filterOrdersByTab,
 } from "@/lib/admin/order-board";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
+import { useOrderNotifications } from "@/lib/hooks/use-order-notifications";
 import { formatPrice } from "@/lib/format";
 import {
   ORDER_STATUS_LABELS,
@@ -57,6 +58,7 @@ export function AdminOrdersPage() {
     {},
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const notifications = useOrderNotifications();
 
   const setActiveTab = useCallback(
     (tab: OrderBoardTab) => {
@@ -67,17 +69,19 @@ export function AdminOrdersPage() {
     [router, searchParams],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (options?: { silent?: boolean }) => {
+    // Rafraîchissement silencieux : pas de spinner plein écran pour un KDS
+    // qui se met à jour en continu — les cartes s'actualisent en place.
+    if (!options?.silent) setLoading(true);
     try {
       const response = await fetch("/api/admin/orders", { cache: "no-store" });
       if (!response.ok) throw new Error("Erreur");
       const data = (await response.json()) as { orders: SavedOrder[] };
       setOrders(data.orders);
     } catch {
-      setOrders([]);
+      if (!options?.silent) setOrders([]);
     } finally {
-      setLoading(false);
+      if (!options?.silent) setLoading(false);
     }
   }, []);
 
@@ -96,9 +100,27 @@ export function AdminOrdersPage() {
 
   useOrderRealtime({
     onStatusChange: (row) => {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === row.id ? { ...o, status: row.status } : o)),
-      );
+      // On lit l'état courant via le setter mais sans effet de bord dedans :
+      // on note juste si la commande est déjà connue, puis on agit après.
+      let isNew = false;
+      setOrders((prev) => {
+        const known = prev.some((o) => o.id === row.id);
+        if (!known) {
+          isNew = true;
+          return prev; // fiche complète récupérée via load() ci-dessous
+        }
+        return prev.map((o) =>
+          o.id === row.id ? { ...o, status: row.status } : o,
+        );
+      });
+
+      if (isNew) {
+        notifications.notify(
+          "Nouvelle commande",
+          `Commande ${row.id} reçue — à préparer.`,
+        );
+        void load({ silent: true });
+      }
     },
   });
 
@@ -262,17 +284,47 @@ export function AdminOrdersPage() {
             })}
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="cursor-pointer gap-2"
-          onClick={() => void load()}
-        >
-          <RefreshCw className="size-4" aria-hidden />
-          Actualiser
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant={notifications.enabled ? "default" : "outline"}
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={notifications.toggle}
+            title={
+              notifications.enabled
+                ? "Notifications activées — cliquez pour couper"
+                : "Activer le son et les alertes pour les nouvelles commandes"
+            }
+            aria-pressed={notifications.enabled}
+          >
+            {notifications.enabled ? (
+              <Bell className="size-4" aria-hidden />
+            ) : (
+              <BellOff className="size-4" aria-hidden />
+            )}
+            {notifications.enabled ? "Alertes activées" : "Alertes"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Actualiser
+          </Button>
+        </div>
       </header>
+
+      {notifications.enabled && notifications.permission === "denied" && (
+        <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 font-body text-sm text-amber-800">
+          Le son fonctionne, mais les alertes desktop sont bloquées par le
+          navigateur. Autorisez les notifications pour ce site pour les recevoir
+          quand l&apos;onglet n&apos;est pas au premier plan.
+        </p>
+      )}
 
       {todayOrders.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4">

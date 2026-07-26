@@ -4,7 +4,7 @@ import { DEFAULT_OG_IMAGE, BUSINESS, SITE_NAME, SITE_URL } from "@/lib/seo/site"
 import {
   getProductPrice,
   isProductAvailable,
-} from "@/lib/mock-data";
+} from "@/lib/catalog-utils";
 import type { Product } from "@/types/product";
 
 export type BreadcrumbItem = {

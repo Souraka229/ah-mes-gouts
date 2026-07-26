@@ -13,7 +13,7 @@ const TRACKING_RATE_WINDOW_MS = 60_000;
 
 export async function GET(request: Request, context: RouteContext) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterSec } = checkRateLimit(
+  const { allowed, retryAfterSec } = await checkRateLimit(
     `orders:tracking:${ip}`,
     TRACKING_RATE_LIMIT,
     TRACKING_RATE_WINDOW_MS,

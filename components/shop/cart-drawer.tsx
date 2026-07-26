@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 
 import { EmptyState } from "@/components/shop/empty-state";
 import { buttonVariants } from "@/components/ui/button";
@@ -32,10 +31,10 @@ export function CartDrawer() {
       <SheetContent
         side="right"
         className={cn(
-          "flex w-full flex-col border-l border-white/40 bg-card/75 p-0 shadow-2xl backdrop-blur-xl sm:max-w-md",
+          "glass flex h-dvh max-h-dvh w-full flex-col justify-between border-l border-white/40 p-0 shadow-2xl sm:max-w-md gap-0 overflow-hidden",
         )}
       >
-        <SheetHeader className="border-b border-border/60 px-6 py-5">
+        <SheetHeader className="shrink-0 border-b border-border/60 px-6 py-5 bg-white/60">
           <SheetTitle className="font-display text-2xl text-primary">
             Votre panier
           </SheetTitle>
@@ -46,7 +45,7 @@ export function CartDrawer() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {items.length === 0 ? (
             <EmptyState
               icon={ShoppingBag}
@@ -69,7 +68,7 @@ export function CartDrawer() {
                 return (
                   <li
                     key={item.lineId}
-                    className="rounded-2xl border border-border/70 bg-white/50 p-4"
+                    className="rounded-2xl border border-border/70 bg-white/70 p-4 shadow-sm"
                   >
                     <div className="flex gap-3">
                       <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-bg">
@@ -94,7 +93,7 @@ export function CartDrawer() {
                           <button
                             type="button"
                             onClick={() => removeItem(item.lineId)}
-                            className="flex size-11 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-destructive"
+                            className="flex size-9 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
                             aria-label={`Retirer ${item.name} du panier`}
                           >
                             <Trash2 className="size-4" />
@@ -121,10 +120,10 @@ export function CartDrawer() {
                               onClick={() =>
                                 updateQuantity(item.lineId, item.quantity - 1)
                               }
-                              className="flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
+                              className="flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
                               aria-label="Diminuer la quantité"
                             >
-                              <Minus className="size-4" />
+                              <Minus className="size-3.5" />
                             </button>
                             <span className="min-w-8 text-center font-body text-sm font-semibold">
                               {item.quantity}
@@ -134,10 +133,10 @@ export function CartDrawer() {
                               onClick={() =>
                                 updateQuantity(item.lineId, item.quantity + 1)
                               }
-                              className="flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
+                              className="flex size-9 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted"
                               aria-label="Augmenter la quantité"
                             >
-                              <Plus className="size-4" />
+                              <Plus className="size-3.5" />
                             </button>
                           </div>
                           <p className="font-body text-sm font-semibold text-text">
@@ -154,7 +153,7 @@ export function CartDrawer() {
         </div>
 
         {items.length > 0 && (
-          <div className="border-t border-border/60 bg-white/40 px-6 py-5 backdrop-blur-sm">
+          <div className="shrink-0 border-t border-border/80 bg-white/95 px-6 py-5 shadow-2xl backdrop-blur-md">
             <dl className="space-y-2 font-body text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <dt>Sous-total</dt>
@@ -185,72 +184,14 @@ export function CartDrawer() {
               onClick={closeCart}
               className={cn(
                 buttonVariants(),
-                "mt-4 flex h-11 w-full cursor-pointer items-center justify-center bg-accent text-text hover:bg-accent/90",
+                "mt-4 flex h-12 w-full cursor-pointer items-center justify-center bg-accent text-text font-bold hover:bg-accent/90 shadow-md transition-transform active:scale-[0.99]",
               )}
             >
-              Passer commande
+              Passer commande ({formatPrice(totals.total)})
             </Link>
           </div>
         )}
       </SheetContent>
     </Sheet>
-  );
-}
-
-type CartIconButtonProps = {
-  className?: string;
-  /** Sur hero sombre : pastille glass, pas disque blanc opaque */
-  variant?: "default" | "onDark";
-};
-
-export function CartIconButton({
-  className,
-  variant = "default",
-}: CartIconButtonProps) {
-  const itemCount = useCartStore((state) =>
-    state.items.reduce((sum, item) => sum + item.quantity, 0),
-  );
-  const cartPulse = useCartStore((state) => state.cartPulse);
-  const toggleCart = useCartStore((state) => state.toggleCart);
-  const acknowledgeCartPulse = useCartStore(
-    (state) => state.acknowledgeCartPulse,
-  );
-  const onDark = variant === "onDark";
-
-  return (
-    <motion.button
-      type="button"
-      onClick={toggleCart}
-      animate={
-        cartPulse
-          ? { scale: [1, 1.18, 1], rotate: [0, -8, 8, 0] }
-          : { scale: 1, rotate: 0 }
-      }
-      transition={{ duration: 0.45, ease: "easeOut" }}
-      onAnimationComplete={() => {
-        if (cartPulse) acknowledgeCartPulse();
-      }}
-      className={cn(
-        "relative flex size-11 cursor-pointer items-center justify-center rounded-full transition-colors duration-200",
-        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-        onDark
-          ? "border border-white/25 bg-white/10 text-bg backdrop-blur-sm hover:bg-white/18 focus-visible:outline-accent"
-          : "border border-border bg-card text-primary hover:bg-muted focus-visible:outline-primary",
-        className,
-      )}
-      aria-label={`Panier, ${itemCount} article${itemCount > 1 ? "s" : ""}`}
-    >
-      <ShoppingBag className="size-[1.15rem]" strokeWidth={1.75} aria-hidden />
-      {itemCount > 0 && (
-        <motion.span
-          key={itemCount}
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent font-body text-[10px] font-bold text-text shadow-[0_1px_4px_rgba(0,0,0,0.2)]"
-        >
-          {itemCount > 9 ? "9+" : itemCount}
-        </motion.span>
-      )}
-    </motion.button>
   );
 }

@@ -4,12 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Bell,
-  Bot,
   Calendar,
   Database,
   IceCreamCone,
-  LayoutTemplate,
-  Palette,
+  Info,
   ScrollText,
   Sparkles,
   Truck,
@@ -19,11 +17,10 @@ import {
 import { cn } from "@/lib/utils";
 
 const SETTINGS_NAV = [
-  { href: "/admin/parametres/general", label: "Général", icon: Palette },
   {
-    href: "/admin/site-builder",
-    label: "Contenu des pages",
-    icon: LayoutTemplate,
+    href: "/admin/parametres/boutique",
+    label: "Infos boutique",
+    icon: Info,
   },
   {
     href: "/admin/parametres/livraison",
@@ -41,7 +38,6 @@ const SETTINGS_NAV = [
     label: "Utilisateurs & rôles",
     icon: Users,
   },
-  { href: "/admin/assistant", label: "Assistant IA", icon: Bot },
   { href: "/admin/donnees", label: "Données", icon: Database },
   { href: "/admin/parametres/journal", label: "Journal des actions", icon: ScrollText },
   {

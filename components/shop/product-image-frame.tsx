@@ -35,6 +35,7 @@ export function ProductImageFrame({
         fill
         sizes={sizes}
         priority={priority}
+        quality={75}
         unoptimized={src.endsWith(".svg")}
         className={cn(
           "object-contain object-center transition-transform duration-[250ms] motion-reduce:transition-none",

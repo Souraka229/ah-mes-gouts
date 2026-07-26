@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
 
-import { getIndexableProducts } from "@/lib/mock-data";
+import { getIndexableShopProducts } from "@/lib/server/shop-catalog";
 import { SITE_URL } from "@/lib/seo/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
   const staticPages: MetadataRoute.Sitemap = [
@@ -27,14 +27,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const productPages: MetadataRoute.Sitemap = getIndexableProducts().map(
-    (product) => ({
-      url: `${SITE_URL}/produit/${product.slug}`,
-      lastModified: new Date(product.updatedAt),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    }),
-  );
+  let products: Awaited<ReturnType<typeof getIndexableShopProducts>> = [];
+  try {
+    products = await getIndexableShopProducts();
+  } catch {
+    products = [];
+  }
+
+  const productPages: MetadataRoute.Sitemap = products.map((product) => ({
+    url: `${SITE_URL}/produit/${product.slug}`,
+    lastModified: new Date(product.updatedAt),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
 
   return [...staticPages, ...productPages];
 }

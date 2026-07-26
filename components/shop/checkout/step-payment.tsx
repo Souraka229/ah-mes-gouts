@@ -10,13 +10,15 @@ import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { getLineUnitPrice } from "@/lib/cart-utils";
 import { getOrCreateDeviceKey } from "@/lib/crm/device-id";
-import { trackActivity } from "@/lib/crm/track";
-import { processPayment } from "@/lib/payments/process-payment";
 import {
   generateOrderId,
   saveOrder,
 } from "@/lib/order-storage";
-import { validateCartStock, validateCartStockWithCatalog } from "@/lib/validate-cart-stock";
+import {
+  encodeOrderFlags,
+  PACKAGING_LABELS,
+  type PackagingChoice,
+} from "@/lib/orders/order-flags";
 import { cn } from "@/lib/utils";
 import {
   PAYMENT_METHOD_LABELS,
@@ -62,7 +64,7 @@ const paymentMethods: {
   },
 ];
 
-type PaymentUiState = "idle" | "loading" | "error";
+type PaymentUiState = "idle" | "loading" | "pending" | "error";
 
 async function persistOrderOnServer(
   order: SavedOrder,
@@ -114,14 +116,95 @@ export function StepPayment() {
 
   const [uiState, setUiState] = useState<PaymentUiState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Emballage : proposé seulement si plusieurs articles (sinon sans objet).
+  const totalUnits = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const showPackaging = totalUnits > 1;
+  const [packaging, setPackaging] = useState<PackagingChoice>("together");
   const [suggestedSlot, setSuggestedSlot] = useState<{
     start: string;
     end: string;
     slotKey: string;
     label?: string;
   } | null>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const payingRef = useRef(false);
   const idempotencyRef = useRef<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopPolling = () => {
+    if (pollTimerRef.current) {
+      clearTimeout(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  };
+
+  const finishSuccess = (orderId: string) => {
+    stopPolling();
+    clearCart();
+    resetCheckout();
+    payingRef.current = false;
+    idempotencyRef.current = null;
+    router.push(`/commande/confirmation?orderId=${orderId}`);
+  };
+
+  const pollPaymentStatus = (
+    orderId: string,
+    reference: string,
+    deviceKey: string | null,
+  ) => {
+    stopPolling();
+    const delays = [3000, 5000, 8000];
+    const maxAttempts = 15;
+    let attempts = 0;
+
+    const tick = async () => {
+      attempts += 1;
+      if (attempts > maxAttempts) {
+        stopPolling();
+        setUiState("error");
+        setErrorMessage(
+          "Délai dépassé. Si vous avez validé sur votre téléphone, contactez-nous avec votre numéro de commande.",
+        );
+        payingRef.current = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/payments/initiate?reference=${encodeURIComponent(reference)}&orderId=${encodeURIComponent(orderId)}`,
+          {
+            headers: deviceKey ? { "x-amg-device-key": deviceKey } : {},
+          },
+        );
+        const payload = (await response.json()) as {
+          status?: string;
+          error?: string;
+        };
+
+        if (payload.status === "SUCCESS") {
+          finishSuccess(orderId);
+          return;
+        }
+        if (payload.status === "FAILED") {
+          stopPolling();
+          setUiState("error");
+          setErrorMessage(
+            payload.error ||
+              "Paiement refusé ou annulé. Réessayez ou changez de méthode.",
+          );
+          payingRef.current = false;
+          return;
+        }
+      } catch {
+        /* réseau instable — on continue */
+      }
+
+      const delay = delays[Math.min(attempts - 1, delays.length - 1)]!;
+      pollTimerRef.current = setTimeout(() => void tick(), delay);
+    };
+
+    pollTimerRef.current = setTimeout(() => void tick(), delays[0]!);
+  };
 
   const handlePay = async () => {
     if (!paymentMethod || !mode || cartItems.length === 0 || !scheduledSlot) return;
@@ -155,7 +238,11 @@ export function StepPayment() {
         stockIssues = payload.issues;
       }
     } catch {
-      stockIssues = validateCartStock(cartItems);
+      setUiState("error");
+      setErrorMessage(
+        "Impossible de vérifier le stock. Vérifiez votre connexion et réessayez.",
+      );
+      return;
     }
 
     if (stockIssues.length > 0) {
@@ -171,32 +258,24 @@ export function StepPayment() {
     payingRef.current = true;
     setUiState("loading");
     setErrorMessage(null);
+    setPendingMessage(null);
+    stopPolling();
 
     const orderId = generateOrderId();
     if (!idempotencyRef.current) {
       idempotencyRef.current = `pay-${orderId}-${crypto.randomUUID()}`;
     }
 
-    const result = await processPayment({
-      method: paymentMethod,
-      amount: totals.total,
-      orderId,
-      customerPhone: client.phone,
-    });
-
-    if (result.status === "error") {
-      setUiState("error");
-      setErrorMessage(result.message);
-      payingRef.current = false;
-      return;
-    }
-
     const zone = zoneId;
+    const encodedMessage = encodeOrderFlags({
+      note: client.message,
+      packaging: showPackaging ? packaging : null,
+    });
 
     const order: SavedOrder = {
       id: orderId,
       createdAt: new Date().toISOString(),
-      status: "paiement_confirme",
+      status: "recue",
       mode,
       fulfillmentType: mode,
       zoneId: mode === "delivery" ? zone : null,
@@ -206,8 +285,15 @@ export function StepPayment() {
       scheduledSlotEnd: scheduledSlot.end,
       deliveryFee: totals.deliveryFee,
       client: isGift
-        ? { ...client, address: "", landmark: "", message: "" }
-        : client,
+        ? {
+            ...client,
+            address: "",
+            landmark: "",
+            message: encodeOrderFlags({
+              packaging: showPackaging ? packaging : null,
+            }),
+          }
+        : { ...client, message: encodedMessage },
       isGift,
       gift: isGift ? gift : null,
       paymentMethod,
@@ -240,17 +326,76 @@ export function StepPayment() {
       } else {
         setErrorMessage(
           err.message ||
-            "Impossible de finaliser la commande. Vérifiez votre connexion et réessayez.",
+            "Impossible d'enregistrer la commande. Vérifiez votre connexion.",
         );
       }
       return;
     }
 
-    clearCart();
-    resetCheckout();
+    const deviceKey = getOrCreateDeviceKey();
+    let paymentResponse: Response;
+    try {
+      paymentResponse = await fetch("/api/payments/initiate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(deviceKey ? { "x-amg-device-key": deviceKey } : {}),
+        },
+        body: JSON.stringify({
+          orderId,
+          method: paymentMethod,
+        }),
+      });
+    } catch {
+      setUiState("error");
+      setErrorMessage("Connexion interrompue pendant le paiement.");
+      payingRef.current = false;
+      return;
+    }
+
+    const paymentPayload = (await paymentResponse.json().catch(() => null)) as {
+      status?: string;
+      error?: string;
+      message?: string;
+      reference?: string;
+      paymentUrl?: string;
+      orderId?: string;
+    } | null;
+
+    if (!paymentResponse.ok || !paymentPayload) {
+      setUiState("error");
+      setErrorMessage(
+        paymentPayload?.error || "Le paiement n'a pas pu être lancé.",
+      );
+      payingRef.current = false;
+      return;
+    }
+
+    if (paymentPayload.status === "SUCCESS") {
+      finishSuccess(orderId);
+      return;
+    }
+
+    if (paymentPayload.status === "PENDING" && paymentPayload.reference) {
+      if (paymentPayload.paymentUrl) {
+        window.location.href = paymentPayload.paymentUrl;
+        return;
+      }
+
+      setUiState("pending");
+      setPendingMessage(
+        paymentPayload.message ||
+          "Validez le paiement sur votre téléphone (invite USSD), puis patientez…",
+      );
+      pollPaymentStatus(orderId, paymentPayload.reference, deviceKey);
+      return;
+    }
+
+    setUiState("error");
+    setErrorMessage(
+      paymentPayload.error || "Paiement refusé. Réessayez ou changez de méthode.",
+    );
     payingRef.current = false;
-    idempotencyRef.current = null;
-    router.push(`/commande/confirmation?orderId=${orderId}`);
   };
 
   return (
@@ -270,6 +415,40 @@ export function StepPayment() {
         <div className="rounded-2xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
           Cadeau pour <strong>{gift.recipientName}</strong>
           {!gift.senderVisible && " — mode anonyme activé"}
+        </div>
+      )}
+
+      {showPackaging && (
+        <div className="space-y-3">
+          <p className="font-body text-sm font-medium text-primary">
+            Comment emballer votre commande ?
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(["together", "separate"] as const).map((choice) => {
+              const selected = packaging === choice;
+              return (
+                <button
+                  key={choice}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setPackaging(choice)}
+                  className={cn(
+                    "min-h-11 cursor-pointer rounded-2xl border px-4 py-3 text-left font-body text-sm transition-all duration-[250ms]",
+                    selected
+                      ? "border-primary bg-primary/5 font-semibold text-primary shadow-md"
+                      : "border-border bg-card text-text hover:border-primary/40",
+                  )}
+                >
+                  {PACKAGING_LABELS[choice]}
+                  <span className="mt-0.5 block font-body text-xs font-normal text-muted-foreground">
+                    {choice === "together"
+                      ? "Tout dans un même emballage."
+                      : "Chaque article emballé à part."}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -309,6 +488,18 @@ export function StepPayment() {
           );
         })}
       </div>
+
+      {uiState === "pending" && pendingMessage && (
+        <div
+          role="status"
+          className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4 font-body text-sm text-primary"
+        >
+          <div className="flex items-start gap-3">
+            <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin" aria-hidden />
+            <p>{pendingMessage}</p>
+          </div>
+        </div>
+      )}
 
       {uiState === "error" && errorMessage && (
         <div
@@ -360,13 +551,15 @@ export function StepPayment() {
 
       <Button
         className="h-11 w-full cursor-pointer bg-accent text-text hover:bg-accent/90 sm:w-auto sm:min-w-64"
-        disabled={!paymentMethod || uiState === "loading" || !scheduledSlot}
+        disabled={!paymentMethod || uiState === "loading" || uiState === "pending" || !scheduledSlot}
         onClick={handlePay}
       >
-        {uiState === "loading" ? (
+        {uiState === "loading" || uiState === "pending" ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden />
-            Traitement en cours...
+            {uiState === "pending"
+              ? "En attente de validation…"
+              : "Traitement en cours..."}
           </>
         ) : (
           "Confirmer et payer"

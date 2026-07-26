@@ -12,6 +12,8 @@ export type DriverOrderView = {
   collectOnDelivery: boolean;
   scheduledSlotStart: string | null;
   driverStartedAt: string | null;
+  /** Marqueur « client injoignable » posé par le livreur, si présent. */
+  unreachableAt: string | null;
 };
 
 export type DriverPortalData = {

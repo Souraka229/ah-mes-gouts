@@ -1,4 +1,3 @@
-import { getPublishedSections, getSectionByKey } from "@/lib/server/site-content-repository";
 import {
   LANDING_COPY,
   LANDING_IMAGES,
@@ -18,12 +17,10 @@ import type {
   SignatureMomentSectionContent,
   StorytellingSectionContent,
   TypoBandSectionContent,
-  PageSection,
 } from "@/types/site-content";
 import type { Product } from "@/types/product";
 
 export type HomePageContent = {
-  sections: PageSection[];
   hero: HeroSectionContent;
   giftTeaser: GiftTeaserSectionContent;
   productGrid: ProductGridSectionContent;
@@ -36,7 +33,8 @@ export type HomePageContent = {
   giftProducts: Product[];
 };
 
-const DEFAULTS = {
+/** Contenu fixe de l'accueil (plus d'édition CMS). */
+const CONTENT = {
   hero: {
     titleLine1: SITE_NAME,
     titleLine2: "",
@@ -78,35 +76,31 @@ const DEFAULTS = {
   },
 };
 
+const VISIBLE_KEYS = new Set<string>([
+  "hero",
+  "gift_teaser",
+  "product_grid",
+  "storytelling",
+  "typo_band",
+  "signature_moment",
+  "footer",
+]);
+
 export async function getHomePageContent(): Promise<HomePageContent> {
-  const sections = await getPublishedSections("home");
-  const visibleSectionKeys = new Set(
-    sections.filter((s) => s.isVisible).map((s) => s.sectionKey),
-  );
-
-  const giftTeaser =
-    getSectionByKey(sections, "gift_teaser")?.content ?? DEFAULTS.giftTeaser;
-
   const [menuShowcase, giftProducts] = await Promise.all([
     getMenuDuJourShowcaseForLanding(),
-    getGiftProductsBySlugs(giftTeaser.itemSlugs),
+    getGiftProductsBySlugs(CONTENT.giftTeaser.itemSlugs),
   ]);
 
   return {
-    sections,
-    hero: getSectionByKey(sections, "hero")?.content ?? DEFAULTS.hero,
-    giftTeaser,
-    productGrid:
-      getSectionByKey(sections, "product_grid")?.content ?? DEFAULTS.productGrid,
-    storytelling:
-      getSectionByKey(sections, "storytelling")?.content ?? DEFAULTS.storytelling,
-    typoBand:
-      getSectionByKey(sections, "typo_band")?.content ?? DEFAULTS.typoBand,
-    signatureMoment:
-      getSectionByKey(sections, "signature_moment")?.content ??
-      DEFAULTS.signatureMoment,
-    footer: getSectionByKey(sections, "footer")?.content ?? DEFAULTS.footer,
-    visibleSectionKeys,
+    hero: CONTENT.hero,
+    giftTeaser: CONTENT.giftTeaser,
+    productGrid: CONTENT.productGrid,
+    storytelling: CONTENT.storytelling,
+    typoBand: CONTENT.typoBand,
+    signatureMoment: CONTENT.signatureMoment,
+    footer: CONTENT.footer,
+    visibleSectionKeys: VISIBLE_KEYS,
     menuShowcase,
     giftProducts,
   };

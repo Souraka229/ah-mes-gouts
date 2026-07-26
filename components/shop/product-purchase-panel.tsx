@@ -1,23 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Loader2, Minus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
   isProductAvailable,
-} from "@/lib/mock-data";
-import {
-  getLowStockLabel,
-  isLowStock,
-} from "@/lib/product-stock-display";
-import { Badge } from "@/components/ui/badge";
-import { supplementOptions } from "@/lib/supplements";
+} from "@/lib/catalog-utils";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
@@ -27,9 +20,6 @@ type ProductPurchasePanelProps = {
 
 export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
   const addItem = useCartStore((state) => state.addItem);
-  const [selectedSupplementIds, setSelectedSupplementIds] = useState<string[]>(
-    [],
-  );
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
@@ -37,26 +27,8 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
   const available = isProductAvailable(product);
   const baseUnitPrice = getProductPrice(product);
 
-  const selectedSupplements = useMemo(
-    () =>
-      supplementOptions.filter((option) =>
-        selectedSupplementIds.includes(option.id),
-      ),
-    [selectedSupplementIds],
-  );
-
-  const supplementsTotal = selectedSupplements.reduce(
-    (sum, supplement) => sum + supplement.price,
-    0,
-  );
-  const unitPrice = baseUnitPrice + supplementsTotal;
+  const unitPrice = baseUnitPrice;
   const totalPrice = unitPrice * quantity;
-
-  const toggleSupplement = (id: string, checked: boolean) => {
-    setSelectedSupplementIds((current) =>
-      checked ? [...current, id] : current.filter((item) => item !== id),
-    );
-  };
 
   const handleAddToCart = async () => {
     if (!available || isAdding) return;
@@ -70,7 +42,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
       name: product.name,
       imageUrl: product.imageUrl,
       baseUnitPrice,
-      supplements: selectedSupplements,
+      supplements: [],
       quantity,
     });
 
@@ -102,59 +74,9 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         <p className="mt-2 font-display text-4xl font-semibold text-primary">
           {formatPrice(baseUnitPrice)}
         </p>
-        {isLowStock(product) && (
-          <Badge className="mt-3 border-0 bg-secondary/80 text-primary">
-            {getLowStockLabel(product)}
-          </Badge>
-        )}
         <p className="mt-4 font-body leading-relaxed text-muted-foreground">
           {product.description}
         </p>
-      </div>
-
-      <div>
-        <h2 className="font-display text-xl font-semibold text-primary">
-          Suppléments
-        </h2>
-        <p className="mt-1 font-body text-sm text-muted-foreground">
-          Personnalisez votre création — sélection multiple.
-        </p>
-        <ul className="mt-4 space-y-3">
-          {supplementOptions.map((option) => {
-            const checked = selectedSupplementIds.includes(option.id);
-            const inputId = `supplement-${option.id}`;
-
-            return (
-              <li key={option.id}>
-                <label
-                  htmlFor={inputId}
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between gap-4 rounded-xl border p-4 transition-colors duration-200",
-                    checked
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:bg-muted/50",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id={inputId}
-                      checked={checked}
-                      onCheckedChange={(value) =>
-                        toggleSupplement(option.id, value === true)
-                      }
-                    />
-                    <span className="font-body text-sm font-medium text-text">
-                      {option.name}
-                    </span>
-                  </div>
-                  <span className="font-body text-sm text-muted-foreground">
-                    +{formatPrice(option.price)}
-                  </span>
-                </label>
-              </li>
-            );
-          })}
-        </ul>
       </div>
 
       <div>
@@ -188,10 +110,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
               <Plus className="size-4" />
             </button>
           </div>
-          <p className="font-body text-sm text-muted-foreground">
-            {product.stockRemaining} disponible
-            {product.stockRemaining > 1 ? "s" : ""}
-          </p>
         </div>
       </div>
 
@@ -202,13 +120,6 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             {formatPrice(totalPrice)}
           </span>
         </div>
-        {selectedSupplements.length > 0 && (
-          <p className="mt-2 font-body text-xs text-muted-foreground">
-            Inclut {selectedSupplements.length} supplément
-            {selectedSupplements.length > 1 ? "s" : ""} ·{" "}
-            {formatPrice(unitPrice)} / unité
-          </p>
-        )}
       </div>
 
       <Button

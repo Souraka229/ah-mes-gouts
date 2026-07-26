@@ -30,10 +30,6 @@ export function AdminPromotionsPage() {
           Produits en promotion. Modifiez les prix promo depuis{" "}
           <Link href="/admin/produits" className="text-primary underline">
             Produits
-          </Link>{" "}
-          ou l&apos;{" "}
-          <Link href="/admin/assistant" className="text-primary underline">
-            Assistant IA
           </Link>
           .
         </p>

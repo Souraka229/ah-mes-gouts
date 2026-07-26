@@ -9,7 +9,6 @@ import {
 import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getAllServerOrders } from "@/lib/server/order-repository";
-import { getAllSlotBookings } from "@/lib/server/slot-bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -47,16 +46,15 @@ export async function GET() {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       ),
-      slotBookings: getAllSlotBookings(),
       storage: {
         orders: "postgres (prisma) — Order",
         deliveryConfig: "postgres (prisma) — DeliveryZone + DeliverySchedule",
         catalog: "postgres (prisma) — Product",
         menus: "postgres (prisma) — Menu",
-        siteContent: "postgres (prisma) — SiteContentStore",
-        siteSettings: "postgres (prisma) — SiteSettingsStore",
+        boutiqueSettings: "postgres (prisma) — SiteSettingsStore",
         adminLog: "postgres (prisma) — AdminActionLog",
-        slotBookings: "mémoire process (non persisté)",
+        idempotency: "postgres — OrderIdempotencyKey",
+        rateLimit: "postgres — RateLimitBucket",
       },
     },
     { headers: { "Cache-Control": "no-store" } },

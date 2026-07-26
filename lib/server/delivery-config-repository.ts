@@ -1,5 +1,9 @@
 import { randomUUID } from "crypto";
 
+import { revalidateTag } from "next/cache";
+
+import { unstable_cache } from "next/cache";
+
 import type {
   DeliveryConfig,
   DeliveryOptions,
@@ -212,17 +216,23 @@ async function writeConfigToDb(config: DeliveryConfig): Promise<void> {
 }
 
 export async function getDeliveryConfig(): Promise<DeliveryConfig> {
-  // Toujours lire la DB : un cache process-local sur Vercel masquait les syncs
-  // zones (affiches A–E) et pouvait réécrire d’anciennes zones en admin.
-  const fromDb = await readConfigFromDb();
-  const config = fromDb ?? createDefaultConfig();
-
-  if (!fromDb) {
-    await writeConfigToDb(config);
-  }
-
-  return config;
+  return getCachedDeliveryConfig();
 }
+
+const getCachedDeliveryConfig = unstable_cache(
+  async (): Promise<DeliveryConfig> => {
+    const fromDb = await readConfigFromDb();
+    const config = fromDb ?? createDefaultConfig();
+
+    if (!fromDb) {
+      await writeConfigToDb(config);
+    }
+
+    return config;
+  },
+  ["delivery-config-v1"],
+  { revalidate: 60, tags: ["delivery-config"] },
+);
 
 export async function saveDeliveryConfig(
   config: DeliveryConfig,
@@ -232,6 +242,7 @@ export async function saveDeliveryConfig(
     options: config.options ?? defaultOptions(),
   };
   await writeConfigToDb(withOptions);
+  revalidateTag("delivery-config");
   return withOptions;
 }
 

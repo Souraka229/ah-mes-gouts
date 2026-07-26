@@ -8,6 +8,7 @@ import {
   Navigation,
   Package,
   Phone,
+  PhoneOff,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -98,6 +99,25 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
         driverStartedAt: new Date().toISOString(),
       });
       toast.success("En cours de livraison");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+      void load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const markUnreachable = async (order: DriverOrderView) => {
+    setBusyId(order.id);
+    try {
+      const res = await fetch(
+        `/api/livreur/${accessToken}/orders/${order.id}/unreachable`,
+        { method: "POST" },
+      );
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Action impossible");
+      patchOrder(order.id, { unreachableAt: new Date().toISOString() });
+      toast.success("Signalé — le back office va rappeler la cliente");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur");
       void load();
@@ -291,7 +311,14 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                 </a>
               </div>
 
-              <div className="border-t border-border p-3">
+              {order.unreachableAt && (
+                <div className="mx-3 flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 font-body text-sm font-semibold text-red-700">
+                  <PhoneOff className="size-4 shrink-0" aria-hidden />
+                  Injoignable signalé — le back office rappelle la cliente
+                </div>
+              )}
+
+              <div className="space-y-2 border-t border-border p-3">
                 {order.status === "prete" ? (
                   <Button
                     type="button"
@@ -308,20 +335,33 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                     Je pars livrer
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    size="lg"
-                    className="min-h-14 w-full cursor-pointer gap-2 bg-success text-base text-success-foreground hover:bg-success/90"
-                    disabled={busyId === order.id}
-                    onClick={() => void markDelivered(order)}
-                  >
-                    {busyId === order.id ? (
-                      <Loader2 className="size-5 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="size-5" />
+                  <>
+                    <Button
+                      type="button"
+                      size="lg"
+                      className="min-h-14 w-full cursor-pointer gap-2 bg-success text-base text-success-foreground hover:bg-success/90"
+                      disabled={busyId === order.id}
+                      onClick={() => void markDelivered(order)}
+                    >
+                      {busyId === order.id ? (
+                        <Loader2 className="size-5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="size-5" />
+                      )}
+                      Livré
+                    </Button>
+                    {!order.unreachableAt && (
+                      <button
+                        type="button"
+                        disabled={busyId === order.id}
+                        onClick={() => void markUnreachable(order)}
+                        className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 font-body text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60"
+                      >
+                        <PhoneOff className="size-5" aria-hidden />
+                        Client injoignable
+                      </button>
                     )}
-                    Livré
-                  </Button>
+                  </>
                 )}
               </div>
             </li>

@@ -6,7 +6,7 @@ import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { BrandLogo } from "@/components/shop/brand-logo";
-import { CartIconButton } from "@/components/shop/cart-drawer";
+import { CartIconButton } from "@/components/shop/cart-icon-button";
 import { SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ export function SiteHeader() {
       className={cn(
         "sticky top-0 z-50 transition-[background-color,box-shadow,border-color,backdrop-filter] duration-300",
         solidHeader
-          ? "border-b border-border/50 bg-bg/90 shadow-[0_1px_16px_rgba(36,23,38,0.06)] backdrop-blur-md"
+          ? "glass border-b border-white/40"
           : "absolute inset-x-0 top-0 border-b border-white/[0.06] bg-gradient-to-b from-primary/55 via-primary/20 to-transparent",
       )}
     >

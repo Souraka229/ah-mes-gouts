@@ -36,6 +36,7 @@ function toScheduledMenu(row: {
   status: PrismaMenuStatus;
   productIds: string[];
   displayOrder: number[];
+  dailyStock: number[];
   createdAt: Date;
 }): ScheduledMenu {
   return {
@@ -45,6 +46,7 @@ function toScheduledMenu(row: {
     status: fromPrismaStatus(row.status),
     productIds: row.productIds,
     displayOrder: row.displayOrder,
+    dailyStock: row.dailyStock,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -57,6 +59,7 @@ function toMenuRow(menu: ScheduledMenu) {
     status: toPrismaStatus(menu.status),
     productIds: menu.productIds,
     displayOrder: menu.displayOrder,
+    dailyStock: menu.dailyStock,
     createdAt: new Date(menu.createdAt),
   };
 }
@@ -69,11 +72,13 @@ function defaultActivateAt(date: Date, hour = 20, minute = 0): string {
 
 async function seedMenus(): Promise<ScheduledMenu[]> {
   const catalog = await getAdminCatalog();
-  const productIds = catalog
+  const selected = catalog
     .filter((p) => !p.isGiftCard && p.slug !== "carte-cadeau")
-    .slice(0, 8)
-    .map((p) => p.id);
+    .slice(0, 8);
+  const productIds = selected.map((p) => p.id);
   const displayOrder = productIds.map((_, i) => i);
+  // Stock du jour par défaut = stock actuel du produit.
+  const dailyStock = selected.map((p) => p.stockRemaining);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -85,6 +90,7 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
     status: "active",
     productIds,
     displayOrder,
+    dailyStock,
     createdAt: new Date().toISOString(),
   };
 
@@ -98,6 +104,7 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
     status: "scheduled",
     productIds: [...productIds],
     displayOrder: [...displayOrder],
+    dailyStock: [...dailyStock],
     createdAt: new Date().toISOString(),
   };
 
@@ -167,6 +174,7 @@ export async function createMenu(input: {
   activateAt: string;
   productIds: string[];
   displayOrder: number[];
+  dailyStock?: number[];
 }): Promise<ScheduledMenu> {
   const menu: ScheduledMenu = {
     id: randomUUID(),
@@ -175,6 +183,8 @@ export async function createMenu(input: {
     status: "scheduled",
     productIds: input.productIds,
     displayOrder: input.displayOrder,
+    // Par défaut : pas de cible de stock (0 = illimité, on ne réinitialise pas).
+    dailyStock: input.dailyStock ?? input.productIds.map(() => 0),
     createdAt: new Date().toISOString(),
   };
 
@@ -189,7 +199,7 @@ export async function updateMenu(
   patch: Partial<
     Pick<
       ScheduledMenu,
-      "date" | "activateAt" | "productIds" | "displayOrder" | "status"
+      "date" | "activateAt" | "productIds" | "displayOrder" | "status" | "dailyStock"
     >
   >,
   options?: { forceActiveEdit?: boolean },
@@ -234,7 +244,31 @@ export async function duplicateMenu(
     activateAt: defaultActivateAt(date, 20, 0),
     productIds: [...source.productIds],
     displayOrder: [...source.displayOrder],
+    dailyStock: [...source.dailyStock],
   });
+}
+
+/**
+ * Recharge le stock du jour : pour chaque produit du menu ayant une quantité
+ * cible définie (`dailyStock`), on remet `stockRemaining` à cette valeur.
+ * Une quantité ≤ 0 est ignorée (produit non piloté par le stock du jour).
+ */
+async function resetDailyStock(menu: ScheduledMenu): Promise<void> {
+  const targets = menu.productIds
+    .map((productId, i) => ({ productId, quantity: menu.dailyStock[i] ?? 0 }))
+    .filter((t) => t.quantity > 0);
+
+  if (targets.length === 0) return;
+
+  const prisma = getPrisma();
+  await prisma.$transaction(
+    targets.map((t) =>
+      prisma.product.update({
+        where: { id: t.productId },
+        data: { stockRemaining: t.quantity },
+      }),
+    ),
+  );
 }
 
 export async function activateDueMenus(): Promise<ScheduledMenu[]> {
@@ -264,6 +298,15 @@ export async function activateDueMenus(): Promise<ScheduledMenu[]> {
 
     await saveMenus(menus);
 
+    // Chaque menu qui s'active remet le stock du jour au plein.
+    for (const menu of activated) {
+      try {
+        await resetDailyStock(menu);
+      } catch {
+        // Produit hors base / erreur ponctuelle : on n'empêche pas l'activation.
+      }
+    }
+
     for (const menu of activated) {
       await appendAdminActionLog({
         adminName: "Système",
@@ -290,11 +333,14 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
   const active = await getActiveMenu();
 
   if (!active || active.productIds.length === 0) {
-    const { products } = await import("@/lib/mock-data");
-    return products;
+    return catalog.filter((p) => p.isMenuDuJour);
   }
 
+  // Résolution robuste : par ID puis par slug. Après un reseed, les IDs du
+  // menu (ex. "6") peuvent ne plus correspondre aux IDs catalogue (UUID) —
+  // le repli par slug évite un menu du jour vide.
   const byId = new Map(catalog.map((p) => [p.id, p]));
+  const bySlug = new Map(catalog.map((p) => [p.slug, p]));
   const ordered: Product[] = [];
 
   const pairs = active.productIds.map((id, i) => ({
@@ -304,13 +350,13 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
   pairs.sort((a, b) => a.order - b.order);
 
   for (const { id } of pairs) {
-    const product = byId.get(id);
+    const product = byId.get(id) ?? bySlug.get(id);
     if (product) {
       ordered.push({ ...product, isMenuDuJour: true });
     }
   }
 
-  return ordered.length > 0 ? ordered : (await import("@/lib/mock-data")).products;
+  return ordered.length > 0 ? ordered : catalog.filter((p) => p.isMenuDuJour);
 }
 
 export async function reseedMenus(): Promise<ScheduledMenu[]> {

@@ -82,6 +82,7 @@ export type SavedOrder = {
   }[];
   subtotal: number;
   total: number;
+  paymentReference?: string | null;
   driverId?: string | null;
   driverName?: string | null;
   driverStartedAt?: string | null;

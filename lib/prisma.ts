@@ -12,6 +12,7 @@ export function getPrisma(): PrismaClient {
   }
 
   if (!globalForPrisma.prisma) {
+    // Production : DATABASE_URL doit inclure pgbouncer=true&connection_limit=1 (port 6543).
     globalForPrisma.prisma = new PrismaClient({
       log:
         process.env.NODE_ENV === "development"

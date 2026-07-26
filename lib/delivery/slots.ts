@@ -1,3 +1,4 @@
+import { DELIVERY_WAVES, PICKUP_WINDOW } from "@/lib/delivery/constants";
 import type {
   DeliveryScheduleConfig,
   FulfillmentType,
@@ -7,12 +8,6 @@ import type {
 function parseTimeToMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h! * 60 + m!;
-}
-
-function formatMinutes(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function startOfDay(date: Date): Date {
@@ -67,34 +62,56 @@ export function isDateClosed(
   return !getScheduleForDay(schedules, type, date.getDay());
 }
 
+function timeOnDate(date: Date, time: string): Date {
+  const minutes = parseTimeToMinutes(time);
+  const d = new Date(date);
+  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return d;
+}
+
+/**
+ * Créneaux proposés à la cliente.
+ * - Livraison : 2 vagues fixes (13h–15h30, 16h–18h30).
+ * - Retrait / sur place : une seule fenêtre large (jusqu'à 19h).
+ * Le jour reste piloté par la config (schedule.isActive) ; seules
+ * les heures sont figées pour rester ultra simples.
+ */
 export function buildSlotsForDate(
   schedule: DeliveryScheduleConfig,
   date: Date,
   now = new Date(),
 ): TimeSlotOption[] {
-  const startMin = parseTimeToMinutes(schedule.startTime);
-  const endMin = parseTimeToMinutes(schedule.endTime);
-  const slots: TimeSlotOption[] = [];
+  const today = isSameDay(date, now);
 
-  for (let cursor = startMin; cursor + schedule.slotDuration <= endMin; cursor += schedule.slotDuration) {
-    const slotStart = new Date(date);
-    slotStart.setHours(Math.floor(cursor / 60), cursor % 60, 0, 0);
-
-    const slotEnd = new Date(slotStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + schedule.slotDuration);
-
-    if (isSameDay(date, now) && slotStart <= now) continue;
-
-    const label = `${formatMinutes(cursor)} – ${formatMinutes(cursor + schedule.slotDuration)}`;
-    slots.push({
-      start: slotStart.toISOString(),
-      end: slotEnd.toISOString(),
-      label,
-      slotKey: `${schedule.type}:${slotStart.toISOString()}`,
+  if (schedule.type === "delivery") {
+    return DELIVERY_WAVES.flatMap((wave) => {
+      const start = timeOnDate(date, wave.start);
+      const end = timeOnDate(date, wave.end);
+      // On masque une vague déjà commencée pour une commande du jour.
+      if (today && start <= now) return [];
+      return [
+        {
+          start: start.toISOString(),
+          end: end.toISOString(),
+          label: wave.label,
+          slotKey: `delivery:${wave.key}:${start.toISOString()}`,
+        },
+      ];
     });
   }
 
-  return slots;
+  // Retrait / sur place : fenêtre unique.
+  const start = timeOnDate(date, PICKUP_WINDOW.start);
+  const end = timeOnDate(date, PICKUP_WINDOW.end);
+  if (today && end <= now) return [];
+  return [
+    {
+      start: start.toISOString(),
+      end: end.toISOString(),
+      label: PICKUP_WINDOW.label,
+      slotKey: `pickup:${start.toISOString()}`,
+    },
+  ];
 }
 
 export function getSlotsForDate(

@@ -237,6 +237,11 @@ export function AdminMenusPage() {
     const dateObj = new Date(targetDate + "T12:00:00");
     const activateAt = defaultActivateAtISO(dateObj, h ?? 20, m ?? 0);
     const displayOrder = selectedIds.map((_, i) => i);
+    // Stock du jour = quantité saisie par produit. À 20h (activation du menu),
+    // le stock de chaque produit est remis à cette valeur.
+    const dailyStock = selectedIds.map(
+      (id) => productDrafts[id]?.stockRemaining ?? 0,
+    );
 
     setSaving(true);
     try {
@@ -251,6 +256,7 @@ export function AdminMenusPage() {
             activateAt,
             productIds: selectedIds,
             displayOrder,
+            dailyStock,
             forceActiveEdit: forceActive || editing.status === "active",
           }),
         });
@@ -272,6 +278,7 @@ export function AdminMenusPage() {
             activateAt,
             productIds: selectedIds,
             displayOrder,
+            dailyStock,
           }),
         });
         if (!res.ok) throw new Error();

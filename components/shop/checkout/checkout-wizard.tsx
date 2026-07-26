@@ -1,20 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
-
 import { CheckoutStepIndicator } from "@/components/shop/checkout/checkout-step-indicator";
 import { CheckoutSummary } from "@/components/shop/checkout/checkout-summary";
-import { StepClientForm } from "@/components/shop/checkout/step-client-form";
-import { StepDeliveryZone } from "@/components/shop/checkout/step-delivery-zone";
-import { StepMode } from "@/components/shop/checkout/step-mode";
-import { StepPayment } from "@/components/shop/checkout/step-payment";
-import { StepSchedule } from "@/components/shop/checkout/step-schedule";
-import { StepUpsell } from "@/components/shop/checkout/step-upsell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
@@ -22,12 +15,47 @@ import { cn } from "@/lib/utils";
 import type { CheckoutStep } from "@/types/order";
 import type { Product } from "@/types/product";
 
-const stepComponents: Record<CheckoutStep, React.ComponentType> = {
+const StepMode = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-mode").then((m) => m.StepMode),
+);
+const StepDeliveryZone = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-delivery-zone").then(
+      (m) => m.StepDeliveryZone,
+    ),
+);
+const StepSchedule = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-schedule").then(
+      (m) => m.StepSchedule,
+    ),
+);
+const StepClientForm = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-client-form").then(
+      (m) => m.StepClientForm,
+    ),
+);
+const StepUpsell = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-upsell").then((m) => m.StepUpsell),
+);
+const StepPayment = dynamic(
+  () =>
+    import("@/components/shop/checkout/step-payment").then(
+      (m) => m.StepPayment,
+    ),
+);
+
+const stepComponents: Record<
+  Exclude<CheckoutStep, "upsell">,
+  React.ComponentType
+> = {
   mode: StepMode,
   zone: StepDeliveryZone,
   schedule: StepSchedule,
   client: StepClientForm,
-  upsell: StepUpsell,
   payment: StepPayment,
 };
 
@@ -47,7 +75,6 @@ export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
     }
   }, [step, mode]);
 
-  const StepComponent = stepComponents[step];
   const canGoBack = step !== "mode";
   const showZone = mode === "delivery";
 
@@ -87,21 +114,19 @@ export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -24 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-          >
-            {step === "upsell" ? (
-              <StepUpsell candidates={upsellCandidates} />
-            ) : (
-              <StepComponent />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div
+          key={step}
+          className="checkout-step-enter"
+        >
+          {step === "upsell" ? (
+            <StepUpsell candidates={upsellCandidates} />
+          ) : (
+            (() => {
+              const StepComponent = stepComponents[step];
+              return <StepComponent />;
+            })()
+          )}
+        </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
           <CheckoutSummary />

@@ -116,6 +116,7 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
     subtotal: order.subtotal,
     total: order.total,
     paymentMethod: toPrismaPaymentMethod(order.paymentMethod),
+    paymentReference: order.paymentReference ?? null,
     clientFirstName: order.client.firstName,
     clientLastName: order.client.lastName,
     clientPhone: order.client.phone,
@@ -131,6 +132,7 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
     senderVisible: order.gift?.senderVisible ?? true,
     items: {
       create: order.items.map((item) => ({
+        slug: item.slug ?? null,
         name: item.name,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -183,11 +185,13 @@ export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
         }
       : null,
     paymentMethod: fromPrismaPaymentMethod(row.paymentMethod),
+    paymentReference: row.paymentReference,
     items: row.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       supplements: item.supplements,
+      slug: item.slug ?? undefined,
     })),
     subtotal: row.subtotal,
     total: row.total,

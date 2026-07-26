@@ -9,6 +9,9 @@ export type ScheduledMenu = {
   status: MenuStatus;
   productIds: string[];
   displayOrder: number[];
+  /** Stock du jour par produit (même ordre que productIds). Réinitialise le
+   *  stockRemaining à l'activation du menu (20h la veille). */
+  dailyStock: number[];
   createdAt: string;
 };
 

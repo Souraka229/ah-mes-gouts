@@ -4,7 +4,7 @@
  */
 import type { NextRequest } from "next/server";
 
-import type { AdminRole } from "@/lib/admin-assistant/types";
+import type { AdminRole } from "@/lib/admin/types";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
 
 export const ADMIN_SESSION_COOKIE = "amg_admin_session";

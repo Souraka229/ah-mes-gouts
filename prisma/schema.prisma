@@ -165,6 +165,7 @@ model Order {
   subtotal      Int
   total         Int
   paymentMethod PaymentMethod
+  paymentReference String?
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -201,12 +202,33 @@ model Order {
   @@index([createdAt])
   @@index([driverId])
   @@index([status])
+  @@index([scheduledSlotStart, fulfillmentType, status])
+  @@index([paymentReference])
+}
+
+/// Idempotence checkout — remplace le cache RAM multi-instance.
+model OrderIdempotencyKey {
+  key       String   @id
+  orderId   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Rate limiting distribué (remplace Map process-local).
+model RateLimitBucket {
+  key     String   @id
+  count   Int      @default(1)
+  resetAt DateTime
+
+  @@index([resetAt])
 }
 
 model OrderItem {
   id       String @id @default(cuid())
   orderId  String
   order    Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  slug     String?
   name     String
   quantity Int
   unitPrice Int
@@ -249,16 +271,12 @@ model Menu {
   status       MenuStatus
   productIds   String[]
   displayOrder Int[]
+  /** Stock du jour par produit (aligné sur productIds) — appliqué à l'activation 20h. */
+  dailyStock   Int[]      @default([])
   createdAt    DateTime   @default(now())
 
   @@index([status])
   @@index([activateAt])
-}
-
-model SiteContentStore {
-  id        String   @id @default("default")
-  data      Json
-  updatedAt DateTime @updatedAt
 }
 
 model SiteSettingsStore {

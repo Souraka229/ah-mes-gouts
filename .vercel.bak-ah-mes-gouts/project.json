@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_sf59iutMnjQ8TpxFlmQCF3GDL3gw",
+  "orgId": "team_7QV9DDy0niKT5rQ70odT6xLd",
+  "projectName": "ah-mes-gouts",
+  "settings": {
+    "createdAt": 1782939422987,
+    "framework": "nextjs",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

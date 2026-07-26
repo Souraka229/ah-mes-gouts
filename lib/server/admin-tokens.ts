@@ -1,4 +1,4 @@
-import type { AdminRole } from "@/lib/admin-assistant/types";
+import type { AdminRole } from "@/lib/admin/types";
 
 export type AdminTokenEntry = {
   id: string;

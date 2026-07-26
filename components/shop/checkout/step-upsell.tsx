@@ -10,9 +10,8 @@ import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
-  getUpsellProducts,
   isGiftCardProduct,
-} from "@/lib/mock-data";
+} from "@/lib/catalog-utils";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
@@ -46,11 +45,9 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
 
   const suggestions = useMemo(() => {
     const inCart = new Set(cartItems.map((item) => item.productId));
-    const pool = (
-      candidates && candidates.length > 0
-        ? candidates
-        : getUpsellProducts(cartItems.map((item) => item.productId))
-    ).filter((product) => !inCart.has(product.id));
+    const pool = (candidates ?? []).filter(
+      (product) => !inCart.has(product.id),
+    );
 
     const chocolates = pool.filter(isChocolateSupplement);
     const rest = pool.filter((product) => !isChocolateSupplement(product));
@@ -187,9 +184,14 @@ export function StepUpsell({ candidates }: StepUpsellProps) {
                 <p className="font-display text-lg font-semibold text-primary">
                   {product.name}
                 </p>
-                <p className="mt-1 font-body text-sm text-muted-foreground">
+                <p className="mt-1 font-body text-sm font-semibold text-text">
                   {formatPrice(getProductPrice(product))}
                 </p>
+                {product.description && (
+                  <p className="mt-1 line-clamp-2 font-body text-xs text-muted-foreground">
+                    {product.description}
+                  </p>
+                )}
                 {isCard && isGift && product.giftCardMessage && (
                   <p className="mt-2 line-clamp-2 font-body text-xs text-muted-foreground italic">
                     &ldquo;{product.giftCardMessage}&rdquo;

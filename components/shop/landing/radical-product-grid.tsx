@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Heart, Square } from "lucide-react";
 
 import { formatPrice } from "@/lib/format";
-import { menuPacks } from "@/lib/landing-data";
 import {
   BOUTIQUE_HOURS,
   PRODUCT_SHAPE_BY_SLUG,
@@ -16,7 +15,6 @@ import type { ProductGridSectionContent } from "@/types/site-content";
 
 import { GoldRibbon } from "@/components/shop/landing/gold-ribbon";
 import { MaskLine, Reveal } from "@/components/shop/landing/reveal";
-import { MenuPackCard } from "@/components/shop/landing/menu-pack-card";
 import { NightDaySection } from "@/components/shop/landing/night-day-section";
 
 function resolveShape(item: MenuShowcaseItem): ProductShapeId | undefined {
@@ -219,24 +217,6 @@ export function RadicalProductGridSection({
         </ul>
       )}
 
-      {/* Formules — présentées comme un encart, pas une grille e-commerce */}
-      <div className="mt-20 lg:mt-24">
-        <Reveal>
-          <h3 className="font-display text-2xl font-light italic text-primary sm:text-3xl">
-            {content.packsSectionTitle}
-          </h3>
-        </Reveal>
-        <div
-          className="mt-7 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-3"
-          style={{ scrollSnapType: "x mandatory" }}
-        >
-          {menuPacks.map((pack, i) => (
-            <Reveal key={pack.id} delay={i * 0.07} className="shrink-0">
-              <MenuPackCard pack={pack} />
-            </Reveal>
-          ))}
-        </div>
-      </div>
     </NightDaySection>
   );
 }

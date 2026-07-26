@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto";
 
+import { Prisma } from "@prisma/client";
+
 import { getPrisma } from "@/lib/prisma";
 import { buildDemoOrders } from "@/lib/server/demo-orders";
 import {
@@ -14,6 +16,7 @@ import {
   canDriverMarkDelivered,
   canDriverStartDelivery,
 } from "@/lib/orders/status-machine";
+import { markUnreachable, parseOrderFlags } from "@/lib/orders/order-flags";
 import type { DriverOrderView } from "@/types/driver";
 import type { OrderStatus, SavedOrder } from "@/types/order";
 
@@ -41,6 +44,49 @@ export async function saveServerOrderWithRetry(
     maxAttempts: 3,
     baseDelayMs: 200,
   });
+}
+
+/** Créneau complet — erreur métier lors de la réservation atomique. */
+export class SlotFullError extends Error {
+  constructor() {
+    super("Ce créneau est complet.");
+    this.name = "SlotFullError";
+  }
+}
+
+/**
+ * Insert commande + vérif capacité créneau en une transaction Serializable.
+ * Remplace reserveSlot() en RAM — safe multi-instance Vercel.
+ */
+export async function saveServerOrderWithSlotReservation(
+  order: SavedOrder,
+  slot: {
+    scheduledSlotStart: Date;
+    fulfillmentType: string;
+    maxOrdersPerSlot: number;
+  },
+): Promise<void> {
+  const prisma = getPrisma();
+  const data = toPrismaOrderCreateInput(order);
+
+  await prisma.$transaction(
+    async (tx) => {
+      const count = await tx.order.count({
+        where: {
+          scheduledSlotStart: slot.scheduledSlotStart,
+          fulfillmentType: slot.fulfillmentType,
+          status: { not: "ANNULEE" },
+        },
+      });
+
+      if (count >= slot.maxOrdersPerSlot) {
+        throw new SlotFullError();
+      }
+
+      await tx.order.create({ data });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
 }
 
 /** Stock insuffisant à la création — erreur métier, jamais réessayée. */
@@ -73,7 +119,6 @@ export async function createServerOrderWithStock(
         where: { slug: claim.slug },
         select: { id: true },
       });
-      // Produit hors base (fallback mock) : pas de suivi de stock possible.
       if (!tracked) continue;
 
       const result = await tx.product.updateMany({
@@ -95,6 +140,72 @@ export async function createServerOrderWithStock(
   });
 }
 
+/**
+ * Confirme le paiement : décrémente le stock et passe la commande en PAIEMENT_CONFIRME.
+ * Idempotent si déjà confirmée.
+ */
+export async function confirmServerOrderPayment(
+  orderId: string,
+  stockClaims: { slug: string; name: string; quantity: number }[],
+  paymentReference?: string,
+): Promise<SavedOrder | undefined> {
+  const prisma = getPrisma();
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { items: true, driver: { select: { name: true } } },
+      });
+
+      if (!existing) return undefined;
+
+      const currentStatus = fromPrismaOrderStatus(existing.status);
+      if (currentStatus !== "recue") {
+        return fromPrismaOrder(existing);
+      }
+
+      for (const claim of stockClaims) {
+        const tracked = await tx.product.findUnique({
+          where: { slug: claim.slug },
+          select: { id: true },
+        });
+        if (!tracked) continue;
+
+        const result = await tx.product.updateMany({
+          where: { slug: claim.slug, stockRemaining: { gte: claim.quantity } },
+          data: { stockRemaining: { decrement: claim.quantity } },
+        });
+
+        if (result.count === 0) {
+          throw new OrderStockError([
+            {
+              name: claim.name,
+              message: "Ce produit vient d'être épuisé.",
+            },
+          ]);
+        }
+      }
+
+      const row = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: toPrismaOrderStatus("paiement_confirme"),
+          ...(paymentReference ? { paymentReference } : {}),
+        },
+        include: { items: true, driver: { select: { name: true } } },
+      });
+
+      return fromPrismaOrder(row);
+    });
+  } catch (error) {
+    if (error instanceof OrderStockError) {
+      throw error;
+    }
+    return undefined;
+  }
+}
+
 export async function getServerOrder(
   orderId: string,
 ): Promise<SavedOrder | undefined> {
@@ -107,10 +218,31 @@ export async function getServerOrder(
 }
 
 export async function getAllServerOrders(): Promise<SavedOrder[]> {
+  return getServerOrdersForAdmin({ limit: 500 });
+}
+
+export type AdminOrdersQuery = {
+  /** Nombre max de commandes (défaut 100, plafond 200). */
+  limit?: number;
+  /** Fenêtre glissante en jours (défaut 7). */
+  days?: number;
+};
+
+/** Liste paginée pour le KDS — évite le full scan sous charge. */
+export async function getServerOrdersForAdmin(
+  query: AdminOrdersQuery = {},
+): Promise<SavedOrder[]> {
+  const limit = Math.min(Math.max(query.limit ?? 100, 1), 200);
+  const days = Math.min(Math.max(query.days ?? 7, 1), 30);
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
   const prisma = getPrisma();
   const rows = await prisma.order.findMany({
+    where: { createdAt: { gte: since } },
     include: { items: true, driver: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
+    take: limit,
   });
   return rows.map(fromPrismaOrder);
 }
@@ -233,6 +365,7 @@ function toDriverOrderView(
     collectOnDelivery: row.status === "PRETE" && row.paymentMethod !== "CARD",
     scheduledSlotStart: row.scheduledSlotStart?.toISOString() ?? null,
     driverStartedAt: row.driverStartedAt?.toISOString() ?? null,
+    unreachableAt: parseOrderFlags(row.clientMessage).unreachableAt,
   };
 }
 
@@ -264,6 +397,35 @@ export async function driverStartDelivery(
       status: "EN_LIVRAISON",
       driverStartedAt: now,
     },
+    include: { items: true, driver: { select: { name: true } } },
+  });
+
+  return fromPrismaOrder(updated);
+}
+
+/**
+ * Le livreur signale qu'il n'a pas pu joindre la cliente.
+ * Sans nouveau statut DB : on pose un marqueur horodaté dans clientMessage,
+ * relu par le back office (bandeau rouge « à rappeler »). La commande reste
+ * en cours de livraison pour que le livreur puisse retenter ou clôturer.
+ */
+export async function driverMarkUnreachable(
+  driverId: string,
+  orderId: string,
+): Promise<SavedOrder> {
+  const prisma = getPrisma();
+  const row = await prisma.order.findFirst({
+    where: { id: orderId, driverId },
+    include: { items: true, driver: { select: { name: true } } },
+  });
+
+  if (!row) {
+    throw new Error("Commande introuvable ou non assignée à ce livreur.");
+  }
+
+  const updated = await prisma.order.update({
+    where: { id: orderId },
+    data: { clientMessage: markUnreachable(row.clientMessage) },
     include: { items: true, driver: { select: { name: true } } },
   });
 

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Calendar,
+  ChevronDown,
   IceCreamCone,
   LayoutDashboard,
   LogOut,
@@ -25,21 +26,35 @@ type NavItem = {
   label: string;
   icon: typeof Package;
   adminOnly?: boolean;
+  /** Rangé sous « Plus » — accessible mais masqué par défaut. */
+  secondary?: boolean;
 };
 
+// L'essentiel au quotidien en premier ; le reste sous « Plus ».
 const NAV_ITEMS: NavItem[] = [
-  { href: "/admin", label: "Cockpit", icon: LayoutDashboard },
   { href: "/admin/commandes", label: "Commandes", icon: Package },
-  { href: "/admin/clients", label: "Clients", icon: Users },
-  { href: "/admin/menus", label: "Menu du jour", icon: Calendar },
   { href: "/admin/produits", label: "Produits", icon: IceCreamCone },
   { href: "/admin/livreurs", label: "Livreurs", icon: UserRound },
-  { href: "/admin/parametres/livraison", label: "Créneaux", icon: Truck },
+  {
+    href: "/admin/cockpit",
+    label: "Cockpit",
+    icon: LayoutDashboard,
+    secondary: true,
+  },
+  { href: "/admin/clients", label: "Clients", icon: Users, secondary: true },
+  { href: "/admin/menus", label: "Menu du jour", icon: Calendar, secondary: true },
+  {
+    href: "/admin/parametres/livraison",
+    label: "Créneaux",
+    icon: Truck,
+    secondary: true,
+  },
   {
     href: "/admin/parametres",
     label: "Paramètres",
     icon: Settings,
     adminOnly: true,
+    secondary: true,
   },
 ];
 
@@ -83,10 +98,69 @@ function NavLink({
   );
 }
 
+function NavSection({
+  primary,
+  secondary,
+  expanded,
+  onToggleMore,
+  isActive,
+  onNavigate,
+}: {
+  primary: NavItem[];
+  secondary: NavItem[];
+  expanded: boolean;
+  onToggleMore: () => void;
+  isActive: (href: string) => boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <>
+      {primary.map((item) => (
+        <NavLink
+          key={item.href}
+          item={item}
+          active={isActive(item.href)}
+          onNavigate={onNavigate}
+        />
+      ))}
+
+      {secondary.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={onToggleMore}
+            aria-expanded={expanded}
+            className="relative flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 font-body text-sm text-primary-foreground/70 transition-colors duration-150 hover:bg-white/[0.08] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            <ChevronDown
+              className={cn(
+                "size-4 shrink-0 opacity-90 transition-transform duration-200",
+                expanded && "rotate-180",
+              )}
+              aria-hidden
+            />
+            Plus
+          </button>
+          {expanded &&
+            secondary.map((item) => (
+              <NavLink
+                key={item.href}
+                item={item}
+                active={isActive(item.href)}
+                onNavigate={onNavigate}
+              />
+            ))}
+        </>
+      )}
+    </>
+  );
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [me, setMe] = useState<AdminMe | null>(null);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     void fetch("/api/admin/me", { cache: "no-store" })
@@ -100,7 +174,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   );
 
   const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
     if (href === "/admin/parametres") {
       return (
         pathname.startsWith("/admin/parametres") &&
@@ -109,6 +182,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     }
     return pathname.startsWith(href);
   };
+
+  const primaryNav = visibleNav.filter((item) => !item.secondary);
+  const secondaryNav = visibleNav.filter((item) => item.secondary);
+  // On déplie « Plus » d'office quand on est déjà sur une page secondaire.
+  const onSecondaryPage = secondaryNav.some((item) => isActive(item.href));
+  const moreExpanded = showMore || onSecondaryPage;
 
   const logout = () => {
     void fetch("/api/admin/auth", { method: "DELETE" }).then(() => {
@@ -134,13 +213,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-0.5 p-3" aria-label="Navigation admin">
-          {visibleNav.map((item) => (
-            <NavLink
-              key={item.href}
-              item={item}
-              active={isActive(item.href)}
-            />
-          ))}
+          <NavSection
+            primary={primaryNav}
+            secondary={secondaryNav}
+            expanded={moreExpanded}
+            onToggleMore={() => setShowMore((v) => !v)}
+            isActive={isActive}
+          />
         </nav>
 
         <div className="space-y-3 border-t border-white/10 p-4">
@@ -184,14 +263,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </button>
             </div>
             <nav className="flex-1 space-y-0.5 p-3">
-              {visibleNav.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  active={isActive(item.href)}
-                  onNavigate={() => setMobileOpen(false)}
-                />
-              ))}
+              <NavSection
+                primary={primaryNav}
+                secondary={secondaryNav}
+                expanded={moreExpanded}
+                onToggleMore={() => setShowMore((v) => !v)}
+                isActive={isActive}
+                onNavigate={() => setMobileOpen(false)}
+              />
             </nav>
             <div className="border-t border-white/10 p-4">
               <button

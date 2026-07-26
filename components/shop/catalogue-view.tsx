@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { IceCreamCone, Search } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
@@ -15,8 +16,7 @@ import { formatTodayFrench } from "@/lib/format-date";
 import {
   filterProducts,
   getPriceBounds,
-  products as fallbackProducts,
-} from "@/lib/mock-data";
+} from "@/lib/catalog-utils";
 import { cn } from "@/lib/utils";
 import {
   defaultCatalogueFilters,
@@ -27,19 +27,19 @@ import type { Product } from "@/types/product";
 type CatalogueTab = "menu" | "all";
 
 type CatalogueViewProps = {
-  initialPromotionsOnly?: boolean;
-  initialGiftsOnly?: boolean;
   menuProducts?: Product[];
   allProducts?: Product[];
 };
 
 export function CatalogueView({
-  initialPromotionsOnly = false,
-  initialGiftsOnly = false,
   menuProducts: menuProductsProp,
   allProducts: allProductsProp,
 }: CatalogueViewProps) {
-  const fullCatalog = allProductsProp ?? fallbackProducts;
+  const searchParams = useSearchParams();
+  const initialPromotionsOnly = searchParams.get("promotions") === "1";
+  const initialGiftsOnly = searchParams.get("cadeaux") === "1";
+
+  const fullCatalog = allProductsProp ?? [];
   const menuCatalog = menuProductsProp ?? fullCatalog.filter((p) => p.isMenuDuJour);
 
   const [activeTab, setActiveTab] = useState<CatalogueTab>("menu");
@@ -57,6 +57,14 @@ export function CatalogueView({
     promotionsOnly: initialPromotionsOnly,
     giftsOnly: initialGiftsOnly,
   }));
+
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      promotionsOnly: searchParams.get("promotions") === "1",
+      giftsOnly: searchParams.get("cadeaux") === "1",
+    }));
+  }, [searchParams]);
 
   const activeFilters = useMemo(
     () => ({ ...filters, search: debouncedSearch }),
@@ -187,7 +195,7 @@ export function CatalogueView({
               </div>
 
               {filteredMenu.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6">
                   {filteredMenu.map((product, index) => (
                     <ProductCard
                       key={product.id}
@@ -220,7 +228,7 @@ export function CatalogueView({
               </div>
 
               {filteredAll.length > 0 ? (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6">
                   {filteredAll.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}

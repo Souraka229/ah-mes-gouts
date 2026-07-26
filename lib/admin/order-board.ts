@@ -1,5 +1,6 @@
 import type { OrderStatus, SavedOrder } from "@/types/order";
 import { PAYMENT_METHOD_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
+import { parseOrderFlags, type OrderFlags } from "@/lib/orders/order-flags";
 
 export type OrderBoardTab = "nouvelles" | "preparation" | "livraison";
 
@@ -110,7 +111,7 @@ export function formatFulfillmentPlace(order: SavedOrder): string {
 export function getCakeMessage(order: SavedOrder): string | null {
   const gift = order.gift?.giftMessage?.trim();
   if (gift) return gift;
-  const client = order.client.message?.trim();
+  const client = parseOrderFlags(order.client.message).note;
   if (client) return client;
   return null;
 }
@@ -119,9 +120,15 @@ export function hasReferenceNote(order: SavedOrder): boolean {
   return order.items.some((i) => i.supplements.length > 0);
 }
 
+/** Choix d'emballage + signalement injoignable extraits du message. */
+export function getOrderFlags(order: SavedOrder): OrderFlags {
+  return parseOrderFlags(order.client.message);
+}
+
 export function getPrimaryAction(
   order: SavedOrder,
 ): { label: string; nextStatus: OrderStatus } | null {
+  const isDelivery = (order.fulfillmentType ?? order.mode) === "delivery";
   switch (order.status) {
     case "recue":
     case "paiement_confirme":
@@ -129,7 +136,10 @@ export function getPrimaryAction(
     case "preparation":
       return { label: "Marquer prête", nextStatus: "prete" };
     case "prete":
-      return { label: "En livraison", nextStatus: "en_livraison" };
+      // Boutique (emporter / sur place) : pas de livraison → on termine direct.
+      return isDelivery
+        ? { label: "En livraison", nextStatus: "en_livraison" }
+        : { label: "Terminer", nextStatus: "livree" };
     case "en_livraison":
       return { label: "Terminer", nextStatus: "livree" };
     default:

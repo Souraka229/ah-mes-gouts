@@ -28,7 +28,7 @@ const MODE_OPTIONS: ModeOption[] = [
     mode: "pickup",
     icon: ShoppingBag,
     title: "À emporter",
-    description: "Passez récupérer votre commande emballée et repartez avec.",
+    description: "Vous passez chercher votre commande en boutique (jusqu'à 19h).",
   },
   {
     mode: "delivery",

@@ -9,7 +9,7 @@ import { ProductViewTracker } from "@/components/shop/product-view-tracker";
 import { SimilarProducts } from "@/components/shop/similar-products";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/format";
-import { getProductPrice, isProductAvailable } from "@/lib/mock-data";
+import { getProductPrice, isProductAvailable } from "@/lib/catalog-utils";
 import { getOgImageUrl } from "@/lib/seo/images";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { SITE_NAME } from "@/lib/seo/site";

@@ -1,13 +1,9 @@
-import {
-  getProductPrice,
-  isGiftCardProduct,
-  isProductAvailable,
-  products as fallbackProducts,
-} from "@/lib/mock-data";
 import { getProductGalleryImages } from "@/lib/product-images";
+import { isGiftCardProduct, isProductAvailable, getProductPrice } from "@/lib/catalog-utils";
 import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { getShopProductsFromActiveMenu } from "@/lib/server/menu-repository";
 import type { Product } from "@/types/product";
+import { unstable_cache } from "next/cache";
 
 export { getShopProductsFromActiveMenu };
 
@@ -21,9 +17,14 @@ export type MenuShowcaseItem = {
   product: Product;
 };
 
+const getCachedCatalog = unstable_cache(
+  async () => getAdminCatalog(),
+  ["shop-full-catalog"],
+  { revalidate: 120, tags: ["catalog"] },
+);
+
 export async function getFullCatalog(): Promise<Product[]> {
-  const catalog = await getAdminCatalog();
-  return catalog.length > 0 ? catalog : fallbackProducts;
+  return getCachedCatalog();
 }
 
 export async function getShopProductBySlug(

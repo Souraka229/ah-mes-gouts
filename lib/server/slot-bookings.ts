@@ -3,17 +3,6 @@ import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
 
-declare global {
-  var __amgSlotBookings: Map<string, number> | undefined;
-}
-
-function getBookingStore(): Map<string, number> {
-  if (!globalThis.__amgSlotBookings) {
-    globalThis.__amgSlotBookings = new Map();
-  }
-  return globalThis.__amgSlotBookings;
-}
-
 export function parseSlotKey(slotKey: string): {
   type: string;
   startIso: string;
@@ -45,16 +34,9 @@ export async function getMaxOrdersPerSlot(): Promise<number> {
   return options.maxOrdersPerSlot;
 }
 
-export function getSlotBookingCount(slotKey: string): number {
-  return getBookingStore().get(slotKey) ?? 0;
-}
-
+/** Comptage DB uniquement — source de vérité unique (plus de Map RAM). */
 export async function getSlotUsageCount(slotKey: string): Promise<number> {
-  const [dbCount, memoryCount] = await Promise.all([
-    countOrdersForSlot(slotKey),
-    Promise.resolve(getSlotBookingCount(slotKey)),
-  ]);
-  return Math.max(dbCount, memoryCount);
+  return countOrdersForSlot(slotKey);
 }
 
 export async function isSlotAvailable(slotKey: string): Promise<boolean> {
@@ -65,29 +47,8 @@ export async function isSlotAvailable(slotKey: string): Promise<boolean> {
   return usage < max;
 }
 
-export async function reserveSlot(slotKey: string): Promise<boolean> {
-  const available = await isSlotAvailable(slotKey);
-  if (!available) return false;
-
-  const store = getBookingStore();
-  const current = store.get(slotKey) ?? 0;
-  store.set(slotKey, current + 1);
-  return true;
-}
-
-export function releaseSlot(slotKey: string): void {
-  const store = getBookingStore();
-  const current = store.get(slotKey) ?? 0;
-  if (current <= 1) store.delete(slotKey);
-  else store.set(slotKey, current - 1);
-}
-
-export function getAllSlotBookings(): Record<string, number> {
-  return Object.fromEntries(getBookingStore());
-}
-
 export function buildSlotKey(
-  type: import("@/lib/delivery/types").FulfillmentType,
+  type: FulfillmentType,
   startIso: string,
 ): string {
   return `${type}:${startIso}`;

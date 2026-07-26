@@ -78,10 +78,10 @@ export function StepSchedule() {
         </h1>
         <p className="mt-2 font-body text-muted-foreground">
           {mode === "delivery"
-            ? "Sélectionnez la date et l'heure de livraison souhaitées."
+            ? "Choisissez le jour et la vague de livraison (13h–15h30 ou 16h–18h30)."
             : mode === "dinein"
-              ? "Sélectionnez la date et l'heure de votre venue pour déguster sur place."
-              : "Sélectionnez la date et l'heure de retrait de votre commande."}
+              ? "Choisissez le jour de votre venue — vous passez quand vous voulez (jusqu'à 19h)."
+              : "Choisissez le jour — vous passez chercher quand vous voulez (jusqu'à 19h)."}
         </p>
       </div>
 

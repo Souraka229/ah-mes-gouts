@@ -111,18 +111,30 @@
     position: relative;
   }
 
-  /* Grain global — opacity 0.035, multiply, sur tout le site */
+  /* Grain global — texture CSS légère (pas de feTurbulence GPU-expensive) */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: 9998;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.028;
     mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-repeat: repeat;
-    background-size: 180px 180px;
+    background-image: radial-gradient(
+        rgba(36, 23, 38, 0.35) 0.6px,
+        transparent 0.7px
+      ),
+      radial-gradient(rgba(36, 23, 38, 0.2) 0.5px, transparent 0.6px);
+    background-size: 3px 3px, 5px 5px;
+    background-position:
+      0 0,
+      1px 2px;
+  }
+
+  @media (max-width: 768px), (pointer: coarse) {
+    body::before {
+      display: none;
+    }
   }
 
   h1,
@@ -152,6 +164,42 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes cart-pulse {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.18) rotate(-8deg);
+  }
+  70% {
+    transform: scale(1) rotate(8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes checkout-step-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.checkout-step-enter {
+  animation: checkout-step-enter 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-step-enter {
+    animation: none;
   }
 }
 
@@ -302,4 +350,115 @@ html.custom-cursor-active * {
 
 .typo-band-rotate-text--compact {
   font-size: clamp(1.25rem, 4vw, 2rem);
+}
+
+/* ─── Glassmorphism — surface translucide dépolie (header, panier, cartes) ─── */
+.glass {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 8px 32px rgba(36, 23, 38, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Liquid glass — reflet spéculaire diagonal + bord lumineux (façon verre épais).
+   À poser sur une surface `.glass` (ou `.glass-dark`) via la classe `.liquid`. */
+.liquid {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.liquid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.08) 24%,
+    transparent 46%,
+    transparent 72%,
+    rgba(255, 255, 255, 0.14) 100%
+  );
+  pointer-events: none;
+}
+.liquid::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(255, 255, 255, 0) 40%,
+    rgba(201, 169, 110, 0.35) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Variante sombre — pour surfaces posées sur l'écrin de nuit / le primary */
+.glass-dark {
+  background-color: rgba(31, 43, 77, 0.35);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Navigateurs sans backdrop-filter : repli opaque lisible */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: rgba(255, 255, 255, 0.92);
+  }
+  .glass-dark {
+    background-color: rgba(31, 43, 77, 0.9);
+  }
+}
+
+/* ─── Logo « or liquide » — reflet doré qui balaye lentement le mot-symbole ─── */
+@keyframes logo-sheen {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.logo-liquid-gold {
+  --logo-base: currentColor;
+  background-image: linear-gradient(
+    100deg,
+    var(--logo-base) 0%,
+    var(--logo-base) 38%,
+    #e7d3a8 47%,
+    #c9a96e 50%,
+    #e7d3a8 53%,
+    var(--logo-base) 62%,
+    var(--logo-base) 100%
+  );
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logo-sheen 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-liquid-gold {
+    animation: none;
+  }
 }

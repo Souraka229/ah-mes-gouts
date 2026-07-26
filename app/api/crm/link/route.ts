@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterSec } = checkRateLimit(
+  const { allowed, retryAfterSec } = await checkRateLimit(
     `crm:link:${ip}`,
     20,
     60_000,

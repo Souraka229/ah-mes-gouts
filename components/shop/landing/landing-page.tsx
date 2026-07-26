@@ -1,20 +1,56 @@
-import { RadicalBoutiqueSection } from "@/components/shop/landing/radical-boutique-section";
-import { GiftUpsellBandSection } from "@/components/shop/landing/gift-upsell-band";
+import dynamic from "next/dynamic";
+
 import { LandingShell } from "@/components/shop/landing/landing-shell";
-import { RadicalFormatsSection } from "@/components/shop/landing/radical-formats-section";
-import { RadicalFooterWordmarkSection } from "@/components/shop/landing/radical-footer-wordmark";
 import { RadicalHeroSection } from "@/components/shop/landing/radical-hero-section";
 import { RadicalProductGridSection } from "@/components/shop/landing/radical-product-grid";
-import { RadicalSignatureMomentSection } from "@/components/shop/landing/radical-signature-moment";
-import { RadicalSocialProofSection } from "@/components/shop/landing/radical-social-proof-section";
-import { RadicalValuesBand } from "@/components/shop/landing/radical-values-band";
 import type { HomePageContent } from "@/lib/server/home-content";
 
+const RadicalSignatureMomentSection = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-signature-moment").then(
+      (m) => m.RadicalSignatureMomentSection,
+    ),
+);
+const RadicalFormatsSection = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-formats-section").then(
+      (m) => m.RadicalFormatsSection,
+    ),
+);
+const RadicalBoutiqueSection = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-boutique-section").then(
+      (m) => m.RadicalBoutiqueSection,
+    ),
+);
+const GiftUpsellBandSection = dynamic(
+  () =>
+    import("@/components/shop/landing/gift-upsell-band").then(
+      (m) => m.GiftUpsellBandSection,
+    ),
+);
+const RadicalValuesBand = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-values-band").then(
+      (m) => m.RadicalValuesBand,
+    ),
+);
+const RadicalSocialProofSection = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-social-proof-section").then(
+      (m) => m.RadicalSocialProofSection,
+    ),
+);
+const RadicalFooterWordmarkSection = dynamic(
+  () =>
+    import("@/components/shop/landing/radical-footer-wordmark").then(
+      (m) => m.RadicalFooterWordmarkSection,
+    ),
+);
+
 /**
- * Landing « écrin de nuit » — ordre éditorial :
- * Hero → Menu du jour → Signature/savoir-faire → Catalogue teaser →
- * En boutique/Sur place → Cadeaux → Réassurance → Footer.
- * Alternance des aplats : violet ↔ crème ↔ bleu nuit ↔ crème…
+ * Landing « écrin de nuit » — hero + menu du jour au-dessus du fold ;
+ * le reste est code-splitté pour accélérer TTI.
  */
 export function LandingPage({ content }: { content: HomePageContent }) {
   const v = content.visibleSectionKeys;
@@ -45,7 +81,6 @@ export function LandingPage({ content }: { content: HomePageContent }) {
         />
       )}
 
-      {/* Réassurance — valeurs + avis, traitées avec la même exigence */}
       <RadicalValuesBand />
       <RadicalSocialProofSection />
 

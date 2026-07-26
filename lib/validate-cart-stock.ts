@@ -1,4 +1,3 @@
-import { products } from "@/lib/mock-data";
 import type { CartLineItem } from "@/types/cart";
 import type { Product } from "@/types/product";
 
@@ -42,9 +41,4 @@ export function validateCartStockWithCatalog(
   }
 
   return issues;
-}
-
-/** @deprecated Préférer l'API `/api/cart/validate-stock` avec le catalogue serveur. */
-export function validateCartStock(items: CartLineItem[]): StockValidationIssue[] {
-  return validateCartStockWithCatalog(items, products);
 }

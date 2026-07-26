@@ -22,7 +22,7 @@ function expectedLinkPayload(): string {
  */
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed } = checkRateLimit(`telegram:webhook:${ip}`, 40, 60_000);
+  const { allowed } = await checkRateLimit(`telegram:webhook:${ip}`, 40, 60_000);
   if (!allowed) {
     return NextResponse.json({ ok: true });
   }

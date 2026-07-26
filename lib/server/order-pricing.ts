@@ -1,4 +1,4 @@
-import { getProductPrice } from "@/lib/mock-data";
+import { getProductPrice } from "@/lib/catalog-utils";
 import { getFullCatalog } from "@/lib/server/shop-catalog";
 import { supplementOptions } from "@/lib/supplements";
 import type { SavedOrder } from "@/types/order";

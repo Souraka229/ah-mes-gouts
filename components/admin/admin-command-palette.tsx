@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Bot,
   Calendar,
   IceCreamCone,
   LayoutDashboard,
@@ -34,7 +33,7 @@ export function AdminCommandPalette() {
       {
         id: "dash",
         label: "Tableau de bord",
-        href: "/admin",
+        href: "/admin/cockpit",
         group: "Navigation",
       },
       {
@@ -60,12 +59,6 @@ export function AdminCommandPalette() {
         id: "delivery",
         label: "Livraison & créneaux",
         href: "/admin/parametres/livraison",
-        group: "Navigation",
-      },
-      {
-        id: "assistant",
-        label: "Assistant IA",
-        href: "/admin/assistant",
         group: "Navigation",
       },
       {
@@ -124,7 +117,6 @@ export function AdminCommandPalette() {
     if (id.includes("menu")) return Calendar;
     if (id.includes("product") || id.includes("stock")) return IceCreamCone;
     if (id.includes("delivery")) return Truck;
-    if (id.includes("assistant")) return Bot;
     return LayoutDashboard;
   };
 

@@ -1,23 +1,24 @@
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 
 /**
- * Display : Fraunces (variable) — sa plage opsz/wght porte à elle seule le
- * contraste graisse/italique de la direction « écrin de nuit ».
+ * Display : Fraunces (variable) — preload seul le body pour libérer la bande
+ * passante LCP ; Fraunces charge en swap sans bloquer le hero.
  */
 export const fontDisplay = Fraunces({
   variable: "--font-family-display",
   subsets: ["latin"],
-  style: ["normal", "italic"],
   display: "swap",
-  preload: true,
+  preload: false,
+  adjustFontFallback: true,
 });
 
 export const fontBody = Plus_Jakarta_Sans({
   variable: "--font-family-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "600"],
   display: "swap",
   preload: true,
+  adjustFontFallback: true,
 });
 
 export const fontVariables = `${fontDisplay.variable} ${fontBody.variable}`;

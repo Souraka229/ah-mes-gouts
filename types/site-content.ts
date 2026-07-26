@@ -1,6 +1,4 @@
-/** Modèle générique de section de page — équivalent Prisma PageSection. */
-
-export type SitePageId = "home" | "catalogue" | "livraison" | "contact";
+/** Types de contenu des sections de la page d'accueil (contenu fixe). */
 
 export type SectionKey =
   | "hero"
@@ -67,60 +65,4 @@ export type SectionContentMap = {
   typo_band: TypoBandSectionContent;
   signature_moment: SignatureMomentSectionContent;
   footer: FooterSectionContent;
-};
-
-export type PageSection<K extends SectionKey = SectionKey> = {
-  id: string;
-  page: SitePageId;
-  sectionKey: K;
-  isVisible: boolean;
-  order: number;
-  content: SectionContentMap[K];
-  updatedAt: string;
-};
-
-export type PageSectionDraft = PageSection;
-
-export type SectionVersionSnapshot = {
-  id: string;
-  sectionId: string;
-  sectionKey: SectionKey;
-  page: SitePageId;
-  content: SectionContentMap[SectionKey];
-  publishedAt: string;
-  publishedBy: string;
-};
-
-export type SiteContentStore = {
-  published: PageSection[];
-  drafts: PageSectionDraft[];
-  history: SectionVersionSnapshot[];
-};
-
-export type BrandColors = {
-  bg: string;
-  primary: string;
-  secondary: string;
-  accent: string;
-};
-
-export type NotificationTemplate = {
-  id: string;
-  key: string;
-  label: string;
-  body: string;
-};
-
-export type SiteSettings = {
-  siteName: string;
-  logoUrl: string;
-  faviconUrl: string;
-  brandColors: BrandColors;
-  notificationTemplates: NotificationTemplate[];
-  updatedAt: string;
-};
-
-export type PublishedPageContent = {
-  page: SitePageId;
-  sections: PageSection[];
 };

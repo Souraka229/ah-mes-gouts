@@ -14,7 +14,8 @@ export const metadata: Metadata = createPageMetadata({
   noIndex: true,
 });
 
-export const dynamic = "force-dynamic";
+/** Upsells issus du catalogue — ISR léger, pas de force-dynamic. */
+export const revalidate = 120;
 
 export default async function CheckoutPage() {
   let upsellCandidates: Product[] = [];

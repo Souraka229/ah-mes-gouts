@@ -19,6 +19,8 @@ import {
   createServerOrderWithStock,
   getServerOrder,
   OrderStockError,
+  saveServerOrderWithSlotReservation,
+  SlotFullError,
 } from "@/lib/server/order-repository";
 import { priceOrderItems } from "@/lib/server/order-pricing";
 import { withRetry } from "@/lib/server/retry";
@@ -26,7 +28,6 @@ import {
   buildSlotKey,
   findNextAvailableSlot,
   isSlotAvailable,
-  reserveSlot,
 } from "@/lib/server/slot-bookings";
 import type { SavedOrder } from "@/types/order";
 
@@ -46,7 +47,7 @@ const ORDER_RATE_WINDOW_MS = 60_000;
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const { allowed, retryAfterSec } = checkRateLimit(
+  const { allowed, retryAfterSec } = await checkRateLimit(
     `orders:create:${ip}`,
     ORDER_RATE_LIMIT,
     ORDER_RATE_WINDOW_MS,
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
   const idempotencyKey = request.headers.get("idempotency-key")?.trim();
 
   if (idempotencyKey) {
-    const existing = resolveIdempotentOrder(idempotencyKey);
+    const existing = await resolveIdempotentOrder(idempotencyKey);
     if (existing) {
       const prior = await getServerOrder(existing.orderId);
       if (prior) {
@@ -112,11 +113,10 @@ export async function POST(request: Request) {
   const slotStart = order.scheduledSlotStart;
   const slotEnd = order.scheduledSlotEnd;
   const fulfillmentType = order.fulfillmentType ?? order.mode;
-  // « Sur place » (dinein) réutilise les créneaux boutique (pickup).
   const scheduleType = fulfillmentType === "delivery" ? "delivery" : "pickup";
 
   try {
-    const { schedules } = await getDeliveryConfig();
+    const { schedules, options } = await getDeliveryConfig();
     const slots = getSlotsForDate(
       schedules,
       scheduleType,
@@ -149,8 +149,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Recalcul autoritatif des prix + stock depuis le catalogue serveur.
-    // Les montants envoyés par le client sont ignorés (anti-fraude).
     const priced = await priceOrderItems(parsedItems.data);
     if (!priced.ok) {
       return NextResponse.json(
@@ -162,7 +160,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Frais de livraison : depuis la zone active côté serveur, jamais le client.
     let deliveryFee = 0;
     let zoneId: string | null = null;
     let zoneName: string | null = null;
@@ -200,30 +197,49 @@ export async function POST(request: Request) {
       zoneId,
       deliveryZoneId: zoneId,
       zoneName,
+      status: order.status === "paiement_confirme" ? "paiement_confirme" : "recue",
     };
 
-    if (!(await reserveSlot(slotKey))) {
-      const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
-      return NextResponse.json(
-        {
-          error: "Ce créneau vient d'être réservé.",
-          nextSlot,
-        },
-        { status: 409 },
-      );
-    }
+    const awaitingPayment = order.status === "recue";
 
     try {
-      await withRetry(
-        () => createServerOrderWithStock(order, priced.data.stockClaims),
-        {
-          label: "createServerOrderWithStock",
-          maxAttempts: 3,
-          baseDelayMs: 200,
-          shouldRetry: (err) => !(err instanceof OrderStockError),
-        },
-      );
+      if (awaitingPayment) {
+        await withRetry(
+          () =>
+            saveServerOrderWithSlotReservation(order, {
+              scheduledSlotStart: new Date(slotStart),
+              fulfillmentType: scheduleType,
+              maxOrdersPerSlot: options.maxOrdersPerSlot,
+            }),
+          {
+            label: "saveServerOrderWithSlotReservation",
+            maxAttempts: 3,
+            baseDelayMs: 150,
+            shouldRetry: (err) => !(err instanceof SlotFullError),
+          },
+        );
+      } else {
+        await withRetry(
+          () => createServerOrderWithStock(order, priced.data.stockClaims),
+          {
+            label: "createServerOrderWithStock",
+            maxAttempts: 3,
+            baseDelayMs: 200,
+            shouldRetry: (err) => !(err instanceof OrderStockError),
+          },
+        );
+      }
     } catch (err) {
+      if (err instanceof SlotFullError) {
+        const nextSlot = await findNextAvailableSlot(scheduleType, slotStart);
+        return NextResponse.json(
+          {
+            error: "Ce créneau vient d'être réservé.",
+            nextSlot,
+          },
+          { status: 409 },
+        );
+      }
       if (err instanceof OrderStockError) {
         return NextResponse.json(
           {
@@ -239,41 +255,44 @@ export async function POST(request: Request) {
     }
 
     if (idempotencyKey) {
-      rememberIdempotentOrder(idempotencyKey, order.id);
+      await rememberIdempotentOrder(idempotencyKey, order.id);
     }
 
-    const deviceKey =
-      request.headers.get("x-amg-device-key")?.trim() ||
-      (typeof (order as { deviceKey?: string }).deviceKey === "string"
-        ? (order as { deviceKey?: string }).deviceKey
-        : null);
+    if (!awaitingPayment) {
+      const deviceKey =
+        request.headers.get("x-amg-device-key")?.trim() ||
+        (typeof (order as { deviceKey?: string }).deviceKey === "string"
+          ? (order as { deviceKey?: string }).deviceKey
+          : null);
 
-    await attachOrderToCustomer({
-      orderId: order.id,
-      phone: order.client.phone,
-      firstName: order.client.firstName,
-      lastName: order.client.lastName,
-      total: order.total,
-      createdAt: new Date(order.createdAt),
-      deviceKey,
-    });
-
-    await sendOrderNotifications(order).catch((err) => {
-      console.error("[orders] Notification échouée:", err);
-    });
-
-    notifyTelegramSafe(
-      formatNewOrderAlert({
+      await attachOrderToCustomer({
         orderId: order.id,
+        phone: order.client.phone,
+        firstName: order.client.firstName,
+        lastName: order.client.lastName,
         total: order.total,
-        mode: order.mode,
-        clientName: `${order.client.firstName} ${order.client.lastName}`.trim(),
-      }),
-    );
+        createdAt: new Date(order.createdAt),
+        deviceKey,
+      });
+
+      await sendOrderNotifications(order).catch((err) => {
+        console.error("[orders] Notification échouée:", err);
+      });
+
+      notifyTelegramSafe(
+        formatNewOrderAlert({
+          orderId: order.id,
+          total: order.total,
+          mode: order.mode,
+          clientName: `${order.client.firstName} ${order.client.lastName}`.trim(),
+        }),
+      );
+    }
 
     return NextResponse.json({
       ok: true,
       orderId: order.id,
+      status: order.status,
       fulfillmentSummary: formatFulfillmentSummary(order),
     });
   } catch (error) {

@@ -2,12 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId } from "react";
 import {
   motion,
   useReducedMotion,
-  useScroll,
-  useTransform,
   type TargetAndTransition,
 } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
@@ -37,29 +34,12 @@ const TONE_FIELD: Record<HeroTone, string> = {
   nuit: "bg-nuit",
 };
 
-/** Grain doux — soft-light, visible sur les aplats sombres. */
-function Grain() {
-  const id = useId();
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 mix-blend-soft-light"
-      style={{ opacity: 0.12 }}
-      aria-hidden
-    >
-      <svg className="h-full w-full" preserveAspectRatio="none">
-        <filter id={id}>
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.82"
-            numOctaves="3"
-            stitchTiles="stitch"
-          />
-        </filter>
-        <rect width="100%" height="100%" filter={`url(#${id})`} />
-      </svg>
-    </div>
-  );
-}
+const TONE_GRADIENT: Record<HeroTone, string> = {
+  violet:
+    "radial-gradient(ellipse 80% 60% at 70% 40%, rgba(243,201,206,0.25), transparent 60%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(201,169,110,0.12), transparent 55%)",
+  nuit:
+    "radial-gradient(ellipse 80% 60% at 70% 40%, rgba(120,160,200,0.2), transparent 60%), radial-gradient(ellipse 50% 40% at 20% 80%, rgba(243,201,206,0.15), transparent 55%)",
+};
 
 /**
  * Hero « écrin de nuit » — une seule pièce présentée dans une vitrine dorée,
@@ -75,10 +55,6 @@ export function RadicalHeroSection({
   const reduceMotion = useReducedMotion();
   const tone = resolveHeroTone(content.imageUrl);
 
-  const { scrollY } = useScroll();
-  const frameY = useTransform(scrollY, [0, 700], [0, -56]);
-  const haloY = useTransform(scrollY, [0, 700], [0, 90]);
-
   const initial = (
     hidden: TargetAndTransition,
   ): false | TargetAndTransition => (reduceMotion ? false : hidden);
@@ -88,13 +64,19 @@ export function RadicalHeroSection({
       className={`relative min-h-[100dvh] w-full overflow-hidden ${TONE_FIELD[tone]} text-bg`}
       aria-label={`Accueil — ${SITE_NAME_WITH_CREDIT}`}
     >
+      {/* Fond CSS pur — zéro WebGL, TTI minimal */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: TONE_GRADIENT[tone] }}
+        aria-hidden
+      />
+
       {/* Halo tendre (rose) — la lumière derrière la pièce */}
       <motion.div
         className="pointer-events-none absolute -right-[20%] top-1/2 h-[120vmin] w-[120vmin] -translate-y-1/2 lg:right-[2%]"
         style={{
           background:
             "radial-gradient(closest-side, rgba(243,201,206,0.42), rgba(243,201,206,0.10) 45%, transparent 72%)",
-          y: reduceMotion ? undefined : haloY,
         }}
         initial={initial({ opacity: 0, scale: 0.7 })}
         animate={{ opacity: 1, scale: 1 }}
@@ -140,8 +122,6 @@ export function RadicalHeroSection({
           style={{ opacity: 0.55 }}
         />
       </svg>
-
-      <Grain />
 
       <div className="relative z-10 mx-auto grid min-h-[100dvh] w-full max-w-[1400px] grid-cols-1 items-center gap-y-12 px-6 pb-16 pt-28 sm:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-x-10 lg:px-[6vw] lg:pt-24">
         {/* ── Colonne texte ── */}
@@ -239,7 +219,6 @@ export function RadicalHeroSection({
         {/* ── Vitrine : la pièce dans son cadre doré ── */}
         <motion.div
           className="order-1 mx-auto w-full max-w-[26rem] lg:order-2 lg:max-w-none lg:justify-self-end"
-          style={{ y: reduceMotion ? undefined : frameY }}
         >
           <motion.figure
             className="relative"
@@ -255,6 +234,7 @@ export function RadicalHeroSection({
                   alt=""
                   fill
                   priority
+                  quality={75}
                   sizes="(min-width: 1024px) 42vw, 88vw"
                   className="object-cover object-center"
                   unoptimized={content.imageUrl.endsWith(".svg")}

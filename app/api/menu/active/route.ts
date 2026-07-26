@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 
 import {
   activateDueMenus,
@@ -7,36 +8,38 @@ import {
   getShopProductsFromActiveMenu,
 } from "@/lib/server/menu-repository";
 
-export const dynamic = "force-dynamic";
+const getCachedMenuPayload = unstable_cache(
+  async () => {
+    await activateDueMenus();
+
+    const [activeMenu, nextMenu, products] = await Promise.all([
+      getActiveMenu(),
+      getNextScheduledMenu(),
+      getShopProductsFromActiveMenu(),
+    ]);
+
+    const activateAtLabel = nextMenu
+      ? new Date(nextMenu.activateAt).toLocaleString("fr-FR", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+    return { activeMenu, nextMenu, activateAtLabel, products };
+  },
+  ["menu-active-v1"],
+  { revalidate: 60, tags: ["menu"] },
+);
 
 export async function GET() {
-  await activateDueMenus();
+  const payload = await getCachedMenuPayload();
 
-  const [activeMenu, nextMenu, products] = await Promise.all([
-    getActiveMenu(),
-    getNextScheduledMenu(),
-    getShopProductsFromActiveMenu(),
-  ]);
-
-  const activateAtLabel = nextMenu
-    ? new Date(nextMenu.activateAt).toLocaleString("fr-FR", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : null;
-
-  return NextResponse.json(
-    {
-      activeMenu,
-      nextMenu,
-      activateAtLabel,
-      products,
+  return NextResponse.json(payload, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
     },
-    {
-      headers: { "Cache-Control": "no-store, max-age=0" },
-    },
-  );
+  });
 }

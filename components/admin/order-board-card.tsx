@@ -22,10 +22,13 @@ import {
   getCakeMessage,
   getClientPhone,
   getDeliveryAddress,
+  getOrderFlags,
   getPrimaryAction,
   hasReferenceNote,
   paymentLabel,
 } from "@/lib/admin/order-board";
+import { PACKAGING_LABELS } from "@/lib/orders/order-flags";
+import { AlertTriangle, Package as PackageIcon } from "lucide-react";
 import { printOrderReceipt } from "@/lib/admin/print-order-receipt";
 import {
   buildWhatsAppShareUrl,
@@ -92,6 +95,7 @@ export function OrderBoardCard({
   const phone = getClientPhone(order);
   const address = getDeliveryAddress(order);
   const cakeMessage = getCakeMessage(order);
+  const flags = getOrderFlags(order);
   const isDelivery =
     (order.fulfillmentType ?? order.mode) === "delivery";
   const primary = getPrimaryAction(order);
@@ -141,18 +145,27 @@ export function OrderBoardCard({
             </span>
           </div>
 
-          <p className="mt-1 font-display text-base font-medium text-text">
+          {flags.unreachableAt && (
+            <div className="mt-2 flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 font-body text-sm font-semibold text-red-700">
+              <AlertTriangle className="size-4 shrink-0" aria-hidden />
+              Client injoignable par le livreur — à rappeler
+            </div>
+          )}
+
+          <p className="mt-1 font-display text-xl font-semibold text-text">
             {clientLabel(order)}
           </p>
-          <p className="mt-1 font-body text-sm text-text">
+          <p className="mt-1 font-body text-base text-text">
             {formatItemsSummary(order)}
           </p>
-          <p className="mt-2 font-body text-sm font-semibold text-text">
-            Total : {formatPrice(order.total)}
+          <p className="mt-2 font-display text-2xl font-bold text-primary">
+            {formatPrice(order.total)}
           </p>
-          <p className="mt-1 font-body text-sm text-muted-foreground">
+          <p className="mt-2 font-body text-sm text-muted-foreground">
             {isDelivery ? "Livraison" : "Boutique"} :{" "}
-            {formatFulfillmentPlace(order)}
+            <span className="font-medium text-text">
+              {formatFulfillmentPlace(order)}
+            </span>
           </p>
           <p className="font-body text-sm text-muted-foreground">
             {formatScheduleLabel(order)}
@@ -160,6 +173,12 @@ export function OrderBoardCard({
           <p className="font-body text-sm text-muted-foreground">
             Paiement : {paymentLabel(order)}
           </p>
+          {flags.packaging && (
+            <p className="mt-1 inline-flex items-center gap-1.5 font-body text-sm font-medium text-primary">
+              <PackageIcon className="size-4 shrink-0" aria-hidden />
+              {PACKAGING_LABELS[flags.packaging]}
+            </p>
+          )}
 
           {expanded && (
             <div className="mt-4 space-y-1 rounded-xl bg-muted/30 p-4 font-body text-sm text-text">
@@ -202,69 +221,55 @@ export function OrderBoardCard({
             </div>
           )}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {primary && (
+          {/* Action principale — un seul gros bouton pleine largeur.
+              En livraison, il faut d'abord choisir le livreur (le bouton
+              devient « Affecter » tant qu'aucun n'est assigné). */}
+          <div className="mt-4 space-y-2">
+            {canAssignDriver && (
+              <select
+                value={selectedDriverId}
+                title="Choisir un livreur"
+                aria-label="Choisir un livreur"
+                className="min-h-12 w-full cursor-pointer rounded-xl border border-border bg-bg px-3 font-body text-base"
+                onChange={(e) => onPendingDriverChange(order.id, e.target.value)}
+              >
+                <option value="">Choisir un livreur…</option>
+                {drivers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {canAssignDriver && driverDirty ? (
               <Button
                 type="button"
-                size="sm"
-                className="min-h-10 cursor-pointer"
+                className="min-h-14 w-full cursor-pointer text-base font-semibold"
+                onClick={() =>
+                  onAssignDriver(
+                    order.id,
+                    selectedDriverId || null,
+                    order.driverId ?? null,
+                  )
+                }
+              >
+                Affecter à ce livreur
+              </Button>
+            ) : primary ? (
+              <Button
+                type="button"
+                className="min-h-14 w-full cursor-pointer text-base font-semibold"
+                disabled={
+                  primary.nextStatus === "en_livraison" && !selectedDriverId
+                }
                 onClick={() =>
                   onStatusChange(order.id, primary.nextStatus, order.status)
                 }
               >
                 {primary.label}
               </Button>
-            )}
-
-            {canAssignDriver && (
-              <>
-                <select
-                  value={selectedDriverId}
-                  title="Choisir un livreur"
-                  className="min-h-10 cursor-pointer rounded-xl border border-border bg-bg px-3 font-body text-sm"
-                  onChange={(e) =>
-                    onPendingDriverChange(order.id, e.target.value)
-                  }
-                >
-                  <option value="">Livreur…</option>
-                  {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="min-h-10 cursor-pointer"
-                  disabled={!driverDirty}
-                  onClick={() =>
-                    onAssignDriver(
-                      order.id,
-                      selectedDriverId || null,
-                      order.driverId ?? null,
-                    )
-                  }
-                >
-                  Affecter
-                </Button>
-              </>
-            )}
-
-            {order.status === "prete" && !isDelivery && (
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="min-h-10 cursor-pointer"
-                onClick={() =>
-                  onStatusChange(order.id, "livree", order.status)
-                }
-              >
-                Terminer
-              </Button>
-            )}
+            ) : null}
           </div>
 
           <div className="mt-4 flex flex-wrap gap-1 border-t border-border pt-4">

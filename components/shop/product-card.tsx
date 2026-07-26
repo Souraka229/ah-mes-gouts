@@ -11,11 +11,7 @@ import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
   isProductAvailable,
-} from "@/lib/mock-data";
-import {
-  getLowStockLabel,
-  isLowStock,
-} from "@/lib/product-stock-display";
+} from "@/lib/catalog-utils";
 import { getProductAltText } from "@/lib/seo/images";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
@@ -80,11 +76,6 @@ export function ProductCard({
           )}
           {available && showPromotion && (
             <Badge className="bg-accent text-text">Promo</Badge>
-          )}
-          {available && isLowStock(product) && (
-            <Badge className="border-0 bg-secondary/80 text-primary">
-              {getLowStockLabel(product)}
-            </Badge>
           )}
         </div>
       }

@@ -28,11 +28,16 @@ export function BrandLogo({
     <div className={cn("flex flex-col leading-none", className)}>
       <span
         className={cn(
-          "font-display font-semibold tracking-[-0.02em]",
+          "logo-liquid-gold font-display font-semibold tracking-[-0.02em]",
           onDark
             ? "text-[clamp(1.15rem,2.8vw,1.55rem)] text-bg drop-shadow-[0_1px_12px_rgba(0,0,0,0.25)]"
             : "text-[clamp(1rem,2.5vw,1.35rem)] text-primary",
         )}
+        style={
+          {
+            "--logo-base": onDark ? "#faf7f5" : "#3b1f4d",
+          } as React.CSSProperties
+        }
       >
         {SITE_NAME}
       </span>

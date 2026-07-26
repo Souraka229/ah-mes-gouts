@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       activateAt?: string;
       productIds?: string[];
       displayOrder?: number[];
+      dailyStock?: number[];
       duplicateFromId?: string;
     };
 

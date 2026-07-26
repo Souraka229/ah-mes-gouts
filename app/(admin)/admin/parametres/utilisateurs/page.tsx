@@ -12,12 +12,12 @@ export default function AdminUtilisateursPage() {
       </p>
       <div className="rounded-2xl border border-border bg-white p-4 font-body text-sm">
         <p>
-          <strong>Administrateur</strong> — accès total (site-builder, paramètres,
-          assistant)
+          <strong>Administrateur</strong> — accès total (paramètres, infos
+          boutique, journal, notifications)
         </p>
         <p className="mt-2">
-          <strong>Employé</strong> — commandes, produits, livraison (pas
-          site-builder ni assistant)
+          <strong>Employé</strong> — commandes, produits, livraison (pas l&apos;accès
+          aux paramètres)
         </p>
       </div>
     </div>

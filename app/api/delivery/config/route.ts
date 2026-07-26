@@ -5,8 +5,8 @@ import {
   getDeliveryConfig,
 } from "@/lib/server/delivery-config-repository";
 
-/** Config livraison peu volatile — cache edge 60s + SWR. */
-export const revalidate = 60;
+/** Runtime only — évite le crash build si Postgres est injoignable au prerender. */
+export const dynamic = "force-dynamic";
 
 const getCachedDeliveryPayload = unstable_cache(
   async () => {

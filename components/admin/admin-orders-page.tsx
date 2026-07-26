@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bell, BellOff, Loader2, RefreshCw } from "lucide-react";
+import { Bell, BellOff, Loader2, RefreshCw, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ type DriverOption = {
 };
 
 const TAB_ORDER: OrderBoardTab[] = ["nouvelles", "preparation", "livraison"];
+const POLL_MS = 8_000;
 
 function parseTab(value: string | null): OrderBoardTab {
   if (value === "preparation" || value === "livraison" || value === "nouvelles") {
@@ -59,6 +60,9 @@ export function AdminOrdersPage() {
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const notifications = useOrderNotifications();
+  const knownIdsRef = useRef<Set<string> | null>(null);
+  const notificationsRef = useRef(notifications);
+  notificationsRef.current = notifications;
 
   const setActiveTab = useCallback(
     (tab: OrderBoardTab) => {
@@ -69,25 +73,57 @@ export function AdminOrdersPage() {
     [router, searchParams],
   );
 
-  const load = useCallback(async (options?: { silent?: boolean }) => {
-    // Rafraîchissement silencieux : pas de spinner plein écran pour un KDS
-    // qui se met à jour en continu — les cartes s'actualisent en place.
-    if (!options?.silent) setLoading(true);
-    try {
-      const response = await fetch("/api/admin/orders", { cache: "no-store" });
-      if (!response.ok) throw new Error("Erreur");
-      const data = (await response.json()) as { orders: SavedOrder[] };
-      setOrders(data.orders);
-    } catch {
-      if (!options?.silent) setOrders([]);
-    } finally {
-      if (!options?.silent) setLoading(false);
+  const announceNewOrders = useCallback((incoming: SavedOrder[]) => {
+    const known = knownIdsRef.current;
+    if (!known) {
+      // Premier chargement : on mémorise sans alerter (évite le bip au refresh).
+      knownIdsRef.current = new Set(incoming.map((o) => o.id));
+      return;
     }
+
+    const fresh = incoming.filter((o) => !known.has(o.id));
+    for (const order of fresh) {
+      known.add(order.id);
+      notificationsRef.current.notify(
+        "Nouvelle commande",
+        `Commande ${order.id} — ${ORDER_STATUS_LABELS[order.status]}.`,
+      );
+    }
+
+    // Garde le set à jour aussi pour les IDs déjà connus (pas de croissance infinie inutile).
+    for (const order of incoming) known.add(order.id);
   }, []);
+
+  const load = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!options?.silent) setLoading(true);
+      try {
+        const response = await fetch("/api/admin/orders", { cache: "no-store" });
+        if (!response.ok) throw new Error("Erreur");
+        const data = (await response.json()) as { orders: SavedOrder[] };
+        announceNewOrders(data.orders);
+        setOrders(data.orders);
+      } catch {
+        if (!options?.silent) setOrders([]);
+      } finally {
+        if (!options?.silent) setLoading(false);
+      }
+    },
+    [announceNewOrders],
+  );
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Fallback si Realtime Supabase est down : polling + bip sur nouvelles commandes.
+  useEffect(() => {
+    if (!notifications.enabled) return;
+    const timer = window.setInterval(() => {
+      void load({ silent: true });
+    }, POLL_MS);
+    return () => window.clearInterval(timer);
+  }, [notifications.enabled, load]);
 
   useEffect(() => {
     void fetch("/api/admin/drivers", { cache: "no-store" })
@@ -99,27 +135,29 @@ export function AdminOrdersPage() {
   }, []);
 
   useOrderRealtime({
+    enabled: notifications.enabled,
     onStatusChange: (row) => {
-      // On lit l'état courant via le setter mais sans effet de bord dedans :
-      // on note juste si la commande est déjà connue, puis on agit après.
-      let isNew = false;
+      const known = knownIdsRef.current;
+      const isNew = known ? !known.has(row.id) : false;
+
       setOrders((prev) => {
-        const known = prev.some((o) => o.id === row.id);
-        if (!known) {
-          isNew = true;
-          return prev; // fiche complète récupérée via load() ci-dessous
-        }
+        const exists = prev.some((o) => o.id === row.id);
+        if (!exists) return prev;
         return prev.map((o) =>
           o.id === row.id ? { ...o, status: row.status } : o,
         );
       });
 
       if (isNew) {
-        notifications.notify(
+        known?.add(row.id);
+        notificationsRef.current.notify(
           "Nouvelle commande",
           `Commande ${row.id} reçue — à préparer.`,
         );
         void load({ silent: true });
+      } else if (known) {
+        // Statut mis à jour sur une commande déjà connue.
+        known.add(row.id);
       }
     },
   });
@@ -290,7 +328,13 @@ export function AdminOrdersPage() {
             variant={notifications.enabled ? "default" : "outline"}
             size="sm"
             className="cursor-pointer gap-2"
-            onClick={notifications.toggle}
+            onClick={() => {
+              const turningOn = !notifications.enabled;
+              notifications.toggle();
+              if (turningOn) {
+                toast.success("Alertes activées — vous devez entendre un bip.");
+              }
+            }}
             title={
               notifications.enabled
                 ? "Notifications activées — cliquez pour couper"
@@ -305,6 +349,22 @@ export function AdminOrdersPage() {
             )}
             {notifications.enabled ? "Alertes activées" : "Alertes"}
           </Button>
+          {notifications.enabled && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="cursor-pointer gap-2"
+              onClick={() => {
+                notifications.testSound();
+                toast.message("Bip de test envoyé");
+              }}
+              title="Tester le son"
+            >
+              <Volume2 className="size-4" aria-hidden />
+              Tester le son
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
@@ -318,11 +378,20 @@ export function AdminOrdersPage() {
         </div>
       </header>
 
+      {notifications.enabled && (
+        <p className="rounded-xl border border-secondary/60 bg-secondary/20 px-4 py-2.5 font-body text-sm text-text">
+          Son actif — nouvelles commandes détectées en direct
+          {notifications.audioReady ? "" : " (cliquez « Tester le son » si besoin)"}.
+          {notifications.permission === "denied"
+            ? " Les pop-ups desktop sont bloquées par le navigateur."
+            : ""}
+        </p>
+      )}
+
       {notifications.enabled && notifications.permission === "denied" && (
         <p className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 font-body text-sm text-amber-800">
-          Le son fonctionne, mais les alertes desktop sont bloquées par le
-          navigateur. Autorisez les notifications pour ce site pour les recevoir
-          quand l&apos;onglet n&apos;est pas au premier plan.
+          Autorisez les notifications du site dans le navigateur pour les alertes
+          hors onglet. Le son fonctionne dès que les alertes sont activées.
         </p>
       )}
 

@@ -104,11 +104,16 @@
 
   html {
     @apply font-sans antialiased;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
     @apply bg-bg text-text;
     position: relative;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   /* Grain global — texture CSS légère (pas de feTurbulence GPU-expensive) */

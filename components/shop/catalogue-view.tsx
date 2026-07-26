@@ -149,7 +149,7 @@ export function CatalogueView({
 
   const renderProductGrid = (products: Product[], priorityFirst = false) =>
     products.length > 0 ? (
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:gap-6">
+      <div className="grid grid-cols-1 gap-5 min-[420px]:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:gap-6">
         {products.map((product, index) => (
           <ProductCard
             key={product.id}
@@ -168,9 +168,9 @@ export function CatalogueView({
     );
 
   return (
-    <div id="cadeaux" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div id="cadeaux" className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10 lg:px-8">
       <div className="mb-8">
-        <h1 className="font-display text-4xl font-semibold text-primary sm:text-5xl">
+        <h1 className="font-display text-3xl font-semibold text-primary sm:text-5xl">
           Catalogue
         </h1>
         <p className="mt-3 max-w-2xl font-body text-muted-foreground">

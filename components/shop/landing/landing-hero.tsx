@@ -28,7 +28,7 @@ export function LandingHero({
 
   return (
     <section
-      className="relative bg-bg"
+      className="relative overflow-hidden bg-bg"
       aria-label={`Accueil — ${SITE_NAME_WITH_CREDIT}`}
     >
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-[1fr_1.05fr] lg:gap-10 lg:py-16">

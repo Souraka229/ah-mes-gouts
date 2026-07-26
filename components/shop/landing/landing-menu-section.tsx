@@ -40,7 +40,7 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
           </Link>
         </div>
 
-        <ul className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        <ul className="grid grid-cols-1 gap-5 min-[420px]:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           {items.map((item, index) => (
             <li key={item.slug}>
               <ProductCard

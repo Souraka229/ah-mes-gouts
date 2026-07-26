@@ -18,7 +18,7 @@ export function CheckoutStepIndicator({
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <ol className="flex max-w-full gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {STEPS.map((step, index) => {
         const isActive = step.id === currentStep;
         const isDone = index < currentIndex;

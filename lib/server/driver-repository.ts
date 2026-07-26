@@ -3,6 +3,10 @@ import { randomUUID } from "crypto";
 import { getPrisma } from "@/lib/prisma";
 import { parseOrderFlags } from "@/lib/orders/order-flags";
 import { getShopDayBounds } from "@/lib/business-date";
+import {
+  isBulkAreasLabel,
+  resolveDeliveryDisplayName,
+} from "@/lib/delivery-zones";
 import type {
   DriverHistoryAction,
   DriverHistoryData,
@@ -209,7 +213,9 @@ function orderToHistory(row: {
   status: string;
   clientFirstName: string;
   clientLastName: string;
+  zoneId: string | null;
   zoneName: string | null;
+  clientLandmark: string | null;
   total: number;
   createdAt: Date;
   scheduledSlotStart: Date | null;
@@ -223,7 +229,11 @@ function orderToHistory(row: {
     status: row.status.toLowerCase(),
     clientName:
       `${row.clientFirstName} ${row.clientLastName}`.trim() || "Client",
-    zoneName: row.zoneName,
+    zoneName: resolveDeliveryDisplayName(
+      row.zoneId,
+      isBulkAreasLabel(row.zoneName) ? null : row.zoneName,
+      row.clientLandmark,
+    ),
     total: row.total,
     createdAt: row.createdAt.toISOString(),
     scheduledSlotStart: row.scheduledSlotStart?.toISOString() ?? null,
@@ -314,7 +324,9 @@ export async function getDriverHistory(
           status: true,
           clientFirstName: true,
           clientLastName: true,
+          zoneId: true,
           zoneName: true,
+          clientLandmark: true,
           total: true,
           createdAt: true,
           scheduledSlotStart: true,

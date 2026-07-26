@@ -175,26 +175,30 @@ export function getDeliveryZoneById(id: string): DeliveryZone | undefined {
   return deliveryZones.find((zone) => zone.id === id);
 }
 
-/** Nom d’affichage = liste des quartiers (jamais « Zone E »). */
-export function getZoneAreasLabel(zoneId: string): string | null {
-  const zone = getDeliveryZoneById(zoneId);
-  if (!zone || zone.areas.length === 0) return null;
-  return zone.areas.join(", ");
-}
-
 /** Valide un quartier contre la grille officielle d’une zone. */
 export function resolveLocalityName(
   zoneId: string,
   candidate: string | null | undefined,
 ): string | null {
   const trimmed = candidate?.trim();
-  if (!trimmed) return null;
+  if (!trimmed || isBulkAreasLabel(trimmed)) return null;
   const zone = getDeliveryZoneById(zoneId);
   if (!zone) return null;
-  const found = zone.areas.find(
-    (area) => area.toLowerCase() === trimmed.toLowerCase(),
+  return (
+    zone.areas.find((area) => area.toLowerCase() === trimmed.toLowerCase()) ??
+    null
   );
-  return found ?? null;
+}
+
+/** Liste de quartiers collée (erreur d’affichage) — à ignorer. */
+export function isBulkAreasLabel(name: string | null | undefined): boolean {
+  if (!name?.trim()) return false;
+  const t = name.trim();
+  if (t.includes("…") || t.includes("...")) return true;
+  if (t.split(",").length >= 3) return true;
+  return deliveryZones.some(
+    (zone) => zone.areas.join(", ").toLowerCase() === t.toLowerCase(),
+  );
 }
 
 export function isGenericZoneLabel(name: string | null | undefined): boolean {
@@ -202,7 +206,50 @@ export function isGenericZoneLabel(name: string | null | undefined): boolean {
   return /^(zone|destinations)\s+[a-e]$/i.test(name.trim());
 }
 
-/** Libellé livraison : quartier choisi, sinon liste des quartiers, jamais « Zone X ». */
+/** Cherche un quartier connu (toutes zones), y compris dans « … (Quartier) ». */
+export function findKnownLocality(
+  candidate: string | null | undefined,
+): string | null {
+  const trimmed = candidate?.trim();
+  if (!trimmed || isBulkAreasLabel(trimmed) || isGenericZoneLabel(trimmed)) {
+    return null;
+  }
+
+  for (const zone of deliveryZones) {
+    const exact = zone.areas.find(
+      (area) => area.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (exact) return exact;
+  }
+
+  const paren = trimmed.match(/\(([^)]+)\)/);
+  if (paren?.[1]) {
+    const inner = findKnownLocality(paren[1]);
+    if (inner) return inner;
+  }
+
+  for (const zone of deliveryZones) {
+    const embedded = zone.areas.find((area) => {
+      const re = new RegExp(
+        `(^|[\\s,;(/])${escapeRegExp(area)}($|[\\s,;)/])`,
+        "i",
+      );
+      return re.test(trimmed);
+    });
+    if (embedded) return embedded;
+  }
+
+  return null;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Un seul quartier pour l’affichage / stockage — jamais « Zone E »
+ * ni la liste complète des destinations.
+ */
 export function resolveDeliveryDisplayName(
   zoneId: string | null | undefined,
   zoneName: string | null | undefined,
@@ -213,9 +260,53 @@ export function resolveDeliveryDisplayName(
     if (fromHint) return fromHint;
     const fromStored = resolveLocalityName(zoneId, zoneName);
     if (fromStored) return fromStored;
-    if (zoneName && !isGenericZoneLabel(zoneName)) return zoneName.trim();
-    return getZoneAreasLabel(zoneId);
   }
-  if (zoneName && !isGenericZoneLabel(zoneName)) return zoneName.trim();
+
+  const fromHintAnywhere = findKnownLocality(localityHint);
+  if (fromHintAnywhere) return fromHintAnywhere;
+
+  const fromStoredAnywhere = findKnownLocality(zoneName);
+  if (fromStoredAnywhere) return fromStoredAnywhere;
+
+  if (
+    zoneName &&
+    !isGenericZoneLabel(zoneName) &&
+    !isBulkAreasLabel(zoneName)
+  ) {
+    return zoneName.trim();
+  }
+
   return null;
+}
+
+/** Ligne adresse livreur / admin : quartier + adresse + repère. */
+export function formatDeliveryAddressLine(input: {
+  zoneId?: string | null;
+  zoneName?: string | null;
+  address?: string | null;
+  landmark?: string | null;
+}): string {
+  const quartier = resolveDeliveryDisplayName(
+    input.zoneId,
+    input.zoneName,
+    input.landmark,
+  );
+  const address = input.address?.trim() || "";
+  const landmark = input.landmark?.trim() || "";
+  const landmarkUseful =
+    landmark &&
+    landmark !== quartier &&
+    landmark !== address &&
+    !isBulkAreasLabel(landmark);
+
+  const parts: string[] = [];
+  if (quartier) parts.push(quartier);
+  if (address && address !== quartier) parts.push(address);
+  if (landmarkUseful && !findKnownLocality(landmark)) {
+    parts.push(`(${landmark})`);
+  } else if (landmarkUseful && !quartier) {
+    parts.push(landmark);
+  }
+
+  return parts.join(" — ") || "—";
 }

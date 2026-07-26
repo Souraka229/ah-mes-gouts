@@ -64,12 +64,11 @@ export async function POST(request: Request) {
       );
     }
     deliveryFee = zone.cost;
-    zoneName =
-      resolveDeliveryDisplayName(
-        zone.id,
-        null,
-        parsed.data.locality ?? null,
-      ) ?? zone.name;
+    zoneName = resolveDeliveryDisplayName(
+      zone.id,
+      null,
+      parsed.data.locality ?? null,
+    );
   }
 
   return NextResponse.json({

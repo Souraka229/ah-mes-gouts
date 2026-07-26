@@ -209,12 +209,12 @@ export async function POST(request: Request) {
       }
       deliveryFee = zone.cost;
       zoneId = zone.id;
-      zoneName =
-        resolveDeliveryDisplayName(
-          zone.id,
-          order.zoneName,
-          order.client?.landmark,
-        ) ?? zone.name;
+      // Un seul quartier (ex. Segbèya) — jamais la liste des destinations.
+      zoneName = resolveDeliveryDisplayName(
+        zone.id,
+        order.zoneName,
+        order.client?.landmark,
+      );
     }
 
     const subtotal = priced.data.subtotal;

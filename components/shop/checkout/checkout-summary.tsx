@@ -2,11 +2,7 @@
 
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { formatPrice } from "@/lib/format";
-import {
-  getZoneCost,
-  getZoneName,
-  useDeliveryConfig,
-} from "@/lib/hooks/use-delivery-config";
+import { getZoneCost, useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
 import { useCartTotals } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCheckoutQuoteStore } from "@/lib/checkout-quote-store";
@@ -23,8 +19,7 @@ export function CheckoutSummary() {
   const quoteLoading = useCheckoutQuoteStore((state) => state.loading);
   const quoteError = useCheckoutQuoteStore((state) => state.error);
 
-  const zoneName =
-    deliveryLocality ?? quote?.zoneName ?? getZoneName(zones, zoneId);
+  const zoneName = deliveryLocality ?? quote?.zoneName ?? null;
   const fallbackFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
   const subtotal = quote?.subtotal ?? cartTotals.subtotal;
   const deliveryFee = quote?.deliveryFee ?? fallbackFee;
@@ -110,8 +105,7 @@ export function useCheckoutTotal() {
     tax: 0,
     total: quote?.total ?? subtotal + deliveryFee,
     itemCount: cartTotals.itemCount,
-    zoneName:
-      deliveryLocality ?? quote?.zoneName ?? getZoneName(zones, zoneId),
+    zoneName: deliveryLocality ?? quote?.zoneName ?? null,
     quoteLoading,
   };
 }

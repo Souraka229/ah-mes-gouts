@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { getMapsSearchUrl } from "@/lib/driver/portal-links";
+import { formatDeliveryAddressLine } from "@/lib/delivery-zones";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { formatPrice } from "@/lib/format";
 import type { DriverOrderView, DriverPortalData } from "@/types/driver";
@@ -271,15 +272,11 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                     Adresse
                   </p>
                   <p className="mt-0.5 text-text">
-                    {order.zoneName ? (
-                      <span className="font-medium">{order.zoneName}</span>
-                    ) : null}
-                    {order.zoneName && order.deliveryAddress ? " — " : ""}
-                    {order.deliveryAddress}
-                    {order.landmark &&
-                    order.landmark !== order.zoneName
-                      ? ` (${order.landmark})`
-                      : ""}
+                    {formatDeliveryAddressLine({
+                      zoneName: order.zoneName,
+                      address: order.deliveryAddress,
+                      landmark: order.landmark,
+                    })}
                   </p>
                 </div>
 

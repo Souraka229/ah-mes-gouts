@@ -23,6 +23,10 @@ import {
 } from "@/lib/orders/status-machine";
 import { markUnreachable, parseOrderFlags } from "@/lib/orders/order-flags";
 import { getShopDayBounds } from "@/lib/business-date";
+import {
+  isBulkAreasLabel,
+  resolveDeliveryDisplayName,
+} from "@/lib/delivery-zones";
 import type { DriverOrderView } from "@/types/driver";
 import type { OrderStatus, SavedOrder } from "@/types/order";
 
@@ -397,10 +401,16 @@ function toDriverOrderView(
   const phone =
     row.isGift && row.recipientPhone ? row.recipientPhone : row.clientPhone;
 
+  const quartier = resolveDeliveryDisplayName(
+    row.zoneId,
+    isBulkAreasLabel(row.zoneName) ? null : row.zoneName,
+    landmark,
+  );
+
   return {
     id: row.id,
     status: status as "prete" | "en_livraison",
-    zoneName: row.zoneName,
+    zoneName: quartier,
     deliveryAddress: address,
     landmark,
     clientPhone: phone,

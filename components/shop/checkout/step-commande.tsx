@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { StepClientForm } from "@/components/shop/checkout/step-client-form";
 import { StepDeliveryZone } from "@/components/shop/checkout/step-delivery-zone";
@@ -148,25 +148,71 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
     setHasWelcomedBack,
   ]);
 
+  const prevModeRef = useRef(mode);
+  const prevZoneRef = useRef(zoneId);
+
+  // Quand le client choisit mode / zone, on amène le regard sur la suite — pas au mount.
+  useEffect(() => {
+    const modeJustSet = !prevModeRef.current && Boolean(mode);
+    const zoneJustSet =
+      mode === "delivery" && !prevZoneRef.current && Boolean(zoneId);
+    prevModeRef.current = mode;
+    prevZoneRef.current = zoneId;
+
+    if (!modeJustSet && !zoneJustSet) return;
+
+    const targetId = modeJustSet
+      ? mode === "delivery"
+        ? "checkout-section-zone"
+        : "checkout-section-schedule"
+      : "checkout-section-schedule";
+
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    el.scrollIntoView({
+      block: "start",
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+  }, [mode, zoneId]);
+
   const handleContinue = () => {
     setFormError(null);
 
     if (!mode) {
       setFormError("Choisissez comment recevoir votre commande.");
+      document.getElementById("checkout-section-mode")?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
       return;
     }
     if (mode === "delivery" && !zoneId) {
       setFormError("Choisissez votre quartier de livraison.");
+      document.getElementById("checkout-section-zone")?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
       return;
     }
     if (!scheduledSlot) {
       setFormError("Choisissez un créneau horaire.");
+      document.getElementById("checkout-section-schedule")?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
       return;
     }
 
     const clientErrors = validateClientBlock(mode, client, isGift, gift);
     if (Object.keys(clientErrors).length > 0) {
       setFormError("Complétez vos informations de contact.");
+      document.getElementById("checkout-section-client")?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
       return;
     }
 
@@ -179,6 +225,8 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
     setClient(savedClient);
     linkDeviceToPhone(savedClient.phone);
     trackActivity({ type: "checkout_start" });
+    // Remonte avant le rendu paiement — le wizard renforce ensuite.
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     setStep("payment");
   };
 
@@ -193,37 +241,47 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
         </p>
       </div>
 
-      <Section title="1. Comment recevoir ?">
-        <StepMode embedded />
-      </Section>
+      <div id="checkout-section-mode" className="scroll-mt-24">
+        <Section title="1. Comment recevoir ?">
+          <StepMode embedded />
+        </Section>
+      </div>
 
       {mode === "delivery" && (
-        <Section title="2. Où livrer ?">
-          <StepDeliveryZone embedded />
-        </Section>
+        <div id="checkout-section-zone" className="scroll-mt-24">
+          <Section title="2. Où livrer ?">
+            <StepDeliveryZone embedded />
+          </Section>
+        </div>
       )}
 
       {mode && (
-        <Section title={mode === "delivery" ? "3. Quand ?" : "2. Quand ?"}>
-          <StepSchedule embedded />
-        </Section>
+        <div id="checkout-section-schedule" className="scroll-mt-24">
+          <Section title={mode === "delivery" ? "3. Quand ?" : "2. Quand ?"}>
+            <StepSchedule embedded />
+          </Section>
+        </div>
       )}
 
       {mode && (
-        <Section
-          title={
-            mode === "delivery"
-              ? "4. Vos informations"
-              : "3. Vos informations"
-          }
-        >
-          <StepClientForm embedded />
-        </Section>
+        <div id="checkout-section-client" className="scroll-mt-24">
+          <Section
+            title={
+              mode === "delivery"
+                ? "4. Vos informations"
+                : "3. Vos informations"
+            }
+          >
+            <StepClientForm embedded />
+          </Section>
+        </div>
       )}
 
-      <Section title="Suggestions Nounours & Carte">
-        <StepUpsell embedded candidates={upsellCandidates} />
-      </Section>
+      <div id="checkout-section-upsell" className="scroll-mt-24">
+        <Section title="Suggestions Nounours & Carte">
+          <StepUpsell embedded candidates={upsellCandidates} />
+        </Section>
+      </div>
 
       {formError && (
         <p role="alert" className="font-body text-sm text-destructive">

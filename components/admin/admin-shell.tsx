@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { BrandLogo } from "@/components/shop/brand-logo";
+import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -230,6 +231,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {roleLabel}
             </p>
           </div>
+          <PwaInstallButton
+            label="Installer"
+            className="w-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          />
           <button
             type="button"
             onClick={logout}
@@ -271,7 +276,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 onNavigate={() => setMobileOpen(false)}
               />
             </nav>
-            <div className="border-t border-white/10 p-4">
+            <div className="space-y-3 border-t border-white/10 p-4">
+              <PwaInstallButton
+                label="Installer"
+                className="w-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              />
               <button
                 type="button"
                 onClick={logout}
@@ -305,7 +314,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           </div>
-          <BrandLogo compact className="lg:hidden" />
+          <div className="flex items-center gap-2">
+            <PwaInstallButton label="Installer" className="hidden sm:inline-flex" />
+            <BrandLogo compact className="lg:hidden" />
+          </div>
           <button
             type="button"
             className="hidden min-h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 font-body text-xs text-muted-foreground hover:border-primary/30 hover:text-primary sm:inline-flex"

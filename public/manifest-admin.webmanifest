@@ -1,0 +1,19 @@
+{
+  "id": "/admin",
+  "name": "Ah Mes Goûts Admin",
+  "short_name": "Admin",
+  "lang": "fr",
+  "start_url": "/admin",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#FAF7F5",
+  "theme_color": "#3B1F4D",
+  "icons": [
+    {
+      "src": "/pwa/admin-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

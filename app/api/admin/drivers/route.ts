@@ -41,7 +41,14 @@ export async function POST(request: Request) {
   try {
     const driver = await createDriver({ name, phone });
     return NextResponse.json(
-      { driver: { ...driver, deliveriesToday: 0 } },
+      {
+        driver: {
+          ...driver,
+          deliveriesToday: 0,
+          totalDeliveries: 0,
+          lastOrderAt: null,
+        },
+      },
       { status: 201 },
     );
   } catch {

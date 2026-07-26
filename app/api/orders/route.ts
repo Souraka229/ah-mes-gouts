@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isTodayAtShop } from "@/lib/business-date";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { getSlotsForDate } from "@/lib/delivery/slots";
+import { resolveDeliveryDisplayName } from "@/lib/delivery-zones";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getDeliveryConfig, getZoneById } from "@/lib/server/delivery-config-repository";
 import {
@@ -208,7 +209,12 @@ export async function POST(request: Request) {
       }
       deliveryFee = zone.cost;
       zoneId = zone.id;
-      zoneName = zone.name;
+      zoneName =
+        resolveDeliveryDisplayName(
+          zone.id,
+          order.zoneName,
+          order.client?.landmark,
+        ) ?? zone.name;
     }
 
     const subtotal = priced.data.subtotal;

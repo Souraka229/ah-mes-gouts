@@ -10,6 +10,7 @@ import {
   RefreshCw,
   UserX,
 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,18 @@ type DriverRow = {
   isActive: boolean;
   createdAt: string;
   deliveriesToday: number;
+  totalDeliveries: number;
+  lastOrderAt: string | null;
 };
+
+function formatLastOrder(value: string | null): string {
+  if (!value) return "Aucune";
+  return new Date(value).toLocaleString("fr-FR", {
+    timeZone: "Africa/Porto-Novo",
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
 
 export function AdminDriversPage() {
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
@@ -125,7 +137,9 @@ export function AdminDriversPage() {
     }
     const data = (await res.json()) as { driver: DriverRow };
     setDrivers((prev) =>
-      prev.map((d) => (d.id === driver.id ? data.driver : d)),
+      prev.map((d) =>
+        d.id === driver.id ? { ...d, ...data.driver } : d,
+      ),
     );
     toast.success(next ? "Livreur activé" : "Livreur désactivé");
     setBusyId(null);
@@ -152,7 +166,9 @@ export function AdminDriversPage() {
     }
     const data = (await res.json()) as { driver: DriverRow };
     setDrivers((prev) =>
-      prev.map((d) => (d.id === driver.id ? data.driver : d)),
+      prev.map((d) =>
+        d.id === driver.id ? { ...d, ...data.driver } : d,
+      ),
     );
     toast.success("Nouveau lien généré — renvoyez-le au livreur");
     void copyLink(data.driver);
@@ -232,7 +248,7 @@ export function AdminDriversPage() {
         />
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-          <table className="w-full min-w-[40rem] font-body text-sm">
+          <table className="w-full min-w-[72rem] font-body text-sm">
             <thead>
               <tr className="border-b border-border bg-bg/80 text-left text-muted-foreground">
                 <th className="px-4 py-3 font-medium">Livreur</th>
@@ -240,6 +256,8 @@ export function AdminDriversPage() {
                 <th className="px-4 py-3 font-medium text-center">
                   Aujourd&apos;hui
                 </th>
+                <th className="px-4 py-3 font-medium">Total</th>
+                <th className="px-4 py-3 font-medium">Dernière commande</th>
                 <th className="px-4 py-3 font-medium">Statut</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
@@ -254,27 +272,31 @@ export function AdminDriversPage() {
                   )}
                 >
                   <td className="px-4 py-4 font-medium text-primary">
-                    {driver.name}
+                    <Link
+                      href={`/admin/livreurs/${driver.id}`}
+                      className="cursor-pointer hover:underline"
+                    >
+                      {driver.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-4 text-muted-foreground">
                     {driver.phone}
                   </td>
-                  <td className="px-4 py-4 text-center">
-                    <span className="inline-flex min-w-8 justify-center rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                      {driver.deliveriesToday}
-                    </span>
+                  <td className="px-4 py-4 text-center font-semibold text-primary">
+                    {driver.deliveriesToday}
                   </td>
-                  <td className="px-4 py-4">
-                    <span
-                      className={cn(
-                        "rounded-full px-2.5 py-1 text-xs font-semibold",
-                        driver.isActive
-                          ? "bg-success/15 text-success"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {driver.isActive ? "Actif" : "Inactif"}
-                    </span>
+                  <td className="px-4 py-4 text-muted-foreground">
+                    {driver.totalDeliveries}
+                  </td>
+                  <td className="px-4 py-4 text-xs text-muted-foreground">
+                    {formatLastOrder(driver.lastOrderAt)}
+                  </td>
+                  <td className="px-4 py-4 text-xs font-medium">
+                    {driver.isActive ? (
+                      <span className="text-success">Actif</span>
+                    ) : (
+                      <span className="text-muted-foreground">Inactif</span>
+                    )}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-2">

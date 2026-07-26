@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  resolveDeliveryDisplayName,
+} from "@/lib/delivery-zones";
 import { getZoneById } from "@/lib/server/delivery-config-repository";
 import { priceOrderItems } from "@/lib/server/order-pricing";
 
 const quoteSchema = z.object({
   mode: z.enum(["delivery", "pickup", "dinein"]).nullable(),
   zoneId: z.string().trim().min(1).nullable(),
+  locality: z.string().trim().min(1).max(120).nullable().optional(),
   items: z
     .array(
       z.object({
@@ -60,7 +64,12 @@ export async function POST(request: Request) {
       );
     }
     deliveryFee = zone.cost;
-    zoneName = zone.name;
+    zoneName =
+      resolveDeliveryDisplayName(
+        zone.id,
+        null,
+        parsed.data.locality ?? null,
+      ) ?? zone.name;
   }
 
   return NextResponse.json({

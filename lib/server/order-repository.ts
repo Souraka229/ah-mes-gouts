@@ -22,6 +22,7 @@ import {
   canDriverStartDelivery,
 } from "@/lib/orders/status-machine";
 import { markUnreachable, parseOrderFlags } from "@/lib/orders/order-flags";
+import { getShopDayBounds } from "@/lib/business-date";
 import type { DriverOrderView } from "@/types/driver";
 import type { OrderStatus, SavedOrder } from "@/types/order";
 
@@ -360,29 +361,18 @@ export async function assignOrderDriver(
   return fromPrismaOrder(row);
 }
 
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfToday(): Date {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
 export async function getDriverOrdersForToday(
   driverId: string,
 ): Promise<DriverOrderView[]> {
   const prisma = getPrisma();
+  const { start, end } = getShopDayBounds();
   const rows = await prisma.order.findMany({
     where: {
       driverId,
       status: { in: ["PRETE", "EN_LIVRAISON"] },
       scheduledSlotStart: {
-        gte: startOfToday(),
-        lte: endOfToday(),
+        gte: start,
+        lte: end,
       },
       fulfillmentType: "delivery",
     },

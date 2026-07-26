@@ -14,6 +14,7 @@ export function useServerCheckoutQuote(): void {
   const items = useCartStore((state) => state.items);
   const mode = useCheckoutStore((state) => state.mode);
   const zoneId = useCheckoutStore((state) => state.zoneId);
+  const deliveryLocality = useCheckoutStore((state) => state.deliveryLocality);
   const setLoading = useCheckoutQuoteStore((state) => state.setLoading);
   const setQuote = useCheckoutQuoteStore((state) => state.setQuote);
   const setError = useCheckoutQuoteStore((state) => state.setError);
@@ -36,6 +37,10 @@ export function useServerCheckoutQuote(): void {
           body: JSON.stringify({
             mode,
             zoneId: mode === "delivery" ? zoneId : null,
+            locality:
+              mode === "delivery" && deliveryLocality
+                ? deliveryLocality
+                : null,
             items: items.map((item) => ({
               slug: item.slug,
               name: item.name,
@@ -69,5 +74,14 @@ export function useServerCheckoutQuote(): void {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [items, mode, zoneId, reset, setError, setLoading, setQuote]);
+  }, [
+    items,
+    mode,
+    zoneId,
+    deliveryLocality,
+    reset,
+    setError,
+    setLoading,
+    setQuote,
+  ]);
 }

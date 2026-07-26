@@ -1,5 +1,6 @@
 import type { OrderStatus, SavedOrder } from "@/types/order";
 import { PAYMENT_METHOD_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
+import { resolveDeliveryDisplayName } from "@/lib/delivery-zones";
 import { parseOrderFlags, type OrderFlags } from "@/lib/orders/order-flags";
 
 export type OrderBoardTab = "nouvelles" | "preparation" | "livraison";
@@ -103,7 +104,16 @@ export function formatFulfillmentType(order: SavedOrder): string {
 export function formatFulfillmentPlace(order: SavedOrder): string {
   const mode = order.fulfillmentType ?? order.mode;
   if (mode === "delivery") {
-    return order.zoneName ?? (order.client.address || "—");
+    return (
+      resolveDeliveryDisplayName(
+        order.zoneId ?? order.deliveryZoneId,
+        order.zoneName,
+        order.client.landmark,
+      ) ??
+      order.zoneName ??
+      order.client.address ??
+      "—"
+    );
   }
   return mode === "dinein" ? "Boutique (sur place)" : "Boutique (à emporter)";
 }

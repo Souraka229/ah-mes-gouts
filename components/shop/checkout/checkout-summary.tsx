@@ -15,6 +15,7 @@ import { RECEPTION_MODE_LABELS, type ReceptionMode } from "@/types/order";
 export function CheckoutSummary() {
   const mode = useCheckoutStore((state) => state.mode);
   const zoneId = useCheckoutStore((state) => state.zoneId);
+  const deliveryLocality = useCheckoutStore((state) => state.deliveryLocality);
   const scheduledSlot = useCheckoutStore((state) => state.scheduledSlot);
   const cartTotals = useCartTotals();
   const { zones } = useDeliveryConfig();
@@ -22,7 +23,8 @@ export function CheckoutSummary() {
   const quoteLoading = useCheckoutQuoteStore((state) => state.loading);
   const quoteError = useCheckoutQuoteStore((state) => state.error);
 
-  const zoneName = quote?.zoneName ?? getZoneName(zones, zoneId);
+  const zoneName =
+    deliveryLocality ?? quote?.zoneName ?? getZoneName(zones, zoneId);
   const fallbackFee = getDeliveryFee(mode, getZoneCost(zones, zoneId));
   const subtotal = quote?.subtotal ?? cartTotals.subtotal;
   const deliveryFee = quote?.deliveryFee ?? fallbackFee;
@@ -93,6 +95,7 @@ export function getDeliveryFee(
 export function useCheckoutTotal() {
   const mode = useCheckoutStore((state) => state.mode);
   const zoneId = useCheckoutStore((state) => state.zoneId);
+  const deliveryLocality = useCheckoutStore((state) => state.deliveryLocality);
   const cartTotals = useCartTotals();
   const { zones } = useDeliveryConfig();
   const quote = useCheckoutQuoteStore((state) => state.quote);
@@ -107,7 +110,8 @@ export function useCheckoutTotal() {
     tax: 0,
     total: quote?.total ?? subtotal + deliveryFee,
     itemCount: cartTotals.itemCount,
-    zoneName: quote?.zoneName ?? getZoneName(zones, zoneId),
+    zoneName:
+      deliveryLocality ?? quote?.zoneName ?? getZoneName(zones, zoneId),
     quoteLoading,
   };
 }

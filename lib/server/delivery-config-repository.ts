@@ -43,7 +43,7 @@ function createDefaultConfig(): DeliveryConfig {
   const zones: DeliveryZoneConfig[] = [
     {
       id: "zone-e",
-      name: "Destinations E",
+      name: "Fidjrossè centre, Calvaire, Akogbato, Fidjrossè JNP, Sème City, Erevan Aéroport, Direction générale MTN",
       cost: 500,
       isActive: true,
       createdAt: timestamp,
@@ -51,7 +51,7 @@ function createDefaultConfig(): DeliveryConfig {
     },
     {
       id: "zone-d",
-      name: "Destinations D",
+      name: "Agla, Aïbatin, Barrière, Cadjèhoun, Fidjrossè Cabane des Pêcheurs, Gbégamey, Haie Vive, Houeyiho, St Jean, Vodjè",
       cost: 700,
       isActive: true,
       createdAt: timestamp,
@@ -59,7 +59,7 @@ function createDefaultConfig(): DeliveryConfig {
     },
     {
       id: "zone-c",
-      name: "Destinations C",
+      name: "Ganhi, Tokpa, St Michel, Aïdjèdo, Ste Cécile, Vedokô, Toyota, St Rita, Sikèkodji, Menontin…",
       cost: 800,
       isActive: true,
       createdAt: timestamp,
@@ -67,7 +67,7 @@ function createDefaultConfig(): DeliveryConfig {
     },
     {
       id: "zone-b",
-      name: "Destinations B",
+      name: "Segbèya, Lomnava, Sènadé, Sobebra, Habitat, Quartier Jack, Yenawa, Sacré Cœur…",
       cost: 1000,
       isActive: true,
       createdAt: timestamp,
@@ -75,7 +75,7 @@ function createDefaultConfig(): DeliveryConfig {
     },
     {
       id: "zone-a",
-      name: "Destinations A",
+      name: "Sourou Léré, Tanti, Yagbé, Avotrou, Finagon, Cocotomey, Zone des Ambassades, Cococodji…",
       cost: 1500,
       isActive: true,
       createdAt: timestamp,
@@ -230,7 +230,7 @@ const getCachedDeliveryConfig = unstable_cache(
 
     return config;
   },
-  ["delivery-config-v1"],
+  ["delivery-config-v2"],
   { revalidate: 60, tags: ["delivery-config"] },
 );
 

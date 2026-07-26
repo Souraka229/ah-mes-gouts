@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { getMapsSearchUrl } from "@/lib/driver/portal-links";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { formatPrice } from "@/lib/format";
@@ -142,7 +143,7 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
           orders: prev.orders.filter((o) => o.id !== order.id),
         };
       });
-      toast.success("Livré ✓");
+      toast.success("Livraison terminée");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erreur");
       void load();
@@ -183,7 +184,7 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
     <div className="mx-auto min-h-screen max-w-lg bg-bg px-4 py-5 pb-28">
       <header className="mb-6 rounded-2xl bg-primary px-5 py-5 text-primary-foreground">
         <p className="font-body text-sm opacity-80">
-          Bonjour {data.driver.firstName} 👋
+          Bonjour {data.driver.firstName}
         </p>
         <h1 className="mt-1 font-display text-2xl font-bold">
           Aujourd&apos;hui ({data.orders.length})
@@ -194,6 +195,10 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
           {activeCount > 0 && `${activeCount} en cours`}
           {data.orders.length === 0 && "Aucune livraison pour le moment"}
         </p>
+        <PwaInstallButton
+          label="Installer"
+          className="mt-4 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+        />
       </header>
 
       {data.orders.length === 0 ? (
@@ -266,9 +271,15 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                     Adresse
                   </p>
                   <p className="mt-0.5 text-text">
-                    {order.zoneName ? `${order.zoneName} — ` : ""}
+                    {order.zoneName ? (
+                      <span className="font-medium">{order.zoneName}</span>
+                    ) : null}
+                    {order.zoneName && order.deliveryAddress ? " — " : ""}
                     {order.deliveryAddress}
-                    {order.landmark ? ` (${order.landmark})` : ""}
+                    {order.landmark &&
+                    order.landmark !== order.zoneName
+                      ? ` (${order.landmark})`
+                      : ""}
                   </p>
                 </div>
 
@@ -283,7 +294,7 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
 
                 {order.collectOnDelivery && (
                   <p className="rounded-xl bg-accent/20 px-3 py-2 text-sm font-medium text-text">
-                    💵 Paiement à la livraison
+                    Paiement à récupérer à la livraison
                   </p>
                 )}
               </div>

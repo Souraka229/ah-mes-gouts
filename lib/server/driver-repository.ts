@@ -1,6 +1,13 @@
 import { randomUUID } from "crypto";
 
 import { getPrisma } from "@/lib/prisma";
+import { parseOrderFlags } from "@/lib/orders/order-flags";
+import { getShopDayBounds } from "@/lib/business-date";
+import type {
+  DriverHistoryAction,
+  DriverHistoryData,
+  DriverHistoryOrder,
+} from "@/types/driver";
 
 export type DriverRecord = {
   id: string;
@@ -103,30 +110,19 @@ export async function regenerateDriverToken(
   }
 }
 
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfToday(): Date {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
 /** Nombre de livraisons assignées au livreur pour aujourd'hui (hors annulées). */
 export async function countDriverDeliveriesToday(
   driverId: string,
 ): Promise<number> {
   const prisma = getPrisma();
+  const { start, end } = getShopDayBounds();
   return prisma.order.count({
     where: {
       driverId,
       fulfillmentType: "delivery",
       scheduledSlotStart: {
-        gte: startOfToday(),
-        lte: endOfToday(),
+        gte: start,
+        lte: end,
       },
       status: { not: "ANNULEE" },
     },
@@ -134,16 +130,310 @@ export async function countDriverDeliveriesToday(
 }
 
 export async function listDriversWithTodayCounts(): Promise<
-  Array<DriverRecord & { deliveriesToday: number }>
+  Array<
+    DriverRecord & {
+      deliveriesToday: number;
+      totalDeliveries: number;
+      lastOrderAt: string | null;
+    }
+  >
 > {
   const drivers = await listDrivers();
-  const counts = await Promise.all(
-    drivers.map((d) => countDriverDeliveriesToday(d.id)),
+  if (drivers.length === 0) return [];
+
+  const prisma = getPrisma();
+  const driverIds = drivers.map((driver) => driver.id);
+  const { start, end } = getShopDayBounds();
+  const baseWhere = {
+    driverId: { in: driverIds },
+    fulfillmentType: "delivery",
+    status: { not: "ANNULEE" as const },
+  };
+  const [totals, today] = await Promise.all([
+    prisma.order.groupBy({
+      by: ["driverId"],
+      where: baseWhere,
+      _count: { id: true },
+      _max: {
+        driverDeliveredAt: true,
+        driverStartedAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.order.groupBy({
+      by: ["driverId"],
+      where: {
+        ...baseWhere,
+        scheduledSlotStart: { gte: start, lte: end },
+      },
+      _count: { id: true },
+    }),
+  ]);
+
+  const totalByDriver = new Map(totals.map((row) => [row.driverId, row]));
+  const todayByDriver = new Map(
+    today.map((row) => [row.driverId, row._count.id]),
   );
-  return drivers.map((d, i) => ({
-    ...d,
-    deliveriesToday: counts[i] ?? 0,
-  }));
+
+  return drivers.map((driver) => {
+    const total = totalByDriver.get(driver.id);
+    const lastOrderAt = total
+      ? latestDate([
+          total._max.driverDeliveredAt,
+          total._max.driverStartedAt,
+          total._max.updatedAt,
+        ])
+      : null;
+    return {
+      ...driver,
+      deliveriesToday: todayByDriver.get(driver.id) ?? 0,
+      totalDeliveries: total?._count.id ?? 0,
+      lastOrderAt: lastOrderAt?.toISOString() ?? null,
+    };
+  });
+}
+
+function latestDate(values: Array<Date | null | undefined>): Date | null {
+  const dates = values.filter((value): value is Date => value instanceof Date);
+  if (dates.length === 0) return null;
+  return new Date(Math.max(...dates.map((date) => date.getTime())));
+}
+
+function durationMinutes(start: Date | null, end: Date | null): number | null {
+  if (!start || !end) return null;
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 60_000));
+}
+
+function orderToHistory(row: {
+  id: string;
+  status: string;
+  clientFirstName: string;
+  clientLastName: string;
+  zoneName: string | null;
+  total: number;
+  createdAt: Date;
+  scheduledSlotStart: Date | null;
+  driverStartedAt: Date | null;
+  driverDeliveredAt: Date | null;
+  clientMessage: string | null;
+}): DriverHistoryOrder {
+  const flags = parseOrderFlags(row.clientMessage);
+  return {
+    id: row.id,
+    status: row.status.toLowerCase(),
+    clientName:
+      `${row.clientFirstName} ${row.clientLastName}`.trim() || "Client",
+    zoneName: row.zoneName,
+    total: row.total,
+    createdAt: row.createdAt.toISOString(),
+    scheduledSlotStart: row.scheduledSlotStart?.toISOString() ?? null,
+    startedAt: row.driverStartedAt?.toISOString() ?? null,
+    deliveredAt: row.driverDeliveredAt?.toISOString() ?? null,
+    unreachableAt: flags.unreachableAt,
+    durationMinutes: durationMinutes(
+      row.driverStartedAt,
+      row.driverDeliveredAt,
+    ),
+  };
+}
+
+function derivedActions(orders: DriverHistoryOrder[]): DriverHistoryAction[] {
+  return orders
+    .flatMap((order) => {
+      const actions: DriverHistoryAction[] = [];
+      if (order.startedAt) {
+        actions.push({
+          id: `${order.id}-started`,
+          orderId: order.id,
+          action: "started",
+          label: `Départ pour la commande ${order.id}`,
+          createdAt: order.startedAt,
+        });
+      }
+      if (order.unreachableAt) {
+        actions.push({
+          id: `${order.id}-unreachable`,
+          orderId: order.id,
+          action: "unreachable",
+          label: `Client injoignable — commande ${order.id}`,
+          createdAt: order.unreachableAt,
+        });
+      }
+      if (order.deliveredAt) {
+        actions.push({
+          id: `${order.id}-delivered`,
+          orderId: order.id,
+          action: "delivered",
+          label: `Commande ${order.id} livrée`,
+          createdAt: order.deliveredAt,
+        });
+      }
+      return actions;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+}
+
+export async function getDriverHistory(
+  driverId: string,
+  page = 1,
+  pageSize = 20,
+): Promise<DriverHistoryData | null> {
+  const prisma = getPrisma();
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(50, Math.max(10, pageSize));
+
+  const driver = await prisma.driver.findUnique({ where: { id: driverId } });
+  if (!driver) return null;
+
+  const where = {
+    driverId,
+    fulfillmentType: "delivery",
+    status: { not: "ANNULEE" as const },
+  };
+
+  const [
+    rows,
+    totalItems,
+    deliveredOrders,
+    activeOrders,
+    aggregate,
+    deliveredTimes,
+    loggedActions,
+  ] =
+    await Promise.all([
+      prisma.order.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        skip: (safePage - 1) * safePageSize,
+        take: safePageSize,
+        select: {
+          id: true,
+          status: true,
+          clientFirstName: true,
+          clientLastName: true,
+          zoneName: true,
+          total: true,
+          createdAt: true,
+          scheduledSlotStart: true,
+          driverStartedAt: true,
+          driverDeliveredAt: true,
+          clientMessage: true,
+        },
+      }),
+      prisma.order.count({ where }),
+      prisma.order.count({ where: { ...where, status: "LIVREE" } }),
+      prisma.order.count({
+        where: { ...where, status: { in: ["PRETE", "EN_LIVRAISON"] } },
+      }),
+      prisma.order.aggregate({
+        where,
+        _max: {
+          driverDeliveredAt: true,
+          driverStartedAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.order.findMany({
+        where: {
+          ...where,
+          status: "LIVREE",
+          driverStartedAt: { not: null },
+          driverDeliveredAt: { not: null },
+        },
+        select: {
+          driverStartedAt: true,
+          driverDeliveredAt: true,
+        },
+      }),
+      prisma.adminActionLog.findMany({
+        where: {
+          source: "driver",
+          details: { path: ["driverId"], equals: driverId },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    ]);
+
+  const orders = rows.map(orderToHistory);
+  const deliveredDurations = deliveredTimes
+    .map((row) => durationMinutes(row.driverStartedAt, row.driverDeliveredAt))
+    .filter((value): value is number => value !== null);
+  const lastOrderAt = latestDate([
+    aggregate._max.driverDeliveredAt,
+    aggregate._max.driverStartedAt,
+    aggregate._max.updatedAt,
+  ]);
+  const persistedActions: DriverHistoryAction[] = loggedActions.map((entry) => {
+    const details =
+      entry.details &&
+      typeof entry.details === "object" &&
+      !Array.isArray(entry.details)
+        ? (entry.details as Record<string, unknown>)
+        : {};
+    const action =
+      entry.action === "started" ||
+      entry.action === "unreachable" ||
+      entry.action === "delivered" ||
+      entry.action === "assigned"
+        ? entry.action
+        : "status";
+    return {
+      id: entry.id,
+      orderId:
+        typeof details.orderId === "string" ? details.orderId : null,
+      action,
+      label: entry.summary,
+      createdAt: entry.createdAt.toISOString(),
+    };
+  });
+  const persistedKeys = new Set(
+    persistedActions.map((action) => `${action.action}:${action.orderId ?? ""}`),
+  );
+  const actions = [
+    ...persistedActions,
+    ...derivedActions(orders).filter(
+      (action) =>
+        !persistedKeys.has(`${action.action}:${action.orderId ?? ""}`),
+    ),
+  ].sort(
+    (a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return {
+    driver: {
+      id: driver.id,
+      name: driver.name,
+      phone: driver.phone,
+      isActive: driver.isActive,
+      createdAt: driver.createdAt.toISOString(),
+    },
+    summary: {
+      totalOrders: totalItems,
+      deliveredOrders,
+      activeOrders,
+      lastOrderAt: lastOrderAt?.toISOString() ?? null,
+      averageDeliveryMinutes:
+        deliveredDurations.length > 0
+          ? Math.round(
+              deliveredDurations.reduce((sum, value) => sum + value, 0) /
+                deliveredDurations.length,
+            )
+          : null,
+    },
+    orders,
+    actions,
+    pagination: {
+      page: safePage,
+      pageSize: safePageSize,
+      totalPages: Math.max(1, Math.ceil(totalItems / safePageSize)),
+      totalItems,
+    },
+  };
 }
 
 export function getDriverPortalPath(accessToken: string): string {

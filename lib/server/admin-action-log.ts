@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/prisma";
 
-export type AdminActionSource = "manual" | "ai_assistant";
+export type AdminActionSource = "manual" | "ai_assistant" | "driver";
 
 export type AdminActionLogEntry = {
   id: string;

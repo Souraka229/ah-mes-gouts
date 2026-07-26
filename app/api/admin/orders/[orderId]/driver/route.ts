@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
+import { getAdminContextAsync } from "@/lib/server/admin-auth";
+import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { assignOrderDriver } from "@/lib/server/order-repository";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{ orderId: string }> };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await isAdminAuthorizedAsync())) {
+  const admin = await getAdminContextAsync();
+  if (!admin) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -28,6 +30,15 @@ export async function PATCH(request: Request, context: RouteContext) {
     );
     if (!order) {
       return NextResponse.json({ error: "Commande introuvable." }, { status: 404 });
+    }
+    if (body.driverId) {
+      await appendAdminActionLog({
+        adminName: admin.name,
+        source: "driver",
+        action: "assigned",
+        summary: `${order.driverName ?? "Livreur"} affecté à la commande ${orderId}`,
+        details: { driverId: body.driverId, orderId },
+      }).catch(() => undefined);
     }
     return NextResponse.json({ order });
   } catch (error) {

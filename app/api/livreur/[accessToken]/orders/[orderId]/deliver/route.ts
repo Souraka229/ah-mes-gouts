@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getDriverByAccessToken } from "@/lib/server/driver-repository";
 import { driverMarkDelivered } from "@/lib/server/order-repository";
+import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,13 @@ export async function POST(_request: Request, context: RouteContext) {
 
   try {
     const order = await driverMarkDelivered(driver.id, orderId);
+    await appendAdminActionLog({
+      adminName: driver.name,
+      source: "driver",
+      action: "delivered",
+      summary: `${driver.name} a livré la commande ${orderId}`,
+      details: { driverId: driver.id, orderId },
+    }).catch(() => undefined);
     return NextResponse.json({ order });
   } catch (error) {
     return NextResponse.json(

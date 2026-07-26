@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { useCheckoutStore } from "@/lib/checkout-store";
@@ -16,9 +16,11 @@ import { cn } from "@/lib/utils";
 
 export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
   const zoneId = useCheckoutStore((state) => state.zoneId);
+  const deliveryLocality = useCheckoutStore((state) => state.deliveryLocality);
   const setZoneId = useCheckoutStore((state) => state.setZoneId);
-  const client = useCheckoutStore((state) => state.client);
-  const setClient = useCheckoutStore((state) => state.setClient);
+  const setDeliveryLocality = useCheckoutStore(
+    (state) => state.setDeliveryLocality,
+  );
 
   const { zones, loading, error } = useDeliveryConfig();
   const [localityValue, setLocalityValue] = useState("");
@@ -28,34 +30,38 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
     [zones],
   );
 
-  /** Localités affichées = grille affiche, filtrées par zones actives en DB. */
   const localityOptions = useMemo(() => {
     const all = getDeliveryLocalityOptions();
     if (activeIds.size === 0) return all;
     return all.filter((opt) => activeIds.has(opt.zoneId));
   }, [activeIds]);
 
-  const selectedZone =
-    zones.find((zone) => zone.id === zoneId) ??
-    (zoneId
-      ? {
-          id: zoneId,
-          name: getDeliveryZoneById(zoneId)?.name ?? zoneId,
-          cost: getDeliveryZoneById(zoneId)?.price ?? 0,
-        }
-      : null);
+  useEffect(() => {
+    if (!zoneId || !deliveryLocality) return;
+    const match = localityOptions.find(
+      (opt) => opt.zoneId === zoneId && opt.area === deliveryLocality,
+    );
+    if (match) setLocalityValue(match.value);
+  }, [zoneId, deliveryLocality, localityOptions]);
+
+  const selectedOption = localityOptions.find(
+    (opt) => opt.value === localityValue,
+  );
+
+  const fee =
+    zones.find((zone) => zone.id === zoneId)?.cost ??
+    (zoneId ? (getDeliveryZoneById(zoneId)?.price ?? 0) : 0);
 
   const handleLocalityChange = (value: string) => {
     setLocalityValue(value);
     const parsed = parseLocalityValue(value);
     if (!parsed) {
       setZoneId(null);
+      setDeliveryLocality(null);
       return;
     }
     setZoneId(parsed.zoneId);
-    if (!client.landmark?.trim()) {
-      setClient({ ...client, landmark: parsed.area });
-    }
+    setDeliveryLocality(parsed.area);
   };
 
   return (
@@ -74,7 +80,7 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
 
       {loading && (
         <p className="font-body text-sm text-muted-foreground">
-          Chargement des zones...
+          Chargement des destinations...
         </p>
       )}
 
@@ -86,7 +92,7 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
 
       {!loading && localityOptions.length === 0 && (
         <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
-          Aucune zone de livraison disponible pour le moment.
+          Aucune destination disponible pour le moment.
         </p>
       )}
 
@@ -119,7 +125,7 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
                   return (
                     <optgroup
                       key={code}
-                      label={`Destinations ${code} — ${formatPrice(price)}`}
+                      label={`${formatPrice(price)}`}
                     >
                       {group.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -137,15 +143,15 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
             </div>
           </div>
 
-          {selectedZone && localityValue && (
+          {selectedOption && (
             <p className="font-body text-sm text-muted-foreground">
               Frais de livraison :{" "}
               <span className="font-semibold text-text">
-                {formatPrice(selectedZone.cost)}
+                {formatPrice(fee || selectedOption.price)}
               </span>
               <span className="text-muted-foreground">
                 {" "}
-                ({selectedZone.name})
+                — {selectedOption.area}
               </span>
             </p>
           )}

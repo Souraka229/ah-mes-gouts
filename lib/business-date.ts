@@ -51,3 +51,15 @@ export function shopDateTimeToUtc(dateKey: string, timeHHmm: string): Date {
 export function shopDateTimeToIso(dateKey: string, timeHHmm: string): string {
   return shopDateTimeToUtc(dateKey, timeHHmm).toISOString();
 }
+
+/** Bornes UTC du jour boutique courant, utilisables dans les requêtes Prisma. */
+export function getShopDayBounds(now = new Date()): {
+  start: Date;
+  end: Date;
+} {
+  const start = shopDateTimeToUtc(getShopDateKey(now), "00:00");
+  return {
+    start,
+    end: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1),
+  };
+}

@@ -26,6 +26,8 @@ type CheckoutState = {
   step: CheckoutStep;
   mode: ReceptionMode | null;
   zoneId: string | null;
+  /** Quartier choisi (Fidjrossè, Haie Vive…) — pas le code zone. */
+  deliveryLocality: string | null;
   scheduledSlot: ScheduledSlotSelection | null;
   client: ClientInfo;
   isGift: boolean;
@@ -35,6 +37,7 @@ type CheckoutState = {
   setStep: (step: CheckoutStep) => void;
   setMode: (mode: ReceptionMode) => void;
   setZoneId: (zoneId: string | null) => void;
+  setDeliveryLocality: (locality: string | null) => void;
   setScheduledSlot: (slot: ScheduledSlotSelection | null) => void;
   setClient: (client: ClientInfo) => void;
   setIsGift: (isGift: boolean) => void;
@@ -50,6 +53,7 @@ const initialState = {
   step: "commande" as CheckoutStep,
   mode: null as ReceptionMode | null,
   zoneId: null as string | null,
+  deliveryLocality: null as string | null,
   scheduledSlot: null as ScheduledSlotSelection | null,
   client: getEmptyClient(),
   isGift: false,
@@ -68,9 +72,17 @@ export const useCheckoutStore = create<CheckoutState>()(
         set({
           mode,
           zoneId: mode === "delivery" ? get().zoneId : null,
+          deliveryLocality:
+            mode === "delivery" ? get().deliveryLocality : null,
           scheduledSlot: null,
         }),
-      setZoneId: (zoneId) => set({ zoneId, scheduledSlot: null }),
+      setZoneId: (zoneId) =>
+        set({
+          zoneId,
+          deliveryLocality: zoneId ? get().deliveryLocality : null,
+          scheduledSlot: null,
+        }),
+      setDeliveryLocality: (deliveryLocality) => set({ deliveryLocality }),
       setScheduledSlot: (scheduledSlot) => set({ scheduledSlot }),
       setClient: (client) => set({ client }),
       setIsGift: (isGift) =>
@@ -102,6 +114,7 @@ export const useCheckoutStore = create<CheckoutState>()(
         step: state.step,
         mode: state.mode,
         zoneId: state.zoneId,
+        deliveryLocality: state.deliveryLocality,
         scheduledSlot: state.scheduledSlot,
         client: state.client,
         isGift: state.isGift,
@@ -110,17 +123,24 @@ export const useCheckoutStore = create<CheckoutState>()(
         hasWelcomedBack: state.hasWelcomedBack,
       }),
       migrate: (persisted) => {
-        const p = persisted as Record<string, unknown> & { step?: string };
+        const p = persisted as Record<string, unknown> & {
+          step?: string;
+          deliveryLocality?: string | null;
+        };
+        const next = {
+          ...p,
+          deliveryLocality: p.deliveryLocality ?? null,
+        };
         if (
-          p.step &&
-          p.step !== "commande" &&
-          p.step !== "payment"
+          next.step &&
+          next.step !== "commande" &&
+          next.step !== "payment"
         ) {
-          return { ...p, step: "commande" as CheckoutStep };
+          return { ...next, step: "commande" as CheckoutStep };
         }
-        return persisted as CheckoutState;
+        return next as CheckoutState;
       },
-      version: 2,
+      version: 3,
     },
   ),
 );

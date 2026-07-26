@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
@@ -20,14 +20,32 @@ export function useServerCheckoutQuote(): void {
   const setError = useCheckoutQuoteStore((state) => state.setError);
   const reset = useCheckoutQuoteStore((state) => state.reset);
 
+  const itemsKey = useMemo(
+    () =>
+      items
+        .map(
+          (item) =>
+            `${item.slug}:${item.quantity}:${item.supplements
+              .map((supplement) => supplement.name)
+              .join(",")}`,
+        )
+        .join("|"),
+    [items],
+  );
+
   useEffect(() => {
-    if (items.length === 0) {
+    if (!itemsKey) {
       reset();
       return;
     }
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
+      const currentItems = useCartStore.getState().items;
+      if (currentItems.length === 0) {
+        reset();
+        return;
+      }
       setLoading();
       try {
         const response = await fetch("/api/cart/quote", {
@@ -41,7 +59,7 @@ export function useServerCheckoutQuote(): void {
               mode === "delivery" && deliveryLocality
                 ? deliveryLocality
                 : null,
-            items: items.map((item) => ({
+            items: currentItems.map((item) => ({
               slug: item.slug,
               name: item.name,
               quantity: item.quantity,
@@ -75,7 +93,7 @@ export function useServerCheckoutQuote(): void {
       controller.abort();
     };
   }, [
-    items,
+    itemsKey,
     mode,
     zoneId,
     deliveryLocality,

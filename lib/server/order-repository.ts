@@ -365,6 +365,27 @@ export async function assignOrderDriver(
   return fromPrismaOrder(row);
 }
 
+type DriverOrderRow = {
+  id: string;
+  status: import("@prisma/client").OrderStatus;
+  zoneId: string | null;
+  zoneName: string | null;
+  clientAddress: string | null;
+  clientLandmark: string | null;
+  clientPhone: string;
+  clientFirstName: string;
+  clientMessage: string | null;
+  isGift: boolean;
+  recipientName: string | null;
+  recipientAddress: string | null;
+  recipientLandmark: string | null;
+  recipientPhone: string | null;
+  total: number;
+  paymentMethod: import("@prisma/client").PaymentMethod;
+  scheduledSlotStart: Date | null;
+  driverStartedAt: Date | null;
+};
+
 export async function getDriverOrdersForToday(
   driverId: string,
 ): Promise<DriverOrderView[]> {
@@ -381,19 +402,37 @@ export async function getDriverOrdersForToday(
       fulfillmentType: "delivery",
     },
     orderBy: { scheduledSlotStart: "asc" },
+    select: {
+      id: true,
+      status: true,
+      zoneId: true,
+      zoneName: true,
+      clientAddress: true,
+      clientLandmark: true,
+      clientPhone: true,
+      clientFirstName: true,
+      clientMessage: true,
+      isGift: true,
+      recipientName: true,
+      recipientAddress: true,
+      recipientLandmark: true,
+      recipientPhone: true,
+      total: true,
+      paymentMethod: true,
+      scheduledSlotStart: true,
+      driverStartedAt: true,
+    },
   });
 
   return rows.map((row) => toDriverOrderView(row));
 }
 
-function toDriverOrderView(
-  row: import("@prisma/client").Order,
-): DriverOrderView {
+function toDriverOrderView(row: DriverOrderRow): DriverOrderView {
   const status = fromPrismaOrderStatus(row.status);
   const address =
     row.isGift && row.recipientAddress
       ? row.recipientAddress
-      : row.clientAddress ?? "";
+      : (row.clientAddress ?? "");
   const landmark =
     row.isGift && row.recipientLandmark
       ? row.recipientLandmark

@@ -201,6 +201,8 @@ model Order {
   @@index([customerId])
   @@index([createdAt])
   @@index([driverId])
+  @@index([driverId, fulfillmentType, status])
+  @@index([driverId, scheduledSlotStart])
   @@index([status])
   @@index([scheduledSlotStart, fulfillmentType, status])
   @@index([paymentReference])
@@ -295,6 +297,7 @@ model AdminActionLog {
   details   Json?
 
   @@index([createdAt])
+  @@index([source, createdAt])
 }
 
 /// Flux minimal pour Supabase Realtime (statut public sans PII)

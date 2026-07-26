@@ -175,6 +175,36 @@ export function getDeliveryZoneById(id: string): DeliveryZone | undefined {
   return deliveryZones.find((zone) => zone.id === id);
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Index précompilés — évite regex/`toLowerCase` en boucle sur les hot paths. */
+const LOCALITY_BY_LOWER = new Map<string, string>();
+const LOCALITY_BY_ZONE = new Map<string, Map<string, string>>();
+const BULK_LABELS = new Set<string>();
+const EMBEDDED_PATTERNS: Array<{ area: string; re: RegExp }> = [];
+
+for (const zone of deliveryZones) {
+  BULK_LABELS.add(zone.areas.join(", ").toLowerCase());
+  const byZone = new Map<string, string>();
+  for (const area of zone.areas) {
+    const key = area.toLowerCase();
+    LOCALITY_BY_LOWER.set(key, area);
+    byZone.set(key, area);
+    EMBEDDED_PATTERNS.push({
+      area,
+      re: new RegExp(
+        `(^|[\\s,;(/])${escapeRegExp(area)}($|[\\s,;)/])`,
+        "i",
+      ),
+    });
+  }
+  LOCALITY_BY_ZONE.set(zone.id, byZone);
+}
+
+const GENERIC_ZONE_RE = /^(zone|destinations)\s+[a-e]$/i;
+
 /** Valide un quartier contre la grille officielle d’une zone. */
 export function resolveLocalityName(
   zoneId: string,
@@ -182,12 +212,7 @@ export function resolveLocalityName(
 ): string | null {
   const trimmed = candidate?.trim();
   if (!trimmed || isBulkAreasLabel(trimmed)) return null;
-  const zone = getDeliveryZoneById(zoneId);
-  if (!zone) return null;
-  return (
-    zone.areas.find((area) => area.toLowerCase() === trimmed.toLowerCase()) ??
-    null
-  );
+  return LOCALITY_BY_ZONE.get(zoneId)?.get(trimmed.toLowerCase()) ?? null;
 }
 
 /** Liste de quartiers collée (erreur d’affichage) — à ignorer. */
@@ -196,14 +221,12 @@ export function isBulkAreasLabel(name: string | null | undefined): boolean {
   const t = name.trim();
   if (t.includes("…") || t.includes("...")) return true;
   if (t.split(",").length >= 3) return true;
-  return deliveryZones.some(
-    (zone) => zone.areas.join(", ").toLowerCase() === t.toLowerCase(),
-  );
+  return BULK_LABELS.has(t.toLowerCase());
 }
 
 export function isGenericZoneLabel(name: string | null | undefined): boolean {
   if (!name?.trim()) return false;
-  return /^(zone|destinations)\s+[a-e]$/i.test(name.trim());
+  return GENERIC_ZONE_RE.test(name.trim());
 }
 
 /** Cherche un quartier connu (toutes zones), y compris dans « … (Quartier) ». */
@@ -215,35 +238,20 @@ export function findKnownLocality(
     return null;
   }
 
-  for (const zone of deliveryZones) {
-    const exact = zone.areas.find(
-      (area) => area.toLowerCase() === trimmed.toLowerCase(),
-    );
-    if (exact) return exact;
-  }
+  const exact = LOCALITY_BY_LOWER.get(trimmed.toLowerCase());
+  if (exact) return exact;
 
   const paren = trimmed.match(/\(([^)]+)\)/);
   if (paren?.[1]) {
-    const inner = findKnownLocality(paren[1]);
+    const inner = LOCALITY_BY_LOWER.get(paren[1].trim().toLowerCase());
     if (inner) return inner;
   }
 
-  for (const zone of deliveryZones) {
-    const embedded = zone.areas.find((area) => {
-      const re = new RegExp(
-        `(^|[\\s,;(/])${escapeRegExp(area)}($|[\\s,;)/])`,
-        "i",
-      );
-      return re.test(trimmed);
-    });
-    if (embedded) return embedded;
+  for (const { area, re } of EMBEDDED_PATTERNS) {
+    if (re.test(trimmed)) return area;
   }
 
   return null;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 /**
@@ -286,27 +294,27 @@ export function formatDeliveryAddressLine(input: {
   address?: string | null;
   landmark?: string | null;
 }): string {
+  const landmark = input.landmark?.trim() || "";
   const quartier = resolveDeliveryDisplayName(
     input.zoneId,
     input.zoneName,
-    input.landmark,
+    landmark || null,
   );
   const address = input.address?.trim() || "";
-  const landmark = input.landmark?.trim() || "";
+  const landmarkIsQuartier = Boolean(
+    landmark && LOCALITY_BY_LOWER.has(landmark.toLowerCase()),
+  );
   const landmarkUseful =
-    landmark &&
+    Boolean(landmark) &&
     landmark !== quartier &&
     landmark !== address &&
-    !isBulkAreasLabel(landmark);
+    !isBulkAreasLabel(landmark) &&
+    !landmarkIsQuartier;
 
   const parts: string[] = [];
   if (quartier) parts.push(quartier);
   if (address && address !== quartier) parts.push(address);
-  if (landmarkUseful && !findKnownLocality(landmark)) {
-    parts.push(`(${landmark})`);
-  } else if (landmarkUseful && !quartier) {
-    parts.push(landmark);
-  }
+  if (landmarkUseful) parts.push(`(${landmark})`);
 
   return parts.join(" — ") || "—";
 }

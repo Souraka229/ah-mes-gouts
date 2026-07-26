@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   Loader2,
@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { getMapsSearchUrl } from "@/lib/driver/portal-links";
-import { formatDeliveryAddressLine } from "@/lib/delivery-zones";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { formatPrice } from "@/lib/format";
 import type { DriverOrderView, DriverPortalData } from "@/types/driver";
@@ -36,13 +35,37 @@ function clientDisplayName(order: DriverOrderView): string {
   return order.clientFirstName;
 }
 
+/** zoneName déjà résolu côté serveur — pas de re-scan des quartiers. */
+function formatOrderAddress(order: DriverOrderView): string {
+  const parts: string[] = [];
+  if (order.zoneName) parts.push(order.zoneName);
+  if (
+    order.deliveryAddress &&
+    order.deliveryAddress !== order.zoneName
+  ) {
+    parts.push(order.deliveryAddress);
+  }
+  if (
+    order.landmark &&
+    order.landmark !== order.zoneName &&
+    order.landmark !== order.deliveryAddress
+  ) {
+    parts.push(`(${order.landmark})`);
+  }
+  return parts.join(" — ") || "—";
+}
+
 export function DriverPortal({ accessToken }: DriverPortalProps) {
   const [data, setData] = useState<DriverPortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const inFlight = useRef(false);
+  const orderIdsRef = useRef<Set<string>>(new Set());
 
   const load = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
       const res = await fetch(`/api/livreur/${accessToken}/orders`, {
         cache: "no-store",
@@ -50,30 +73,48 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
       if (!res.ok) {
         setInvalid(true);
         setData(null);
+        orderIdsRef.current = new Set();
         return;
       }
       const json = (await res.json()) as DriverPortalData;
       setData(json);
+      orderIdsRef.current = new Set(json.orders.map((order) => order.id));
       setInvalid(false);
     } catch {
       toast.error("Connexion impossible");
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   }, [accessToken]);
 
   useEffect(() => {
     void load();
-    const interval = setInterval(() => void load(), 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [load]);
 
   useOrderRealtime({
-    onStatusChange: () => {
+    onStatusChange: (row) => {
+      // Nouveau ticket ou commande déjà affichée → refresh ; ignore le reste.
+      if (
+        orderIdsRef.current.size > 0 &&
+        !orderIdsRef.current.has(row.id)
+      ) {
+        return;
+      }
       void load();
     },
   });
-
   const patchOrder = (orderId: string, patch: Partial<DriverOrderView>) => {
     setData((prev) => {
       if (!prev) return prev;
@@ -271,13 +312,7 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                   <p className="text-xs font-medium text-muted-foreground uppercase">
                     Adresse
                   </p>
-                  <p className="mt-0.5 text-text">
-                    {formatDeliveryAddressLine({
-                      zoneName: order.zoneName,
-                      address: order.deliveryAddress,
-                      landmark: order.landmark,
-                    })}
-                  </p>
+                  <p className="mt-0.5 text-text">{formatOrderAddress(order)}</p>
                 </div>
 
                 <div>

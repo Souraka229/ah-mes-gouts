@@ -1,4 +1,4 @@
-const CACHE_NAME = "amg-admin-assets-v1";
+const CACHE_NAME = "amg-admin-assets-v2";
 const ASSETS = ["/pwa/admin-icon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -35,16 +35,17 @@ self.addEventListener("fetch", (event) => {
     ["style", "script", "font", "image"].includes(request.destination);
   if (!cacheable) return;
 
+  // Stale-while-revalidate : réponse rapide + maj cache en arrière-plan.
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(request);
+      const network = fetch(request)
+        .then((response) => {
+          if (response.ok) void cache.put(request, response.clone());
+          return response;
+        })
+        .catch(() => cached);
+      return cached ?? network;
     }),
   );
 });

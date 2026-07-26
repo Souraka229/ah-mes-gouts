@@ -304,15 +304,7 @@ export async function getDriverHistory(
     status: { not: "ANNULEE" as const },
   };
 
-  const [
-    rows,
-    totalItems,
-    deliveredOrders,
-    activeOrders,
-    aggregate,
-    deliveredTimes,
-    loggedActions,
-  ] =
+  const [rows, statusGroups, aggregate, avgRows, loggedActions] =
     await Promise.all([
       prisma.order.findMany({
         where,
@@ -335,10 +327,10 @@ export async function getDriverHistory(
           clientMessage: true,
         },
       }),
-      prisma.order.count({ where }),
-      prisma.order.count({ where: { ...where, status: "LIVREE" } }),
-      prisma.order.count({
-        where: { ...where, status: { in: ["PRETE", "EN_LIVRAISON"] } },
+      prisma.order.groupBy({
+        by: ["status"],
+        where,
+        _count: { _all: true },
       }),
       prisma.order.aggregate({
         where,
@@ -348,37 +340,48 @@ export async function getDriverHistory(
           updatedAt: true,
         },
       }),
-      prisma.order.findMany({
-        where: {
-          ...where,
-          status: "LIVREE",
-          driverStartedAt: { not: null },
-          driverDeliveredAt: { not: null },
-        },
-        select: {
-          driverStartedAt: true,
-          driverDeliveredAt: true,
-        },
-      }),
+      prisma.$queryRaw<Array<{ avg_min: number | null }>>`
+        SELECT AVG(
+          EXTRACT(EPOCH FROM ("driverDeliveredAt" - "driverStartedAt")) / 60.0
+        )::float AS avg_min
+        FROM "Order"
+        WHERE "driverId" = ${driverId}
+          AND "fulfillmentType" = 'delivery'
+          AND status = 'LIVREE'
+          AND "driverStartedAt" IS NOT NULL
+          AND "driverDeliveredAt" IS NOT NULL
+      `,
       prisma.adminActionLog.findMany({
         where: {
           source: "driver",
           details: { path: ["driverId"], equals: driverId },
         },
         orderBy: { createdAt: "desc" },
-        take: 100,
+        take: 40,
       }),
     ]);
 
+  const countByStatus = new Map(
+    statusGroups.map((row) => [row.status, row._count._all]),
+  );
+  const totalItems = [...countByStatus.values()].reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const deliveredOrders = countByStatus.get("LIVREE") ?? 0;
+  const activeOrders =
+    (countByStatus.get("PRETE") ?? 0) +
+    (countByStatus.get("EN_LIVRAISON") ?? 0);
+
   const orders = rows.map(orderToHistory);
-  const deliveredDurations = deliveredTimes
-    .map((row) => durationMinutes(row.driverStartedAt, row.driverDeliveredAt))
-    .filter((value): value is number => value !== null);
   const lastOrderAt = latestDate([
     aggregate._max.driverDeliveredAt,
     aggregate._max.driverStartedAt,
     aggregate._max.updatedAt,
   ]);
+  const averageDeliveryMinutes =
+    avgRows[0]?.avg_min != null ? Math.round(avgRows[0].avg_min) : null;
+
   const persistedActions: DriverHistoryAction[] = loggedActions.map((entry) => {
     const details =
       entry.details &&
@@ -395,15 +398,16 @@ export async function getDriverHistory(
         : "status";
     return {
       id: entry.id,
-      orderId:
-        typeof details.orderId === "string" ? details.orderId : null,
+      orderId: typeof details.orderId === "string" ? details.orderId : null,
       action,
       label: entry.summary,
       createdAt: entry.createdAt.toISOString(),
     };
   });
   const persistedKeys = new Set(
-    persistedActions.map((action) => `${action.action}:${action.orderId ?? ""}`),
+    persistedActions.map(
+      (action) => `${action.action}:${action.orderId ?? ""}`,
+    ),
   );
   const actions = [
     ...persistedActions,
@@ -429,13 +433,7 @@ export async function getDriverHistory(
       deliveredOrders,
       activeOrders,
       lastOrderAt: lastOrderAt?.toISOString() ?? null,
-      averageDeliveryMinutes:
-        deliveredDurations.length > 0
-          ? Math.round(
-              deliveredDurations.reduce((sum, value) => sum + value, 0) /
-                deliveredDurations.length,
-            )
-          : null,
+      averageDeliveryMinutes,
     },
     orders,
     actions,

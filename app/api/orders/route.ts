@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { isTodayAtShop } from "@/lib/business-date";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { getSlotsForDate } from "@/lib/delivery/slots";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -128,6 +129,16 @@ export async function POST(request: Request) {
 
   const slotStart = order.scheduledSlotStart;
   const slotEnd = order.scheduledSlotEnd;
+  if (!isTodayAtShop(slotStart) || !isTodayAtShop(slotEnd)) {
+    return NextResponse.json(
+      {
+        error:
+          "Le menu est journalier : choisissez un créneau d’aujourd’hui.",
+      },
+      { status: 409 },
+    );
+  }
+
   const fulfillmentType = mode;
   const scheduleType = fulfillmentType === "delivery" ? "delivery" : "pickup";
 

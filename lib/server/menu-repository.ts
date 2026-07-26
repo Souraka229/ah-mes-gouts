@@ -3,6 +3,7 @@ import type { MenuStatus as PrismaMenuStatus } from "@prisma/client";
 
 import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
+import { isTodayAtShop } from "@/lib/business-date";
 import { getPrisma } from "@/lib/prisma";
 import type { MenuStatus, ScheduledMenu } from "@/types/menu";
 import type { Product } from "@/types/product";
@@ -332,8 +333,12 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
   const catalog = await getAdminCatalog();
   const active = await getActiveMenu();
 
-  if (!active || active.productIds.length === 0) {
-    return catalog.filter((p) => p.isMenuDuJour);
+  if (!active || !isTodayAtShop(active.date)) {
+    return [];
+  }
+
+  if (active.productIds.length === 0) {
+    return [];
   }
 
   // Résolution robuste : par ID puis par slug. Après un reseed, les IDs du
@@ -356,7 +361,7 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
     }
   }
 
-  return ordered.length > 0 ? ordered : catalog.filter((p) => p.isMenuDuJour);
+  return ordered;
 }
 
 export async function reseedMenus(): Promise<ScheduledMenu[]> {

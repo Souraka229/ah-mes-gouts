@@ -3,6 +3,8 @@ import { Suspense } from "react";
 
 import { CatalogueView } from "@/components/shop/catalogue-view";
 import { JsonLd } from "@/components/seo/json-ld";
+import { isUnlimitedStockCategory } from "@/lib/admin/categories";
+import { getProductCategory } from "@/lib/catalog-utils";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { buildBreadcrumbSchema } from "@/lib/seo/schemas";
 import {
@@ -30,6 +32,12 @@ export default async function CataloguePage() {
     getShopProductsFromActiveMenu(),
     getFullCatalog(),
   ]);
+  const menuSlugs = new Set(menuProducts.map((product) => product.slug));
+  const dailyCatalog = allProducts.filter(
+    (product) =>
+      menuSlugs.has(product.slug) ||
+      isUnlimitedStockCategory(getProductCategory(product)),
+  );
 
   return (
     <>
@@ -41,7 +49,10 @@ export default async function CataloguePage() {
           </div>
         }
       >
-        <CatalogueView menuProducts={menuProducts} allProducts={allProducts} />
+        <CatalogueView
+          menuProducts={menuProducts}
+          allProducts={dailyCatalog}
+        />
       </Suspense>
     </>
   );

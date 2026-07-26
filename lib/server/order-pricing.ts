@@ -1,6 +1,9 @@
 import { getProductPrice, getProductCategory } from "@/lib/catalog-utils";
 import { isUnlimitedStockCategory } from "@/lib/admin/categories";
-import { getFullCatalog } from "@/lib/server/shop-catalog";
+import {
+  getFullCatalog,
+  getShopProductsFromActiveMenu,
+} from "@/lib/server/shop-catalog";
 import { getPrisma } from "@/lib/prisma";
 import { supplementOptions } from "@/lib/supplements";
 import type { SavedOrder } from "@/types/order";
@@ -53,9 +56,15 @@ export async function priceOrderItems(
     };
   }
 
-  const catalog = await getFullCatalog();
+  const [catalog, activeMenuProducts] = await Promise.all([
+    getFullCatalog(),
+    getShopProductsFromActiveMenu(),
+  ]);
   const bySlug = new Map(catalog.map((product) => [product.slug, product]));
   const byName = new Map(catalog.map((product) => [product.name, product]));
+  const activeMenuSlugs = new Set(
+    activeMenuProducts.map((product) => product.slug),
+  );
 
   const slugs = rawItems
     .map((item) => item.slug)
@@ -94,6 +103,15 @@ export async function priceOrderItems(
     const unlimitedStock = isUnlimitedStockCategory(category);
 
     if (!unlimitedStock) {
+      if (!activeMenuSlugs.has(product.slug)) {
+        issues.push({
+          name: product.name,
+          message:
+            "Ce produit ne fait pas partie du menu disponible aujourd’hui.",
+        });
+        continue;
+      }
+
       const stockRemaining =
         liveStock.get(product.slug) ?? product.stockRemaining;
 

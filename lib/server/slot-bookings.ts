@@ -3,6 +3,7 @@ import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
 import { getPendingPaymentCutoff } from "@/lib/orders/payment-expiration";
+import { isTodayAtShop } from "@/lib/business-date";
 
 export function parseSlotKey(slotKey: string): {
   type: string;
@@ -65,20 +66,15 @@ export async function findNextAvailableSlot(
   type: FulfillmentType,
   afterStartIso: string,
 ): Promise<TimeSlotOption | null> {
-  const { schedules, options } = await getDeliveryConfig();
+  const { schedules } = await getDeliveryConfig();
   const after = new Date(afterStartIso);
   const now = new Date();
+  if (!isTodayAtShop(after, now)) return null;
 
-  for (let offset = 0; offset < options.bookingDaysAhead; offset++) {
-    const date = new Date(after);
-    date.setDate(after.getDate() + offset);
-    date.setHours(0, 0, 0, 0);
-
-    const slots = getSlotsForDate(schedules, type, date, now);
-    for (const slot of slots) {
-      if (new Date(slot.start) < after) continue;
-      if (await isSlotAvailable(slot.slotKey)) return slot;
-    }
+  const slots = getSlotsForDate(schedules, type, now, now);
+  for (const slot of slots) {
+    if (new Date(slot.start) < after) continue;
+    if (await isSlotAvailable(buildSlotKey(type, slot.start))) return slot;
   }
 
   return null;

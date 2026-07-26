@@ -1,4 +1,4 @@
-import { DELIVERY_WAVES, PICKUP_WINDOW } from "@/lib/delivery/constants";
+import { DELIVERY_WAVES } from "@/lib/delivery/constants";
 import type {
   DeliveryScheduleConfig,
   FulfillmentType,
@@ -71,8 +71,7 @@ function timeOnDate(date: Date, time: string): Date {
 
 /**
  * Créneaux proposés à la cliente.
- * - Livraison : 2 vagues fixes (13h–15h30, 16h–18h30).
- * - Retrait / sur place : une seule fenêtre large (jusqu'à 19h).
+ * Deux vagues fixes pour tous les modes (13h–15h30, 16h–18h30).
  * Le jour reste piloté par la config (schedule.isActive) ; seules
  * les heures sont figées pour rester ultra simples.
  */
@@ -83,35 +82,20 @@ export function buildSlotsForDate(
 ): TimeSlotOption[] {
   const today = isSameDay(date, now);
 
-  if (schedule.type === "delivery") {
-    return DELIVERY_WAVES.flatMap((wave) => {
-      const start = timeOnDate(date, wave.start);
-      const end = timeOnDate(date, wave.end);
-      // On masque une vague déjà commencée pour une commande du jour.
-      if (today && start <= now) return [];
-      return [
-        {
-          start: start.toISOString(),
-          end: end.toISOString(),
-          label: wave.label,
-          slotKey: `delivery:${wave.key}:${start.toISOString()}`,
-        },
-      ];
-    });
-  }
-
-  // Retrait / sur place : fenêtre unique.
-  const start = timeOnDate(date, PICKUP_WINDOW.start);
-  const end = timeOnDate(date, PICKUP_WINDOW.end);
-  if (today && end <= now) return [];
-  return [
-    {
-      start: start.toISOString(),
-      end: end.toISOString(),
-      label: PICKUP_WINDOW.label,
-      slotKey: `pickup:${start.toISOString()}`,
-    },
-  ];
+  return DELIVERY_WAVES.flatMap((wave) => {
+    const start = timeOnDate(date, wave.start);
+    const end = timeOnDate(date, wave.end);
+    // La vague reste commandable jusqu'à sa fin.
+    if (today && end <= now) return [];
+    return [
+      {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        label: wave.label,
+        slotKey: `${schedule.type}:${wave.key}:${start.toISOString()}`,
+      },
+    ];
+  });
 }
 
 export function getSlotsForDate(

@@ -1,17 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { CalendarDays, MapPin } from "lucide-react";
 
 import {
   formatSlotDate,
-  getSelectableDates,
   getSlotsForDate,
-  isDateClosed,
 } from "@/lib/delivery/slots";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useDeliveryConfig } from "@/lib/hooks/use-delivery-config";
 import { cn } from "@/lib/utils";
+import { isTodayAtShop } from "@/lib/business-date";
 
 export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
   const mode = useCheckoutStore((state) => state.mode);
@@ -19,36 +18,23 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
   const setScheduledSlot = useCheckoutStore((state) => state.setScheduledSlot);
 
   const { schedules, options, loading } = useDeliveryConfig();
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [slotError, setSlotError] = useState<string | null>(null);
 
   // « Sur place » et « À emporter » partagent les horaires boutique (pickup).
   const fulfillmentType = mode === "delivery" ? "delivery" : "pickup";
   const now = useMemo(() => new Date(), []);
 
-  const selectableDates = useMemo(
-    () =>
-      mode
-        ? getSelectableDates(
-            schedules,
-            fulfillmentType,
-            now,
-            options.bookingDaysAhead,
-          )
-        : [],
-    [schedules, fulfillmentType, mode, now, options.bookingDaysAhead],
-  );
+  const slots = useMemo(() => {
+    if (!mode) return [];
+    return getSlotsForDate(schedules, fulfillmentType, now, now).slice(0, 2);
+  }, [schedules, fulfillmentType, mode, now]);
 
   useEffect(() => {
-    if (!selectedDate && selectableDates.length > 0) {
-      setSelectedDate(selectableDates[0]!);
-    }
-  }, [selectableDates, selectedDate]);
-
-  const slots = useMemo(() => {
-    if (!selectedDate || !mode) return [];
-    return getSlotsForDate(schedules, fulfillmentType, selectedDate, now);
-  }, [selectedDate, schedules, fulfillmentType, mode, now]);
+    if (!scheduledSlot) return;
+    const stillValid =
+      isTodayAtShop(scheduledSlot.start) &&
+      slots.some((slot) => slot.slotKey === scheduledSlot.slotKey);
+    if (!stillValid) setScheduledSlot(null);
+  }, [scheduledSlot, setScheduledSlot, slots]);
 
   if (!mode) return null;
 
@@ -68,11 +54,7 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
             Choisissez votre créneau
           </h1>
           <p className="mt-2 font-body text-muted-foreground">
-            {mode === "delivery"
-              ? "Choisissez le jour et la vague de livraison (13h–15h30 ou 16h–18h30)."
-              : mode === "dinein"
-                ? "Choisissez le jour de votre venue — vous passez quand vous voulez (jusqu'à 19h)."
-                : "Choisissez le jour — vous passez chercher quand vous voulez (jusqu'à 19h)."}
+            Votre commande concerne uniquement le menu d&apos;aujourd&apos;hui.
           </p>
         </div>
       )}
@@ -87,75 +69,31 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
         </div>
       )}
 
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 font-body text-sm font-medium text-primary">
-          <CalendarDays className="size-4" aria-hidden />
-          Date
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {Array.from({ length: options.bookingDaysAhead }, (_, offset) => {
-            const date = new Date(now);
-            date.setDate(now.getDate() + offset);
-            date.setHours(0, 0, 0, 0);
-            const closed = isDateClosed(schedules, fulfillmentType, date);
-            const selectable = selectableDates.some(
-              (d) => d.toDateString() === date.toDateString(),
-            );
-            const isSelected =
-              selectedDate?.toDateString() === date.toDateString();
-
-            return (
-              <button
-                key={offset}
-                type="button"
-                disabled={closed || !selectable}
-                title={closed ? "Fermé ce jour" : undefined}
-                onClick={() => {
-                  if (!closed && selectable) {
-                    setSelectedDate(date);
-                    setScheduledSlot(null);
-                    setSlotError(null);
-                  }
-                }}
-                className={cn(
-                  "min-h-14 min-w-[5.5rem] shrink-0 cursor-pointer rounded-2xl border px-3 py-2 text-center font-body text-xs transition-all duration-[250ms] sm:min-w-24 sm:text-sm",
-                  isSelected && "border-primary bg-primary/5 shadow-md",
-                  !isSelected &&
-                    !closed &&
-                    selectable &&
-                    "border-border bg-card hover:border-primary/40",
-                  (closed || !selectable) &&
-                    "cursor-not-allowed border-border/60 bg-muted/40 text-muted-foreground opacity-60",
-                )}
-              >
-                <span className="block font-semibold capitalize">
-                  {date.toLocaleDateString("fr-FR", { weekday: "short" })}
-                </span>
-                <span className="mt-1 block">
-                  {date.toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
-              </button>
-            );
-          })}
+      <div className="flex items-center gap-3 rounded-2xl border border-secondary/60 bg-secondary/15 px-4 py-3">
+        <CalendarDays className="size-5 shrink-0 text-primary" aria-hidden />
+        <div>
+          <p className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Commande du jour
+          </p>
+          <p className="font-body text-sm font-semibold capitalize text-primary">
+            {formatSlotDate(now)}
+          </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        <p className="font-body text-sm font-medium text-primary">
-          {selectedDate
-            ? `Créneaux — ${formatSlotDate(selectedDate)}`
-            : "Créneaux horaires"}
-        </p>
+        <div className="flex items-center gap-2 font-body text-sm font-medium text-primary">
+          <CalendarDays className="size-4" aria-hidden />
+          Deux créneaux aujourd&apos;hui
+        </div>
 
         {slots.length === 0 ? (
           <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
-            Aucun créneau disponible pour cette date.
+            Les créneaux d&apos;aujourd&apos;hui sont terminés. Le prochain menu
+            sera disponible demain.
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3">
             {slots.map((slot) => {
               const selected = scheduledSlot?.slotKey === slot.slotKey;
               return (
@@ -168,7 +106,6 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
                       end: slot.end,
                       slotKey: slot.slotKey,
                     });
-                    setSlotError(null);
                   }}
                   className={cn(
                     "min-h-14 cursor-pointer rounded-2xl border px-4 py-3 font-body text-sm font-semibold transition-all duration-[250ms]",
@@ -184,12 +121,6 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
       </div>
-
-      {slotError && (
-        <p role="alert" className="font-body text-sm text-destructive">
-          {slotError}
-        </p>
-      )}
     </div>
   );
 }

@@ -15,16 +15,6 @@ export const DELIVERY_WAVES = [
   { key: "vague-2", start: "16:00", end: "18:30", label: "Vague 2 · 16h – 18h30" },
 ] as const;
 
-/**
- * Retrait / à emporter : une seule fenêtre très large.
- * La cliente passe chercher quand elle veut avant la fermeture.
- */
-export const PICKUP_WINDOW = {
-  start: "13:00",
-  end: "19:00",
-  label: "13h – 19h (passez quand vous voulez)",
-} as const;
-
 export const DAY_LABELS = [
   "Dimanche",
   "Lundi",

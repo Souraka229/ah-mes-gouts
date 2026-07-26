@@ -324,32 +324,23 @@ async function seedDeliveryBasics() {
       await prisma.deliverySchedule.deleteMany();
     }
     const rows = [];
-    for (let day = 1; day <= 6; day++) {
+    for (let day = 0; day <= 6; day++) {
       rows.push(
         {
           id: randomUUID(),
           dayOfWeek: day,
           startTime: "13:00",
-          endTime: "15:30",
-          slotDuration: 150,
-          type: "delivery",
-          isActive: true,
-        },
-        {
-          id: randomUUID(),
-          dayOfWeek: day,
-          startTime: "16:00",
           endTime: "18:30",
-          slotDuration: 150,
+          slotDuration: 330,
           type: "delivery",
           isActive: true,
         },
         {
           id: randomUUID(),
           dayOfWeek: day,
-          startTime: "10:00",
-          endTime: "19:00",
-          slotDuration: 60,
+          startTime: "13:00",
+          endTime: "18:30",
+          slotDuration: 330,
           type: "pickup",
           isActive: true,
         },

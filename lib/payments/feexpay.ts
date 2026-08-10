@@ -135,6 +135,35 @@ function splitName(full?: string): { firstName: string; lastName: string } {
   };
 }
 
+/**
+ * Traduit le `reason` technique de FeexPay en message clair pour la cliente.
+ * Sans ça, l'écran affichait juste « FAILED » (responsemsg brut), inexploitable.
+ */
+function humanizeFeexPayReason(reason?: string, fallback?: string): string {
+  const r = (reason ?? "").toUpperCase();
+  if (!r) return fallback || "Paiement refusé par l'opérateur.";
+
+  if (r.includes("LOW_BALANCE") || r.includes("INSUFFICIENT")) {
+    return "Solde insuffisant sur le compte Mobile Money.";
+  }
+  if (r.includes("PAYER_NOT_FOUND") || r.includes("NOT_FOUND")) {
+    return "Ce numéro n'est pas reconnu par l'opérateur. Vérifiez le numéro et l'opérateur choisi.";
+  }
+  if (r.includes("LIMIT")) {
+    return "Limite de transaction atteinte sur ce compte Mobile Money.";
+  }
+  if (r.includes("TIMEOUT") || r.includes("EXPIRED")) {
+    return "Délai dépassé — la demande n'a pas été validée à temps sur le téléphone.";
+  }
+  if (r.includes("CANCEL") || r.includes("REJECT") || r.includes("DENIED")) {
+    return "Paiement annulé ou refusé sur le téléphone.";
+  }
+  if (r.includes("NOT_ALLOWED")) {
+    return "Opération non autorisée sur ce compte Mobile Money.";
+  }
+  return `Paiement refusé par l'opérateur (${reason}).`;
+}
+
 function mapFeexPayStatus(
   status: string | undefined,
 ): "SUCCESS" | "PENDING" | "FAILED" {
@@ -265,6 +294,7 @@ export async function initiateFeexPayPayment(
       status?: string;
       responsemsg?: string;
       message?: string;
+      reason?: string;
     };
 
     if (!response.ok) {
@@ -295,10 +325,7 @@ export async function initiateFeexPayPayment(
       );
       return {
         status: "FAILED",
-        error:
-          data.responsemsg ||
-          data.message ||
-          "Paiement refusé par l'opérateur.",
+        error: humanizeFeexPayReason(data.reason, data.message),
       };
     }
 
@@ -343,6 +370,7 @@ export async function getFeexPayTransactionStatus(
       status?: string;
       responsemsg?: string;
       message?: string;
+      reason?: string;
     };
 
     // 404 = transaction pas (encore) connue de FeexPay. Pendant le polling,
@@ -362,10 +390,16 @@ export async function getFeexPayTransactionStatus(
       return { status: "PENDING", reference: ref, rawResponse: data };
     }
 
+    console.error(
+      "[FeexPay] Statut FAILED — réponse brute:",
+      JSON.stringify(data),
+    );
     return {
       status: "FAILED",
       reference: ref,
-      error: data.responsemsg || data.message,
+      // responsemsg vaut littéralement "FAILED" chez FeexPay — inexploitable
+      // pour la cliente. La vraie cause est dans `reason`.
+      error: humanizeFeexPayReason(data.reason, data.message),
       rawResponse: data,
     };
   } catch (error) {

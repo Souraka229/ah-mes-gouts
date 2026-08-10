@@ -210,6 +210,7 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
                 value={gift.recipientName}
                 error={errors.recipientName}
                 className="sm:col-span-2"
+                normalize={normalizePersonName}
                 onChange={(value) => updateGift("recipientName", value)}
               />
               <Field
@@ -225,7 +226,8 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
                 <>
                   <Field
                     id="recipientAddress"
-                    label="Adresse de livraison"
+                    label="Quartier / adresse de livraison"
+                    placeholder="Ex : Fidjrossè, rue derrière la pharmacie"
                     value={gift.recipientAddress}
                     error={errors.recipientAddress}
                     className="sm:col-span-2"
@@ -233,7 +235,8 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
                   />
                   <Field
                     id="recipientLandmark"
-                    label="Repère"
+                    label="À côté de quoi ?"
+                    placeholder="Ex : en face de la boutique Yatt & Co"
                     value={gift.recipientLandmark}
                     error={errors.recipientLandmark}
                     className="sm:col-span-2"
@@ -317,6 +320,7 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
                 label="Votre prénom"
                 value={client.firstName}
                 error={errors.firstName}
+                normalize={normalizePersonName}
                 onChange={(value) => updateClient("firstName", value)}
               />
               <Field
@@ -324,6 +328,7 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
                 label="Votre nom"
                 value={client.lastName}
                 error={errors.lastName}
+                normalize={normalizePersonName}
                 onChange={(value) => updateClient("lastName", value)}
               />
               <Field
@@ -345,6 +350,7 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
             label="Prénom"
             value={client.firstName}
             error={errors.firstName}
+            normalize={normalizePersonName}
             onChange={(value) => updateClient("firstName", value)}
           />
           <Field
@@ -352,6 +358,7 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
             label="Nom"
             value={client.lastName}
             error={errors.lastName}
+            normalize={normalizePersonName}
             onChange={(value) => updateClient("lastName", value)}
           />
           <Field
@@ -367,7 +374,8 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
             <>
               <Field
                 id="address"
-                label="Adresse"
+                label="Quartier / adresse"
+                placeholder="Ex : Fidjrossè, rue derrière la pharmacie"
                 value={client.address}
                 error={errors.address}
                 className="sm:col-span-2"
@@ -375,7 +383,8 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
               />
               <Field
                 id="landmark"
-                label="Repère"
+                label="À côté de quoi ?"
+                placeholder="Ex : en face de la boutique Yatt & Co"
                 value={client.landmark}
                 error={errors.landmark}
                 className="sm:col-span-2"
@@ -414,13 +423,32 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
   );
 }
 
+/**
+ * Normalise un nom saisi : espaces superflus retirés, première lettre de
+ * chaque mot en majuscule. Évite les « jean   DUPONT » / « jean dupont » qui
+ * ressortent tels quels sur les commandes, les reçus et les étiquettes.
+ * Gère les composés (Jean-Pierre, N'Diaye) et respecte les accents.
+ */
+export function normalizePersonName(raw: string): string {
+  return raw
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("fr")
+    .replace(/(^|[\s\-'’])(\p{L})/gu, (_, sep: string, letter: string) =>
+      `${sep}${letter.toLocaleUpperCase("fr")}`,
+    );
+}
+
 type FieldProps = {
   id: string;
   label: string;
   value: string;
   error?: string;
   className?: string;
+  placeholder?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  /** Normalisation appliquée à la sortie du champ (ex. capitalisation des noms). */
+  normalize?: (value: string) => string;
   onChange: (value: string) => void;
 };
 
@@ -430,7 +458,9 @@ function Field({
   value,
   error,
   className,
+  placeholder,
   inputMode,
+  normalize,
   onChange,
 }: FieldProps) {
   return (
@@ -441,8 +471,18 @@ function Field({
       <Input
         id={id}
         value={value}
+        placeholder={placeholder}
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
+        // Normalisation au blur (pas à la frappe) : ne gêne jamais la saisie.
+        onBlur={
+          normalize
+            ? (event) => {
+                const cleaned = normalize(event.target.value);
+                if (cleaned !== value) onChange(cleaned);
+              }
+            : undefined
+        }
         className="mt-2 h-11 cursor-text font-body"
         aria-invalid={Boolean(error)}
       />

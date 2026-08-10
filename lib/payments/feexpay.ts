@@ -42,23 +42,20 @@ export type FeexPayStatusResult =
   | { status: "PENDING"; reference: string; rawResponse?: unknown }
   | { status: "FAILED"; reference: string; error?: string; rawResponse?: unknown };
 
-const API_ROOT = "https://api.feexpay.me/api/transactions";
-/** Carte : endpoint "public" confirmé correct (docs.feexpay.me + SDK officiel). */
+/**
+ * Confirmé le 10/08/2026 via docs.feexpay.me/api/payin (doc officielle, page
+ * "MTN Mobile Money Bénin" lue directement) : le host est api-v2.feexpay.me,
+ * PAS api.feexpay.me — c'était la vraie cause des 502 depuis le début, avant
+ * même mes changements précédents (qui corrigeaient des détails secondaires
+ * sur le mauvais host). Un endpoint par opérateur sous /public/, confirmé.
+ */
+const API_ROOT = "https://api-v2.feexpay.me/api/transactions";
 const API_BASE = `${API_ROOT}/public`;
 
-/**
- * Mobile Money : endpoint UNIQUE "integration" (pas de route par opérateur sous
- * /public/ — c'était l'erreur). L'opérateur est indiqué via le champ `reseau`.
- * Vérifié dans le bundle du SDK officiel @feexpay/react-sdk (v1.5.8) :
- * unpkg.com/@feexpay/react-sdk/dist/index.cjs.js + types/index.d.ts.
- */
-const MOBILE_REQUEST_ENDPOINT = `${API_ROOT}/requesttopay/integration`;
-const MOBILE_STATUS_ENDPOINT = `${API_ROOT}/getrequesttopay/integration`;
-
-const RESEAU_MAP: Record<Exclude<PaymentMethod, "card">, string> = {
-  mtn_momo: "MTN",
-  moov_money: "MOOV",
-  celtiis_cash: "CELTIIS",
+const MOBILE_ENDPOINTS: Record<Exclude<PaymentMethod, "card">, string> = {
+  mtn_momo: `${API_BASE}/requesttopay/mtn`,
+  moov_money: `${API_BASE}/requesttopay/moov`,
+  celtiis_cash: `${API_BASE}/requesttopay/celtiis_bj`,
 };
 
 export function getFeexPayConfig(): FeexPayConfig | null {
@@ -192,7 +189,6 @@ export async function initiateFeexPayPayment(
         headers: authHeaders(config),
         body: JSON.stringify({
           shop: config.shopId,
-          token: config.apiKey,
           amount,
           phone: phoneNumber,
           first_name: firstName,
@@ -203,7 +199,7 @@ export async function initiateFeexPayPayment(
           description,
           success_redirect_url: successUrl,
           error_redirect_url: successUrl,
-          callback_info: { orderId: input.orderId },
+          callback_info: input.orderId,
         }),
       });
 
@@ -246,23 +242,21 @@ export async function initiateFeexPayPayment(
       };
     }
 
-    const email = input.customerEmail?.trim() || "client@gift-entremets.bj";
+    const endpoint = MOBILE_ENDPOINTS[input.paymentMethod];
 
-    const response = await fetchWithTimeout(MOBILE_REQUEST_ENDPOINT, {
+    const response = await fetchWithTimeout(endpoint, {
       method: "POST",
       headers: authHeaders(config),
       body: JSON.stringify({
         shop: config.shopId,
-        token: config.apiKey,
         amount,
         phoneNumber: Number(phoneNumber),
-        reseau: RESEAU_MAP[input.paymentMethod],
-        currency: "XOF",
         first_name: firstName,
-        email,
-        customId: input.orderId,
+        last_name: lastName,
         description,
-        callback_info: { orderId: input.orderId },
+        // Doc officielle : callback_info est une chaîne (ex. "order_12345"),
+        // pas un objet.
+        callback_info: input.orderId,
       }),
     });
 
@@ -275,7 +269,7 @@ export async function initiateFeexPayPayment(
 
     if (!response.ok) {
       console.error(
-        `[FeexPay] Mobile Money rejeté — HTTP ${response.status}, endpoint ${MOBILE_REQUEST_ENDPOINT}:`,
+        `[FeexPay] Mobile Money rejeté — HTTP ${response.status}, endpoint ${endpoint}:`,
         JSON.stringify(data),
       );
       return {
@@ -337,7 +331,7 @@ export async function getFeexPayTransactionStatus(
 ): Promise<FeexPayStatusResult> {
   try {
     const response = await fetchWithTimeout(
-      `${MOBILE_STATUS_ENDPOINT}/${encodeURIComponent(reference)}`,
+      `${API_BASE}/single/status/${encodeURIComponent(reference)}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${config.apiKey}` },

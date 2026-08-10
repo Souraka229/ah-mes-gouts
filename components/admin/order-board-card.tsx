@@ -2,11 +2,13 @@
 
 import type { ComponentType } from "react";
 import {
+  Info,
   MapPin,
   MessageCircle,
   Pencil,
   Phone,
   Printer,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -64,6 +66,8 @@ type OrderBoardCardProps = {
     previous: string | null,
   ) => void;
   onPendingDriverChange: (orderId: string, driverId: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
 };
 
 function formatRetraitDate(order: SavedOrder): string {
@@ -91,7 +95,10 @@ export function OrderBoardCard({
   onStatusChange,
   onAssignDriver,
   onPendingDriverChange,
+  onEdit,
+  onDelete,
 }: OrderBoardCardProps) {
+  const canDelete = order.status === "recue" || order.status === "annulee";
   const phone = getClientPhone(order);
   const address = getDeliveryAddress(order);
   const cakeMessage = getCakeMessage(order);
@@ -214,10 +221,6 @@ export function OrderBoardCard({
                   {order.driverName}
                 </p>
               )}
-              <p className="pt-2 text-xs text-muted-foreground">
-                Pour modifier une commande, contactez le client ou recréez-la
-                manuellement.
-              </p>
             </div>
           )}
 
@@ -296,11 +299,12 @@ export function OrderBoardCard({
               onClick={() => printOrderReceipt(order)}
             />
             <ActionChip
-              label="Modifier"
-              icon={Pencil}
+              label="Détails"
+              icon={Info}
               onClick={onToggleExpand}
               active={expanded}
             />
+            <ActionChip label="Éditer" icon={Pencil} onClick={onEdit} />
             {order.status !== "annulee" && order.status !== "livree" && (
               <ActionChip
                 label="Annuler"
@@ -315,6 +319,14 @@ export function OrderBoardCard({
                     onStatusChange(order.id, "annulee", order.status);
                   }
                 }}
+              />
+            )}
+            {canDelete && (
+              <ActionChip
+                label="Supprimer"
+                icon={Trash2}
+                variant="danger"
+                onClick={onDelete}
               />
             )}
           </div>

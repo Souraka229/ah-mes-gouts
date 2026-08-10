@@ -308,6 +308,169 @@ export async function getServerOrdersForAdmin(
   return rows.map(fromPrismaOrder);
 }
 
+export type ManualOrderInput = {
+  client: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address?: string;
+    landmark?: string;
+    message?: string;
+  };
+  mode: SavedOrder["mode"];
+  zoneId?: string | null;
+  zoneName?: string | null;
+  deliveryFee?: number;
+  paymentMethod: SavedOrder["paymentMethod"];
+  markPaid?: boolean;
+  items: { name: string; quantity: number; unitPrice: number }[];
+};
+
+/**
+ * Création manuelle d'une commande côté admin (commande téléphone / boutique) —
+ * ne passe pas par la réservation de créneau/stock du checkout client, l'admin
+ * saisit ce qu'il a réellement vendu.
+ */
+export async function createManualServerOrder(
+  input: ManualOrderInput,
+): Promise<SavedOrder> {
+  const deliveryFee = Math.max(0, Math.round(input.deliveryFee ?? 0));
+  const items = input.items.map((item) => ({
+    name: item.name.trim(),
+    quantity: Math.max(1, Math.round(item.quantity)),
+    unitPrice: Math.max(0, Math.round(item.unitPrice)),
+    supplements: [] as string[],
+  }));
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0,
+  );
+
+  const order: SavedOrder = {
+    id: generateOrderId(),
+    createdAt: new Date().toISOString(),
+    status: input.markPaid ? "paiement_confirme" : "recue",
+    mode: input.mode,
+    fulfillmentType: input.mode,
+    zoneId: input.mode === "delivery" ? (input.zoneId ?? null) : null,
+    deliveryZoneId: input.mode === "delivery" ? (input.zoneId ?? null) : null,
+    zoneName: input.mode === "delivery" ? (input.zoneName ?? null) : null,
+    scheduledSlotStart: null,
+    scheduledSlotEnd: null,
+    deliveryFee: input.mode === "delivery" ? deliveryFee : 0,
+    client: {
+      firstName: input.client.firstName.trim(),
+      lastName: input.client.lastName.trim(),
+      phone: input.client.phone.trim(),
+      address: input.client.address?.trim() ?? "",
+      landmark: input.client.landmark?.trim() ?? "",
+      message: input.client.message?.trim() ?? "",
+    },
+    isGift: false,
+    gift: null,
+    paymentMethod: input.paymentMethod,
+    items,
+    subtotal,
+    total: subtotal + (input.mode === "delivery" ? deliveryFee : 0),
+  };
+
+  await saveServerOrderWithRetry(order);
+  return order;
+}
+
+export type OrderDetailsPatch = {
+  client: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    address?: string;
+    landmark?: string;
+    message?: string;
+  };
+  deliveryFee?: number;
+  items: { name: string; quantity: number; unitPrice: number }[];
+};
+
+/** Édition complète (client + articles) d'une commande existante par l'admin. */
+export async function updateServerOrderDetails(
+  orderId: string,
+  patch: OrderDetailsPatch,
+): Promise<SavedOrder | undefined> {
+  const prisma = getPrisma();
+  const existing = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!existing) return undefined;
+
+  const items = patch.items.map((item) => ({
+    name: item.name.trim(),
+    quantity: Math.max(1, Math.round(item.quantity)),
+    unitPrice: Math.max(0, Math.round(item.unitPrice)),
+    supplements: [] as string[],
+  }));
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.quantity * item.unitPrice,
+    0,
+  );
+  const deliveryFee =
+    patch.deliveryFee !== undefined
+      ? Math.max(0, Math.round(patch.deliveryFee))
+      : existing.deliveryFee;
+
+  try {
+    await prisma.$transaction([
+      prisma.orderItem.deleteMany({ where: { orderId } }),
+      prisma.order.update({
+        where: { id: orderId },
+        data: {
+          clientFirstName: patch.client.firstName.trim(),
+          clientLastName: patch.client.lastName.trim(),
+          clientPhone: patch.client.phone.trim(),
+          clientAddress: patch.client.address?.trim() || null,
+          clientLandmark: patch.client.landmark?.trim() || null,
+          clientMessage: patch.client.message?.trim() || null,
+          deliveryFee,
+          subtotal,
+          total: subtotal + deliveryFee,
+          items: { create: items },
+        },
+      }),
+    ]);
+  } catch {
+    return undefined;
+  }
+
+  return getServerOrder(orderId);
+}
+
+/**
+ * Suppression définitive — réservée aux commandes jamais payées (recue) ou déjà
+ * annulées. Une commande payée doit être annulée (statut), jamais supprimée,
+ * pour garder une trace comptable.
+ */
+export async function deleteServerOrder(
+  orderId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const prisma = getPrisma();
+  const existing = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true },
+  });
+
+  if (!existing) {
+    return { ok: false, error: "Commande introuvable." };
+  }
+
+  if (existing.status !== "RECUE" && existing.status !== "ANNULEE") {
+    return {
+      ok: false,
+      error:
+        "Seules les commandes non payées ou déjà annulées peuvent être supprimées. Utilisez « Annuler » pour les autres.",
+    };
+  }
+
+  await prisma.order.delete({ where: { id: orderId } });
+  return { ok: true };
+}
+
 export async function updateServerOrderStatus(
   orderId: string,
   status: OrderStatus,

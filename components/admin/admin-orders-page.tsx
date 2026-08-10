@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bell, BellOff, Loader2, RefreshCw, Volume2 } from "lucide-react";
+import { Bell, BellOff, Loader2, Plus, RefreshCw, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { AdminOrderFormSheet } from "@/components/admin/admin-order-form-sheet";
 import { OrderBoardCard } from "@/components/admin/order-board-card";
 import {
   BOARD_TAB_LABELS,
@@ -59,6 +60,8 @@ export function AdminOrdersPage() {
     {},
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<SavedOrder | null>(null);
   const notifications = useOrderNotifications();
   const knownIdsRef = useRef<Set<string> | null>(null);
   const notificationsRef = useRef(notifications);
@@ -307,6 +310,46 @@ export function AdminOrdersPage() {
     });
   };
 
+  const openCreate = () => {
+    setEditingOrder(null);
+    setFormOpen(true);
+  };
+
+  const openEdit = (order: SavedOrder) => {
+    setEditingOrder(order);
+    setFormOpen(true);
+  };
+
+  const handleSaved = (order: SavedOrder) => {
+    setOrders((prev) => {
+      const exists = prev.some((o) => o.id === order.id);
+      if (exists) return prev.map((o) => (o.id === order.id ? order : o));
+      return [order, ...prev];
+    });
+  };
+
+  const handleDelete = useCallback(async (orderId: string) => {
+    if (
+      !window.confirm(
+        `Supprimer définitivement la commande ${orderId} ? Impossible à annuler.`,
+      )
+    ) {
+      return;
+    }
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      toast.error(data?.error ?? "Suppression impossible");
+      return;
+    }
+    setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    toast.success("Commande supprimée");
+  }, []);
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -374,6 +417,15 @@ export function AdminOrdersPage() {
           >
             <RefreshCw className="size-4" aria-hidden />
             Actualiser
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={openCreate}
+          >
+            <Plus className="size-4" aria-hidden />
+            Nouvelle commande
           </Button>
         </div>
       </header>
@@ -494,11 +546,20 @@ export function AdminOrdersPage() {
                     [orderId]: driverId,
                   }))
                 }
+                onEdit={() => openEdit(order)}
+                onDelete={() => void handleDelete(order.id)}
               />
             </div>
           ))}
         </div>
       )}
+
+      <AdminOrderFormSheet
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        order={editingOrder ?? undefined}
+        onSaved={handleSaved}
+      />
 
       {cancelledToday.length > 0 && (
         <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4">

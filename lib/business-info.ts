@@ -12,8 +12,8 @@ export const BOUTIQUE_HOURS = {
 
 export const ORDER_PHONE = {
   display: "+229 01 97 31 07 42",
-  /** Format local flyer : 0197310742 */
-  tel: "+22997310742",
+  /** Format local flyer : 0197310742 — le "01" manquait ici (bug), les liens tel:/WhatsApp appelaient un numéro incomplet. */
+  tel: "+2290197310742",
 } as const;
 
 /**

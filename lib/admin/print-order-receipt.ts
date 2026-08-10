@@ -71,10 +71,10 @@ export function printOrderReceipt(order: SavedOrder): void {
   <title>Facture ${escapeHtml(order.id)}</title>
   <style>
     :root {
-      --primary: #3b1f4d;
-      --accent: #c9a96e;
-      --text: #241726;
-      --muted: #6b6270;
+      --primary: #17181b;
+      --accent: #a6283a;
+      --text: #221f1e;
+      --muted: #6b6660;
       --border: #e4ddd6;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -91,7 +91,7 @@ export function printOrderReceipt(order: SavedOrder): void {
       margin: 0 auto;
       background: #fff;
       padding: 48px 52px;
-      box-shadow: 0 8px 40px rgba(59, 31, 77, 0.08);
+      box-shadow: 0 8px 40px rgba(23, 24, 27, 0.08);
     }
     .head {
       display: flex;

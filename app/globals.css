@@ -4,25 +4,28 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Design tokens Ah Mes Goûts — toutes les valeurs hex ici uniquement ─── */
+/* ─── Design tokens Gift & ENTREMETS — rouge / bleu clair / noir — toutes les valeurs hex ici uniquement ───
+   Fond crème (--color-bg) et fond photo (--color-photo-bg) volontairement inchangés : les photos
+   produit réelles sont shootées sur ce fond exact pour un raccord sans couture (product-image-frame.tsx).
+   Ne jamais les modifier sans reshooter le catalogue. */
 @theme inline {
   --color-bg: #faf7f5;
-  --color-primary: #3b1f4d;
-  --color-secondary: #f3c9ce;
-  --color-accent: #c9a96e;
-  --color-text: #241726;
+  --color-primary: #17181b;
+  --color-secondary: #dce9f2;
+  --color-accent: #a6283a;
+  --color-text: #221f1e;
   --color-success: #6b8f71;
   --color-white: #ffffff;
   --color-muted: #f0ebe8;
-  --color-muted-foreground: #5c4f63;
-  --color-destructive: #b44a4a;
+  --color-muted-foreground: #5c5750;
+  --color-destructive: #c1462f;
   --color-border: #e8e0dc;
   --color-photo-bg: #e8dfd4;
   /* Écrin de nuit — second froid minéral (jamais en CTA) + respiration jour */
-  --color-nuit: #1f2b4d;
-  --color-bluegray: #e7eaf1;
+  --color-nuit: #12141c;
+  --color-bluegray: #e1edf5;
   /* Ops admin — état « en cours / info » (pas un bleu SaaS) */
-  --color-ops: #3d5a6c;
+  --color-ops: #3a6b87;
 
   --font-display: var(--font-family-display);
   --font-body: var(--font-family-body);
@@ -76,7 +79,8 @@
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
   --accent: var(--color-accent);
-  --accent-foreground: var(--color-text);
+  /* Accent = rouge foncé désormais → texte blanc dessus (contraste ≈ 7:1), plus var(--color-text) (gold-era) */
+  --accent-foreground: var(--color-white);
   --destructive: var(--color-destructive);
   --border: var(--color-border);
   --input: var(--color-border);
@@ -126,10 +130,10 @@
     opacity: 0.028;
     mix-blend-mode: multiply;
     background-image: radial-gradient(
-        rgba(36, 23, 38, 0.35) 0.6px,
+        rgba(34, 31, 30, 0.35) 0.6px,
         transparent 0.7px
       ),
-      radial-gradient(rgba(36, 23, 38, 0.2) 0.5px, transparent 0.6px);
+      radial-gradient(rgba(34, 31, 30, 0.2) 0.5px, transparent 0.6px);
     background-size: 3px 3px, 5px 5px;
     background-position:
       0 0,
@@ -365,7 +369,7 @@ html.custom-cursor-active * {
   -webkit-backdrop-filter: blur(16px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow:
-    0 8px 32px rgba(36, 23, 38, 0.08),
+    0 8px 32px rgba(34, 31, 30, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
@@ -402,7 +406,7 @@ html.custom-cursor-active * {
     135deg,
     rgba(255, 255, 255, 0.6),
     rgba(255, 255, 255, 0) 40%,
-    rgba(201, 169, 110, 0.35) 100%
+    rgba(166, 40, 58, 0.35) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -414,7 +418,7 @@ html.custom-cursor-active * {
 
 /* Variante sombre — pour surfaces posées sur l'écrin de nuit / le primary */
 .glass-dark {
-  background-color: rgba(31, 43, 77, 0.35);
+  background-color: rgba(18, 20, 28, 0.35);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -429,11 +433,11 @@ html.custom-cursor-active * {
     background-color: rgba(255, 255, 255, 0.92);
   }
   .glass-dark {
-    background-color: rgba(31, 43, 77, 0.9);
+    background-color: rgba(18, 20, 28, 0.9);
   }
 }
 
-/* ─── Logo « or liquide » — reflet doré qui balaye lentement le mot-symbole ─── */
+/* ─── Logo « reflet liquide » — sheen rouge sourdine qui balaye lentement le mot-symbole ─── */
 @keyframes logo-sheen {
   0% {
     background-position: 200% center;
@@ -443,15 +447,15 @@ html.custom-cursor-active * {
   }
 }
 
-.logo-liquid-gold {
+.logo-liquid-sheen {
   --logo-base: currentColor;
   background-image: linear-gradient(
     100deg,
     var(--logo-base) 0%,
     var(--logo-base) 38%,
-    #e7d3a8 47%,
-    #c9a96e 50%,
-    #e7d3a8 53%,
+    #e3aab3 47%,
+    #a6283a 50%,
+    #e3aab3 53%,
     var(--logo-base) 62%,
     var(--logo-base) 100%
   );
@@ -463,7 +467,7 @@ html.custom-cursor-active * {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-liquid-gold {
+  .logo-liquid-sheen {
     animation: none;
   }
 }

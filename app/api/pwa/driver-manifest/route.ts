@@ -17,7 +17,7 @@ export function GET(request: Request) {
       scope: "/livreur/",
       display: "standalone",
       background_color: "#FAF7F5",
-      theme_color: "#6B8F71",
+      theme_color: "#17181B",
       icons: [
         {
           src: "/pwa/driver-icon.svg",

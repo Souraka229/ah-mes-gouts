@@ -15,6 +15,7 @@ type ProductImageFrameProps = {
 
 /**
  * Cadre produit sans couture : fond identique à --color-bg (#FAF7F5).
+ * Ne pas changer --color-bg sans reshooter le catalogue (photos réelles calées dessus).
  * Texte et prix toujours en overlay HTML, jamais dans l'image.
  */
 export function ProductImageFrame({

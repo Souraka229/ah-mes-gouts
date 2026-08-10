@@ -4,10 +4,10 @@
  */
 export const colors = {
   bg: "#FAF7F5",
-  primary: "#3B1F4D",
-  secondary: "#F3C9CE",
-  accent: "#C9A96E",
-  text: "#241726",
+  primary: "#17181B",
+  secondary: "#DCE9F2",
+  accent: "#A6283A",
+  text: "#221F1E",
   success: "#6B8F71",
   photoBg: "#E8DFD4",
 } as const;

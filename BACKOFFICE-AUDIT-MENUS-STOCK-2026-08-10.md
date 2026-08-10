@@ -4,34 +4,19 @@ Analyse du code réel (pas une supposition) — 10 août 2026.
 
 ---
 
-## 🔴 1. Bug confirmé — le stock n'est jamais restauré
+## ✅ 1. Correction — pas de bug sur le stock (mon diagnostic initial était faux)
 
-**C'est le point le plus important de cet audit.**
+**Correction du 10/08 après-midi** : en creusant pour corriger ce point, j'ai retracé le
+vrai chemin du code et je m'étais trompé. Le stock est décrémenté **uniquement au moment
+où le paiement est confirmé** (`confirmServerOrderPayment` dans
+`lib/server/order-repository.ts`), dans la **même transaction** que le passage du statut
+à `paiement_confirme`. La création de commande (`saveServerOrderWithSlotReservation`) ne
+touche pas le stock, et la validation du panier (`order-pricing.ts`) ne fait que le lire.
 
-Quand un client commence une commande, le stock est décrémenté **immédiatement** à la
-création de la commande (`recue`), avant même que le paiement soit confirmé
-(`lib/server/order-repository.ts`, décrément atomique correct côté DB — ça au moins,
-c'est bien fait, pas de survente possible).
-
-Le problème : si le paiement **échoue ou est abandonné**, la commande passe à `annulee`
-(ou reste invisible avec la nouvelle règle qu'on a mise en place), mais **le stock
-décrémenté n'est jamais rendu**. J'ai vérifié dans `expirePendingOrder` /
-`expireAllPendingOrders` — ça change juste le statut, aucun `increment` nulle part dans
-tout `order-repository.ts`.
-
-**Conséquence concrète** : chaque panier abandonné, chaque paiement qui échoue, chaque
-test que tu fais toi-même en sandbox — le stock du produit baisse et ne remonte jamais.
-Avec le temps, le stock affiché en admin devient de moins en moins fiable, et des
-produits vont sembler épuisés (`stockRemaining: 0`) alors qu'aucune vente réelle n'a eu
-lieu. Et comme les commandes non payées sont maintenant invisibles côté admin (la règle
-qu'on vient d'implémenter), il n'y a même plus de trace visible pour comprendre pourquoi
-le stock a bougé.
-
-**À corriger** : restaurer le stock (increment) quand une commande passe à `annulee`
-depuis `recue` (paiement jamais confirmé) — que ce soit via l'expiration automatique ou
-une annulation manuelle avant confirmation. Ne pas restaurer si la commande était déjà
-`paiement_confirme` et qu'on annule après coup (là, c'est un choix métier différent —
-peut-être remettre en stock aussi, à voir avec toi).
+Donc : si un paiement échoue ou est abandonné, le stock n'a jamais bougé — il n'y a rien
+à restaurer. C'est en fait bien conçu : stock et confirmation de paiement ne peuvent pas
+se désynchroniser puisqu'ils changent ensemble, atomiquement. Aucune action nécessaire
+sur ce point.
 
 ---
 
@@ -145,11 +130,10 @@ Pas de point négatif majeur ici — c'est la partie la plus solide des quatre.
 
 | # | Sujet | Urgence | Effort |
 |---|---|---|---|
-| 1 | Stock jamais restauré après paiement échoué/abandonné | 🔴 Haute — fausse tes chiffres de stock en continu | Moyen |
+| ~~1~~ | ~~Stock jamais restauré~~ — **corrigé : ce n'était pas un bug**, voir section 1 | — | — |
 | 2 | Cache en mémoire (menus + catalogue) désynchronisé entre instances | 🟠 Moyenne — imprévisible mais pas systématique | Plus lourd (Redis) |
 | 3 | `writeMenusToDb` delete/recreate global → risque de collision | 🟡 Faible aujourd'hui (petite équipe) | Faible |
 | 4 | Pas d'alerte si menu créé sans `dailyStock` défini | 🟡 Faible | Faible |
 | 5 | Pas d'historique des mouvements de stock | 🟢 Confort | Faible |
 
-Dis-moi lesquels tu veux que je traite, je peux commencer par le #1 (le plus important)
-dès que tu confirmes.
+Dis-moi lesquels tu veux que je traite.

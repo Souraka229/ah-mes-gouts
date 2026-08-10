@@ -106,8 +106,12 @@ function authHeaders(config: FeexPayConfig): HeadersInit {
   };
 }
 
-/** Timeout FeexPay — marge sous la limite d'exécution des fonctions Vercel (10s par défaut). */
-const FEEXPAY_TIMEOUT_MS = 8_000;
+/**
+ * Timeout FeexPay — la route /api/payments/initiate déclare maxDuration=30s,
+ * ça laisse une bonne marge pour la requête FeexPay elle-même + la confirmation
+ * de commande (DB + notifications) qui suit en cas de succès.
+ */
+const FEEXPAY_TIMEOUT_MS = 20_000;
 
 /** fetch avec timeout — une réponse FeexPay qui traîne ne doit jamais faire planter la fonction. */
 async function fetchWithTimeout(

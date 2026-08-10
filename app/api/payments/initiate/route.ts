@@ -16,6 +16,11 @@ import {
 import { isPendingPaymentExpired } from "@/lib/orders/payment-expiration";
 import type { PaymentMethod } from "@/types/order";
 
+// FeexPay (surtout en sandbox) peut être lent à répondre. Sans ceci, la limite
+// par défaut de la plateforme (10s) peut tuer la fonction avant même que notre
+// propre try/catch ait la main — ce qui produit un 502 brut malgré le code.
+export const maxDuration = 30;
+
 const bodySchema = z.object({
   orderId: z.string().min(1),
   method: z.enum(["mtn_momo", "moov_money", "celtiis_cash", "card"]),

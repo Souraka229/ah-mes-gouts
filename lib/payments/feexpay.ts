@@ -345,6 +345,13 @@ export async function getFeexPayTransactionStatus(
       message?: string;
     };
 
+    // 404 = transaction pas (encore) connue de FeexPay. Pendant le polling,
+    // la traiter comme FAILED déclarerait à tort un paiement réel comme échoué.
+    // On reste en PENDING : le polling a de toute façon un nombre max d'essais.
+    if (response.status === 404) {
+      return { status: "PENDING", reference, rawResponse: data };
+    }
+
     const ref = data.reference ?? reference;
     const mapped = mapFeexPayStatus(data.status);
 

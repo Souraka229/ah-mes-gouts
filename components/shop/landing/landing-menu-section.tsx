@@ -15,14 +15,14 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
   return (
     <section
       id="menu-du-jour"
-      className="border-t border-border/80 bg-bg py-16 sm:py-20"
+      className="border-t border-border/80 bg-bg py-20 sm:py-28"
       aria-labelledby="landing-menu-title"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="font-body text-[11px] font-semibold uppercase tracking-[0.26em] text-muted-foreground">
-              Sélection du moment
+              Aujourd&apos;hui
             </p>
             <h2
               id="landing-menu-title"
@@ -30,6 +30,9 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
             >
               Menu du jour
             </h2>
+            <p className="mt-2 max-w-md font-body text-sm text-muted-foreground">
+              Ce qu&apos;on a préparé ce matin, en quantité limitée. Demain, ce sera autre chose.
+            </p>
           </div>
           <Link
             href="/catalogue"

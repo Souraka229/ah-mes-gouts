@@ -4,7 +4,6 @@ import { LandingHero } from "@/components/shop/landing/landing-hero";
 import { LandingMenuSection } from "@/components/shop/landing/landing-menu-section";
 import { LandingShell } from "@/components/shop/landing/landing-shell";
 import { LandingTrustBar } from "@/components/shop/landing/landing-trust-bar";
-import { LandingUnivers } from "@/components/shop/landing/landing-univers";
 import type { HomePageContent } from "@/lib/server/home-content";
 
 /**
@@ -28,8 +27,6 @@ export function LandingPage({ content }: { content: HomePageContent }) {
       {showMenuGrid && <LandingMenuSection items={menuItems} />}
 
       <LandingBrandValues />
-
-      <LandingUnivers />
 
       <LandingTrustBar />
 

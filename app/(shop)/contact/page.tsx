@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { GoogleMapsEmbed } from "@/components/shop/google-maps-embed";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
+  BOUTIQUE_HOURS,
   BOUTIQUE_LOCATION,
   ORDER_PHONE,
   WHATSAPP_PICKUP,
@@ -38,7 +39,8 @@ export default function ContactPage() {
           Nous contacter
         </h1>
         <p className="mt-4 font-body text-lg text-muted-foreground">
-          En boutique · Sur place — {BOUTIQUE_LOCATION.full}. Horaires 13h – 19h.
+          En boutique · Sur place — {BOUTIQUE_LOCATION.full}. Horaires{" "}
+          {BOUTIQUE_HOURS.label} ({BOUTIQUE_HOURS.daysLabel.toLowerCase()}).
         </p>
 
         <dl className="mt-8 grid gap-4 sm:grid-cols-2">

@@ -4,6 +4,7 @@ import { MapPin, Phone, Share2 } from "lucide-react";
 import { BrandLogo } from "@/components/shop/brand-logo";
 import { Separator } from "@/components/ui/separator";
 import {
+  BOUTIQUE_HOURS,
   BOUTIQUE_LOCATION,
   ORDER_PHONE,
   WHATSAPP_PICKUP,
@@ -44,7 +45,9 @@ export function SiteFooter() {
               Horaires
             </h3>
             <ul className="mt-3 space-y-2 font-body text-sm text-muted-foreground">
-              <li>Tous les jours : 13h – 19h</li>
+              <li>
+                {BOUTIQUE_HOURS.daysLabel} : {BOUTIQUE_HOURS.label}
+              </li>
               <li>En boutique · Sur place</li>
             </ul>
           </div>

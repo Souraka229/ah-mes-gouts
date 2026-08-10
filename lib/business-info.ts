@@ -65,24 +65,24 @@ export const PRODUCT_SHAPE_BY_SLUG: Partial<Record<string, ProductShapeId>> = {
 
 export const BRAND_VALUES = [
   {
-    id: "ingredients",
-    title: "Ingrédients",
-    detail: "Sélectionnés avec soin",
+    id: "jour-meme",
+    title: "Préparé le jour même",
+    detail: "Rien ne dort au frigo plus d'une nuit.",
   },
   {
-    id: "amour",
-    title: "Fait avec amour",
-    detail: "Chaque création à la main",
+    id: "main",
+    title: "Fait à la main",
+    detail: "Pas de moule industriel, juste nos mains et nos couteaux.",
   },
   {
-    id: "saveurs",
-    title: "Saveurs uniques",
-    detail: "Cœur, carré, signatures",
+    id: "livraison",
+    title: "Livraison à Cotonou",
+    detail: "En moto, en direct, encore frais à l'arrivée.",
   },
   {
-    id: "satisfaction",
-    title: "Satisfaction",
-    detail: "Votre plus belle récompense",
+    id: "retrait",
+    title: "Retrait à Fidjrosse",
+    detail: "Passez le récupérer, ou faites-vous livrer, comme vous voulez.",
   },
 ] as const;
 

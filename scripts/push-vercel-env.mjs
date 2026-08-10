@@ -33,6 +33,7 @@ function loadEnvFile(filePath) {
 
 loadEnvFile(join(root, ".env"));
 loadEnvFile(join(root, ".env.local"));
+loadEnvFile(join(root, ".env.production.local"));
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
@@ -52,6 +53,14 @@ const envMap = {
     process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://instagram.com/ahmesgouts",
   NEXT_PUBLIC_INSTAGRAM_HANDLE:
     process.env.NEXT_PUBLIC_INSTAGRAM_HANDLE || "@ahmesgouts",
+  FEEXPAY_ENABLE: process.env.FEEXPAY_ENABLE,
+  FEEXPAY_SHOP_ID: process.env.FEEXPAY_SHOP_ID,
+  FEEXPAY_API_KEY: process.env.FEEXPAY_API_KEY,
+  FEEXPAY_MODE: process.env.FEEXPAY_MODE,
+  FEEXPAY_CALLBACK_URL: process.env.FEEXPAY_CALLBACK_URL,
+  FEEXPAY_WEBHOOK_SECRET: process.env.FEEXPAY_WEBHOOK_SECRET,
+  DEMO_PAYMENTS: process.env.DEMO_PAYMENTS,
+  FEEXPAY_MOCK: process.env.FEEXPAY_MOCK,
 };
 
 const missing = Object.entries(envMap)
@@ -70,7 +79,12 @@ writeFileSync(
   JSON.stringify(envMap, null, 2),
 );
 
-const targets = ["production", "preview"];
+// Production uniquement : la valeur est passée par stdin (jamais en argument shell) pour
+// éviter que cmd.exe (Windows) n'interprète &, ?, % etc. dans les URLs de connexion et ne
+// tronque/corrompe le secret. Le déploiement preview n'est pas critique pour la prod — s'il
+// faut y répliquer ces variables un jour, le faire manuellement via `vercel env add` avec
+// `--value` (nécessaire côté CLI pour preview) et une valeur sans caractère spécial.
+const targets = ["production"];
 let ok = 0;
 let fail = 0;
 

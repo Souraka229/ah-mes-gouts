@@ -2,6 +2,12 @@
 
 *Généré le 1er juillet 2026 — vérification MCP Supabase + audit code.*
 
+> **⚠️ Mise à jour 10 août 2026** — ce document est partiellement obsolète : Prisma/Postgres est
+> **branché et actif** (plus de stockage JSON), et **FeexPay est intégré et actif en mode
+> SANDBOX** (voir section 5 mise à jour ci-dessous et `ARCHITECTURE.md` §12 pour l'état réel).
+> Les sections 1, 3, 8 ci-dessous datent d'avant cette bascule — se fier à `ARCHITECTURE.md` en
+> cas de doute.
+
 ---
 
 ## ⚠️ Alerte sécurité immédiate
@@ -111,15 +117,17 @@ Coordonnées boutique : `6.3654, 2.4183` (Cotonou) — `lib/maps/shop-location.t
 
 ---
 
-## 5. Paiements — volontairement en attente
+## 5. Paiements — FeexPay actif (mode SANDBOX depuis le 10/08/2026)
 
 | | |
 |-|-|
-| MTN MoMo / Moov / Celtiis / Carte | ⏳ **Mock actif** — ne pas ouvrir au public sans agrégateur |
-| Point d'extension | `lib/payments/process-payment.ts` |
-| TODO dans le code | `// TODO: brancher l'agrégateur Mobile Money réel — GeniusPay/FeexPay` |
+| MTN MoMo / Moov / Celtiis / Carte | ✅ **FeexPay branché** — `FEEXPAY_ENABLE=true`, `FEEXPAY_MODE=sandbox` |
+| Implémentation | `lib/payments/feexpay.ts` + `app/api/payments/initiate/route.ts` + webhook `app/api/payments/feexpay/webhook/route.ts` |
+| Bascule live | Remplacer `FEEXPAY_API_KEY` par la clé live FeexPay (dashboard), passer `FEEXPAY_MODE=live`, retester un vrai petit paiement, puis `npm run deploy:env` |
+| Mock legacy | Conservé (`isMockPaymentAllowed`) mais **inactif** tant que `FEEXPAY_ENABLE=true` |
 
-Variables à fournir plus tard : `MOMO_*`, `GENIUSPAY_API_KEY` (voir `.env.example`).
+Variables (voir `.env.example`) : `FEEXPAY_ENABLE`, `FEEXPAY_SHOP_ID`, `FEEXPAY_API_KEY`,
+`FEEXPAY_MODE`, `FEEXPAY_CALLBACK_URL`, `FEEXPAY_WEBHOOK_SECRET`.
 
 ---
 

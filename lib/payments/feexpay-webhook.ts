@@ -1,8 +1,18 @@
+import { timingSafeEqual } from "crypto";
+
 import {
   getFeexPayConfig,
   getFeexPayTransactionStatus,
 } from "@/lib/payments/feexpay";
 import { getServerOrder } from "@/lib/server/order-repository";
+
+/** Comparaison à temps constant — évite les attaques par timing sur le secret webhook. */
+function secretsMatch(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 export function verifyFeexPayWebhookRequest(request: Request): boolean {
   const secret = process.env.FEEXPAY_WEBHOOK_SECRET?.trim();
@@ -10,10 +20,12 @@ export function verifyFeexPayWebhookRequest(request: Request): boolean {
     return process.env.NODE_ENV !== "production";
   }
 
-  const auth = request.headers.get("authorization");
-  const headerSecret = request.headers.get("x-feexpay-webhook-secret");
+  const auth = request.headers.get("authorization") ?? "";
+  const headerSecret = request.headers.get("x-feexpay-webhook-secret") ?? "";
 
-  return auth === `Bearer ${secret}` || headerSecret === secret;
+  return (
+    secretsMatch(auth, `Bearer ${secret}`) || secretsMatch(headerSecret, secret)
+  );
 }
 
 /**

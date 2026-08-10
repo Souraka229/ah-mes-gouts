@@ -21,14 +21,21 @@ Site e-commerce haut de gamme : catalogue → personnalisation → panier → bo
 
 ## Design system
 
+Palette rouge / bleu clair / noir (refonte août 2026) — répartition 60/30/10 : neutre crème/noir
+dominant, bleu clair en soutien (sections, badges), rouge réservé aux CTA/prix/points forts.
+
 | Token | Hex | Usage |
 |-------|-----|--------|
-| Background | `#FAF7F5` | Crème |
-| Primary | `#3B1F4D` | Violet profond |
-| Secondary | `#F3C9CE` | Rose poudré |
-| Accent / CTA | `#C9A96E` | Doré — actions clés uniquement |
-| Text | `#241726` | Quasi-noir violacé |
-| Success | `#6B8F71` | Vert sauge |
+| Background | `#FAF7F5` | Crème — **inchangé** : les photos produit réelles sont calées dessus |
+| Primary | `#17181B` | Noir (texte, nav, titres) — remplace le violet |
+| Secondary | `#DCE9F2` | Bleu clair — remplace le rose poudré |
+| Accent / CTA | `#A6283A` | Rouge bordeaux — actions clés uniquement (texte blanc dessus, contraste ≈ 7:1) |
+| Text | `#221F1E` | Quasi-noir chaud |
+| Destructive | `#C1462F` | Rouge distinct de l'accent (jamais confondu, toujours + icône) |
+| Success | `#6B8F71` | Vert sauge (inchangé) |
+
+Tous les tokens sont centralisés dans `app/globals.css` (`@theme`) + miroir JS `lib/design-tokens.ts`
+— ne jamais coder un hex en dur ailleurs.
 
 Typo : **Cormorant Garamond / Fraunces** (display) + **Plus Jakarta Sans / Inter** (UI). Icônes : Lucide uniquement.
 

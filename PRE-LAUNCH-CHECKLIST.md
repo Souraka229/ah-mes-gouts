@@ -61,11 +61,12 @@ Tester sur **375px**, **768px**, **1024px**, **1440px** :
 - [ ] Variables d'environnement prod renseignées (voir `.env.example`)
 - [ ] Aucune clé secrète dans le bundle client (`npm run build` + inspecter `.next`)
 
-### Fichiers encore sur mock (au 30/06/2026)
-- `lib/mock-data.ts` — catalogue, stock, filtres, sitemap
-- `lib/server/order-repository.ts` — stockage commandes en mémoire
-- `lib/order-storage.ts` — localStorage client
-- `mockProcessPayment` — paiement simulé côté client
+### Fichiers encore sur mock (mise à jour 10/08/2026)
+- `lib/mock-data.ts` — catalogue, stock, filtres, sitemap (fallback si catalogue admin vide)
+- `lib/order-storage.ts` — localStorage client (copie locale, la source de vérité reste Postgres)
+- ~~`lib/server/order-repository.ts` en mémoire~~ → persiste en Postgres (Prisma) depuis la
+  reconstruction plateforme
+- ~~`mockProcessPayment`~~ → FeexPay actif en mode sandbox (`lib/payments/feexpay.ts`)
 
 ## 5. Sécurité
 
@@ -76,7 +77,7 @@ Tester sur **375px**, **768px**, **1024px**, **1440px** :
   - [x] Création commande `POST /api/orders` (5/min/IP)
   - [x] Suivi commande `GET /api/orders/[id]/tracking` (30/min/IP)
   - [ ] Codes promo (endpoint à créer)
-  - [ ] Paiement Mobile Money (endpoint serveur à créer — actuellement mock client)
+  - [x] Paiement Mobile Money — `POST /api/payments/initiate` (10/min/IP) + webhook FeexPay (30/min/IP)
 - [ ] Secrets uniquement en variables serveur (Cloudinary, MoMo, JWT)
 - [ ] Headers sécurité prod (CSP, HSTS via hébergeur)
 

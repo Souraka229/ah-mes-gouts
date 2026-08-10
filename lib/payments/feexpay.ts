@@ -42,16 +42,23 @@ export type FeexPayStatusResult =
   | { status: "PENDING"; reference: string; rawResponse?: unknown }
   | { status: "FAILED"; reference: string; error?: string; rawResponse?: unknown };
 
-const API_BASE = "https://api.feexpay.me/api/transactions/public";
+const API_ROOT = "https://api.feexpay.me/api/transactions";
+/** Carte : endpoint "public" confirmé correct (docs.feexpay.me + SDK officiel). */
+const API_BASE = `${API_ROOT}/public`;
 
-/** Endpoints officiels FeexPay Bénin — docs.feexpay.me/api_rest.html */
-const MOBILE_ENDPOINTS: Record<
-  Exclude<PaymentMethod, "card">,
-  string
-> = {
-  mtn_momo: `${API_BASE}/requesttopay/mtn`,
-  moov_money: `${API_BASE}/requesttopay/moov`,
-  celtiis_cash: `${API_BASE}/requesttopay/celtiis_bj`,
+/**
+ * Mobile Money : endpoint UNIQUE "integration" (pas de route par opérateur sous
+ * /public/ — c'était l'erreur). L'opérateur est indiqué via le champ `reseau`.
+ * Vérifié dans le bundle du SDK officiel @feexpay/react-sdk (v1.5.8) :
+ * unpkg.com/@feexpay/react-sdk/dist/index.cjs.js + types/index.d.ts.
+ */
+const MOBILE_REQUEST_ENDPOINT = `${API_ROOT}/requesttopay/integration`;
+const MOBILE_STATUS_ENDPOINT = `${API_ROOT}/getrequesttopay/integration`;
+
+const RESEAU_MAP: Record<Exclude<PaymentMethod, "card">, string> = {
+  mtn_momo: "MTN",
+  moov_money: "MOOV",
+  celtiis_cash: "CELTIIS",
 };
 
 export function getFeexPayConfig(): FeexPayConfig | null {
@@ -181,12 +188,14 @@ export async function initiateFeexPayPayment(
         headers: authHeaders(config),
         body: JSON.stringify({
           shop: config.shopId,
+          token: config.apiKey,
           amount,
           phone: phoneNumber,
           first_name: firstName,
           last_name: lastName,
           email,
           type_card: "VISA",
+          currency: "XOF",
           description,
           success_redirect_url: successUrl,
           error_redirect_url: successUrl,
@@ -233,16 +242,21 @@ export async function initiateFeexPayPayment(
       };
     }
 
-    const endpoint = MOBILE_ENDPOINTS[input.paymentMethod];
-    const response = await fetchWithTimeout(endpoint, {
+    const email = input.customerEmail?.trim() || "client@gift-entremets.bj";
+
+    const response = await fetchWithTimeout(MOBILE_REQUEST_ENDPOINT, {
       method: "POST",
       headers: authHeaders(config),
       body: JSON.stringify({
         shop: config.shopId,
+        token: config.apiKey,
         amount,
         phoneNumber: Number(phoneNumber),
-        firstName,
-        lastName,
+        reseau: RESEAU_MAP[input.paymentMethod],
+        currency: "XOF",
+        first_name: firstName,
+        email,
+        customId: input.orderId,
         description,
         callback_info: { orderId: input.orderId },
       }),
@@ -311,7 +325,7 @@ export async function getFeexPayTransactionStatus(
 ): Promise<FeexPayStatusResult> {
   try {
     const response = await fetchWithTimeout(
-      `${API_BASE}/single/status/${encodeURIComponent(reference)}`,
+      `${MOBILE_STATUS_ENDPOINT}/${encodeURIComponent(reference)}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${config.apiKey}` },

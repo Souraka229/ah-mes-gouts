@@ -8,9 +8,10 @@ import { getPrisma } from "@/lib/prisma";
 import type { MenuStatus, ScheduledMenu } from "@/types/menu";
 import type { Product } from "@/types/product";
 
-declare global {
-  var __amgMenus: ScheduledMenu[] | undefined;
-}
+// Pas de cache mémoire process (globalThis) ici volontairement : sur Vercel,
+// chaque instance aurait sa propre copie et pourrait continuer à servir un
+// ancien menu après une modification admin ou une activation ailleurs. Le
+// volume (quelques menus programmés) rend une lecture DB directe négligeable.
 
 function toPrismaStatus(status: MenuStatus): PrismaMenuStatus {
   const map: Record<MenuStatus, PrismaMenuStatus> = {
@@ -136,16 +137,13 @@ async function writeMenusToDb(menus: ScheduledMenu[]): Promise<void> {
 }
 
 export async function getAllMenus(): Promise<ScheduledMenu[]> {
-  if (globalThis.__amgMenus) return globalThis.__amgMenus;
   const fromDb = await readMenusFromDb();
   const menus = fromDb ?? (await seedMenus());
   if (!fromDb) await writeMenusToDb(menus);
-  globalThis.__amgMenus = menus;
   return menus;
 }
 
 async function saveMenus(menus: ScheduledMenu[]): Promise<void> {
-  globalThis.__amgMenus = menus;
   await writeMenusToDb(menus);
 }
 
@@ -191,7 +189,6 @@ export async function createMenu(input: {
 
   const prisma = getPrisma();
   await prisma.menu.create({ data: toMenuRow(menu) });
-  globalThis.__amgMenus = undefined;
   return menu;
 }
 
@@ -223,7 +220,6 @@ export async function updateMenu(
     where: { id },
     data: toMenuRow(updated),
   });
-  globalThis.__amgMenus = undefined;
   return updated;
 }
 
@@ -272,32 +268,53 @@ async function resetDailyStock(menu: ScheduledMenu): Promise<void> {
   );
 }
 
+/**
+ * Active les menus dus — updates ciblés uniquement (pas de réécriture de toute
+ * la table) : évite qu'une activation concurrente à une édition admin écrase
+ * le travail de l'autre.
+ */
 export async function activateDueMenus(): Promise<ScheduledMenu[]> {
   try {
-    const menus = await getAllMenus();
+    const prisma = getPrisma();
     const now = new Date();
-    const due = menus.filter(
-      (m) => m.status === "scheduled" && new Date(m.activateAt) <= now,
-    );
 
-    if (due.length === 0) return [];
+    const dueRows = await prisma.menu.findMany({
+      where: { status: "SCHEDULED", activateAt: { lte: now } },
+      orderBy: { activateAt: "asc" },
+    });
 
-    const activated: ScheduledMenu[] = [];
+    if (dueRows.length === 0) return [];
 
-    for (const menu of due.sort(
-      (a, b) => new Date(a.activateAt).getTime() - new Date(b.activateAt).getTime(),
-    )) {
-      for (const m of menus) {
-        if (m.status === "active") m.status = "expired";
-      }
-      const index = menus.findIndex((m) => m.id === menu.id);
-      if (index >= 0) {
-        menus[index] = { ...menus[index]!, status: "active" };
-        activated.push(menus[index]!);
-      }
-    }
+    const due = dueRows.map(toScheduledMenu);
+    // S'il y a plusieurs menus en retard (ex. serveur arrêté un moment), seul
+    // le plus récent reste actif — même comportement qu'avant, juste sans
+    // réécrire toute la table pour y arriver.
+    const last = due[due.length - 1]!;
+    const earlier = due.slice(0, -1);
 
-    await saveMenus(menus);
+    await prisma.$transaction([
+      prisma.menu.updateMany({
+        where: { status: "ACTIVE" },
+        data: { status: "EXPIRED" },
+      }),
+      ...(earlier.length > 0
+        ? [
+            prisma.menu.updateMany({
+              where: { id: { in: earlier.map((m) => m.id) } },
+              data: { status: toPrismaStatus("expired") },
+            }),
+          ]
+        : []),
+      prisma.menu.update({
+        where: { id: last.id },
+        data: { status: toPrismaStatus("active") },
+      }),
+    ]);
+
+    const activated: ScheduledMenu[] = due.map((m) => ({
+      ...m,
+      status: m.id === last.id ? "active" : "expired",
+    }));
 
     // Chaque menu qui s'active remet le stock du jour au plein.
     for (const menu of activated) {

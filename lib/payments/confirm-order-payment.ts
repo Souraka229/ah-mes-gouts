@@ -1,6 +1,7 @@
 import { getProductCategory } from "@/lib/catalog-utils";
 import { isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { getFullCatalog } from "@/lib/server/shop-catalog";
+import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { sendOrderNotifications } from "@/lib/notifications/order-notifications";
 import {
   formatNewOrderAlert,
@@ -104,6 +105,26 @@ export async function confirmOrderPayment(
         "Le délai de paiement de cette commande a expiré. Veuillez recommencer.",
       status: 410,
     };
+  }
+
+  const trackedClaims = stockClaims.filter((c) => !c.unlimitedStock);
+  if (trackedClaims.length > 0) {
+    void appendAdminActionLog({
+      adminName: "Client",
+      source: "manual",
+      action: "stock_decrement",
+      summary: `Stock débité — commande ${confirmed.id}`,
+      details: {
+        orderId: confirmed.id,
+        items: trackedClaims.map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          quantity: c.quantity,
+        })),
+      },
+    }).catch(() => {
+      /* non bloquant */
+    });
   }
 
   void attachOrderToCustomer({

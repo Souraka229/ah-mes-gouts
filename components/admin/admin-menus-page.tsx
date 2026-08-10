@@ -227,7 +227,7 @@ export function AdminMenusPage() {
     }
   };
 
-  const saveMenu = async (forceActive = false) => {
+  const saveMenu = async (forceActive = false, skipStockWarning = false) => {
     if (!targetDate || selectedIds.length === 0) {
       toast.error("Choisissez une date et au moins un produit.");
       return;
@@ -242,6 +242,14 @@ export function AdminMenusPage() {
     const dailyStock = selectedIds.map(
       (id) => productDrafts[id]?.stockRemaining ?? 0,
     );
+
+    if (!skipStockWarning && dailyStock.every((qty) => qty <= 0)) {
+      const ok = window.confirm(
+        "Aucune quantité du jour n'est définie pour ce menu — le stock ne sera pas renouvelé à l'activation, chaque produit gardera son stock actuel. Continuer quand même ?",
+      );
+      if (!ok) return;
+      return saveMenu(forceActive, true);
+    }
 
     setSaving(true);
     try {
@@ -264,7 +272,7 @@ export function AdminMenusPage() {
           const ok = window.confirm(
             "Ce menu est actif. Confirmer la modification ?",
           );
-          if (ok) return saveMenu(true);
+          if (ok) return saveMenu(true, true);
           return;
         }
         if (!res.ok) throw new Error();

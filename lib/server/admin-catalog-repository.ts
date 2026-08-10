@@ -17,11 +17,12 @@ export type AdminCatalogProduct = Product & {
 
 
 
-declare global {
-
-  var __amgAdminCatalog: AdminCatalogProduct[] | undefined;
-
-}
+// Pas de cache mémoire process (globalThis) ici volontairement : sur Vercel,
+// chaque instance aurait sa propre copie et pourrait servir des données
+// obsolètes après une modification admin. La lecture DB directe est assez
+// rapide vu le volume (catalogue = quelques dizaines de produits). Le cache
+// public (storefront) reste correctement géré via unstable_cache + tags
+// dans lib/server/shop-catalog.ts.
 
 
 
@@ -256,23 +257,10 @@ function applyGiftOverrides(catalog: AdminCatalogProduct[]): AdminCatalogProduct
 
 
 export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
-
-  if (globalThis.__amgAdminCatalog) {
-
-    return applyGiftOverrides(globalThis.__amgAdminCatalog);
-
-  }
-
   const fromDb = await readCatalogFromDb();
-
   const catalog = fromDb ?? seedCatalog();
-
   if (!fromDb) await writeCatalogToDb(catalog);
-
-  globalThis.__amgAdminCatalog = catalog;
-
   return applyGiftOverrides(catalog);
-
 }
 
 
@@ -280,7 +268,6 @@ export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
 export async function saveAdminCatalog(
   catalog: AdminCatalogProduct[],
 ): Promise<void> {
-  globalThis.__amgAdminCatalog = catalog;
   await writeCatalogToDb(catalog);
   revalidateTag("catalog");
 }
@@ -417,7 +404,6 @@ export async function createCatalogProduct(input: {
 
   const prisma = getPrisma();
   await prisma.product.create({ data: toProductRow(product) });
-  globalThis.__amgAdminCatalog = undefined;
   revalidateTag("catalog");
   return product;
 }
@@ -506,7 +492,6 @@ export async function updateCatalogProduct(
 
   });
 
-  globalThis.__amgAdminCatalog = undefined;
   revalidateTag("catalog");
 
   return updated;

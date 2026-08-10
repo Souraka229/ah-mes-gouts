@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment";
-import {
-  verifyFeexPayPaymentForOrder,
-  verifyFeexPayWebhookRequest,
-} from "@/lib/payments/feexpay-webhook";
+import { verifyFeexPayPaymentForOrder } from "@/lib/payments/feexpay-webhook";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * Webhook FeexPay — notification serveur à serveur.
  * URL : https://votre-domaine/api/payments/feexpay/webhook
+ *
+ * FeexPay n'envoie ni secret ni signature avec ses webhooks (confirmé dans
+ * leur doc officielle — aucun mécanisme d'auth documenté). La sécurité vient
+ * de la ré-vérification : on ne fait jamais confiance au body du webhook,
+ * on revérifie toujours le statut via l'API FeexPay avant de confirmer un
+ * paiement (verifyFeexPayPaymentForOrder). Le rate-limit reste actif contre
+ * le spam/abus de l'URL.
  */
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -26,20 +30,20 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!verifyFeexPayWebhookRequest(request)) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-
   try {
+    // Forme réelle du payload FeexPay (doc officielle, section Webhook) :
+    // { reference, order_id, status, amount, callback_info (string), ... }
     const body = (await request.json().catch(() => ({}))) as {
       status?: string;
+      order_id?: string;
       custom_id?: string;
       reference?: string;
-      callback_info?: { orderId?: string };
+      callback_info?: string;
     };
 
     const orderId =
-      body.callback_info?.orderId?.trim() ||
+      body.order_id?.trim() ||
+      body.callback_info?.trim() ||
       body.custom_id?.trim() ||
       null;
     const reference = body.reference?.trim();

@@ -290,7 +290,7 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
       )}
 
       <Button
-        className="h-12 min-h-12 w-full cursor-pointer bg-accent text-base font-semibold text-text hover:bg-accent/90 sm:w-auto sm:px-10"
+        className="h-12 min-h-12 w-full cursor-pointer bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 sm:w-auto sm:px-10"
         disabled={!mode}
         onClick={handleContinue}
       >

@@ -278,7 +278,7 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide",
                     order.status === "prete"
-                      ? "bg-accent text-text"
+                      ? "bg-accent text-accent-foreground"
                       : "bg-primary text-primary-foreground",
                   )}
                 >

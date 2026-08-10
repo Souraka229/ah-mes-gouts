@@ -130,7 +130,7 @@ export function StepUpsell({ candidates, embedded = false }: StepUpsellProps & {
           </p>
         </div>
         <Button
-          className="h-11 w-full cursor-pointer bg-accent text-text hover:bg-accent/90 sm:w-auto"
+          className="h-11 w-full cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto"
           onClick={handleSkip}
         >
           Continuer vers le paiement
@@ -227,7 +227,7 @@ export function StepUpsell({ candidates, embedded = false }: StepUpsellProps & {
       {!embedded && (
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
-            className="h-11 flex-1 cursor-pointer bg-accent text-text hover:bg-accent/90"
+            className="h-11 flex-1 cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={handleSkip}
           >
             Continuer vers le paiement

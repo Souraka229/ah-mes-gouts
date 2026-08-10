@@ -48,7 +48,7 @@ export function CartIconButton({
     >
       <ShoppingBag className="size-[1.15rem]" strokeWidth={1.75} aria-hidden />
       {itemCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent font-body text-[10px] font-bold text-text shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
+        <span className="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-accent font-body text-[10px] font-bold text-accent-foreground shadow-[0_1px_4px_rgba(0,0,0,0.2)]">
           {itemCount > 9 ? "9+" : itemCount}
         </span>
       )}

@@ -82,7 +82,7 @@ export function ShopMobileNav() {
             <ShoppingBag className="size-5" strokeWidth={1.75} />
             Panier
             {itemCount > 0 && (
-              <span className="absolute top-1.5 right-[calc(50%-1.25rem)] flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-text">
+              <span className="absolute top-1.5 right-[calc(50%-1.25rem)] flex size-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-accent-foreground">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>
             )}

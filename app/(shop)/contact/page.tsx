@@ -109,7 +109,7 @@ export default function ContactPage() {
             href="/catalogue"
             className={cn(
               buttonVariants(),
-              "cursor-pointer bg-accent text-text hover:bg-accent/90",
+              "cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90",
             )}
           >
             Commander en ligne

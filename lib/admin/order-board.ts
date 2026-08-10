@@ -35,7 +35,9 @@ export const STATUS_BORDER_CLASS: Record<OrderStatus, string> = {
   annulee: "border-l-red-500",
 };
 
-const NOUVELLES: OrderStatus[] = ["recue", "paiement_confirme"];
+// "recue" = paiement pas encore confirmé (en cours ou échoué) — n'apparaît jamais côté admin.
+// Règle : si le paiement ne passe pas, la commande ne doit pas remonter.
+const NOUVELLES: OrderStatus[] = ["paiement_confirme"];
 const PREPARATION: OrderStatus[] = ["preparation"];
 const LIVRAISON: OrderStatus[] = ["prete", "en_livraison", "livree"];
 

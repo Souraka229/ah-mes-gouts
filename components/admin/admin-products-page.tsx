@@ -240,7 +240,7 @@ export function AdminProductsPage() {
           </Button>
           <Button
             type="button"
-            className="cursor-pointer bg-accent text-text hover:bg-accent/90"
+            className="cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={() => setShowForm((v) => !v)}
           >
             {showForm ? <X className="size-4" /> : <Plus className="size-4" />}

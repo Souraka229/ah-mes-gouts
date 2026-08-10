@@ -74,7 +74,7 @@ export function ProductCard({
             <Badge className="bg-primary text-primary-foreground">Nouveau</Badge>
           )}
           {available && showPromotion && (
-            <Badge className="bg-accent text-text">Promo</Badge>
+            <Badge className="bg-accent text-accent-foreground">Promo</Badge>
           )}
         </div>
       }

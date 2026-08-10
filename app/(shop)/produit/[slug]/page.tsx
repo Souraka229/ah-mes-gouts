@@ -114,7 +114,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </Badge>
               )}
               {product.isPromotion && available && (
-                <Badge className="bg-accent text-text">Promo</Badge>
+                <Badge className="bg-accent text-accent-foreground">Promo</Badge>
               )}
               {!available && <Badge variant="destructive">Épuisé</Badge>}
             </div>

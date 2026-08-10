@@ -2,7 +2,7 @@ import { getProductImageUrl, LANDING_EXTRA_IMAGES, LANDING_POSTER_IMAGES } from 
 
 /** Visuels landing — photos réelles client WebP (+ import Gift) */
 export const LANDING_IMAGES = {
-  hero: "/images/produits/nutella-baileys-speculos.webp",
+  hero: "/images/produits/hero-coeur-signature.png",
   goyaveVanille: getProductImageUrl("goyave-vanille"),
   tiramisuPoster: LANDING_POSTER_IMAGES.tiramisuPoster,
   nutella: getProductImageUrl("nutella-caramel"),

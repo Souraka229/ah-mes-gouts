@@ -81,7 +81,7 @@ export function AdminNotificationsPage() {
                     href={telegram.connectUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-4 py-2 font-body text-sm font-semibold text-text"
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-4 py-2 font-body text-sm font-semibold text-accent-foreground"
                   >
                     Connecter mon Telegram
                     <ExternalLink className="size-4" aria-hidden />

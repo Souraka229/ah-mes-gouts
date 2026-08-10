@@ -11,8 +11,19 @@ export type AdminAlert = {
   href: string;
 };
 
+export type AdminKpiPeriod = "today" | "week" | "month" | "all";
+
+export const KPI_PERIOD_LABELS: Record<AdminKpiPeriod, string> = {
+  today: "Aujourd'hui",
+  week: "Cette semaine",
+  month: "Ce mois-ci",
+  all: "Depuis la création",
+};
+
 export type AdminKpis = {
   dateLabel: string;
+  /** Libellé de comparaison ("vs hier", "vs semaine dernière"…) — null si pas de comparaison (période "all"). */
+  comparisonLabel: string | null;
   ordersToday: number;
   revenueToday: number;
   avgTicket: number;
@@ -46,9 +57,60 @@ function startOfDay(d: Date): Date {
   return x;
 }
 
-function isSameDay(iso: string | null | undefined, day: Date): boolean {
+/** Lundi 00:00 de la semaine de d (ISO — lundi = premier jour). */
+function startOfWeek(d: Date): Date {
+  const x = startOfDay(d);
+  const day = x.getDay(); // 0 = dimanche
+  const diff = day === 0 ? 6 : day - 1;
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+
+function startOfMonth(d: Date): Date {
+  const x = startOfDay(d);
+  x.setDate(1);
+  return x;
+}
+
+function inRange(
+  iso: string | null | undefined,
+  start: Date,
+  end: Date,
+): boolean {
   if (!iso) return false;
-  return new Date(iso).toDateString() === day.toDateString();
+  const t = new Date(iso).getTime();
+  return t >= start.getTime() && t < end.getTime();
+}
+
+/** Bornes [début, fin[ de la période sélectionnée + [début, fin[ de la période précédente équivalente. */
+function getPeriodRange(
+  period: AdminKpiPeriod,
+  now: Date,
+): { start: Date; end: Date; prevStart: Date; prevEnd: Date } {
+  const end = new Date(now.getTime() + 1);
+
+  if (period === "week") {
+    const start = startOfWeek(now);
+    const prevStart = new Date(start);
+    prevStart.setDate(prevStart.getDate() - 7);
+    return { start, end, prevStart, prevEnd: start };
+  }
+  if (period === "month") {
+    const start = startOfMonth(now);
+    const prevStart = new Date(start);
+    prevStart.setMonth(prevStart.getMonth() - 1);
+    return { start, end, prevStart, prevEnd: start };
+  }
+  if (period === "all") {
+    const start = new Date(0);
+    return { start, end, prevStart: new Date(0), prevEnd: new Date(0) };
+  }
+
+  // "today" (défaut)
+  const start = startOfDay(now);
+  const prevStart = new Date(start);
+  prevStart.setDate(prevStart.getDate() - 1);
+  return { start, end, prevStart, prevEnd: start };
 }
 
 function sumTotals(orders: SavedOrder[]): number {
@@ -71,23 +133,37 @@ const NEW_STALE_MINUTES = 20;
 export type BuildAdminKpisOptions = {
   menuProducts?: Product[];
   now?: Date;
+  /** Fenêtre analysée — défaut "today". */
+  period?: AdminKpiPeriod;
 };
 
-/** KPIs + alertes du jour — logique hors UI. */
+const COMPARISON_LABELS: Record<AdminKpiPeriod, string | null> = {
+  today: "vs hier",
+  week: "vs semaine dernière",
+  month: "vs mois dernier",
+  all: null,
+};
+
+/** KPIs + alertes de la période sélectionnée — logique hors UI. */
 export function buildAdminKpis(
   orders: SavedOrder[],
   options: BuildAdminKpisOptions = {},
 ): AdminKpis {
   const now = options.now ?? new Date();
-  const today = startOfDay(now);
-  const yesterday = startOfDay(new Date(today));
-  yesterday.setDate(yesterday.getDate() - 1);
+  const period = options.period ?? "today";
+  const { start, end, prevStart, prevEnd } = getPeriodRange(period, now);
 
-  const ordersToday = orders.filter((o) =>
-    isSameDay(o.scheduledSlotStart ?? o.createdAt, today),
+  // "recue" = paiement pas confirmé (en cours ou échoué) — exclu de tout, dès la source.
+  // Règle : si le paiement ne passe pas, la commande ne doit ni compter ni remonter.
+  const ordersToday = orders.filter(
+    (o) =>
+      o.status !== "recue" &&
+      inRange(o.scheduledSlotStart ?? o.createdAt, start, end),
   );
-  const ordersYesterday = orders.filter((o) =>
-    isSameDay(o.scheduledSlotStart ?? o.createdAt, yesterday),
+  const ordersYesterday = orders.filter(
+    (o) =>
+      o.status !== "recue" &&
+      inRange(o.scheduledSlotStart ?? o.createdAt, prevStart, prevEnd),
   );
 
   const activeToday = ordersToday.filter((o) => o.status !== "annulee");
@@ -96,7 +172,7 @@ export function buildAdminKpis(
     ordersYesterday.filter((o) => o.status !== "annulee"),
   );
 
-  const nouvelles = countStatus(ordersToday, ["recue", "paiement_confirme"]);
+  const nouvelles = countStatus(ordersToday, ["paiement_confirme"]);
   const preparation = countStatus(ordersToday, ["preparation"]);
   const pretes = countStatus(ordersToday, ["prete"]);
   const enCours = countStatus(ordersToday, ["en_livraison"]);
@@ -123,7 +199,7 @@ export function buildAdminKpis(
 
   const staleNew = ordersToday.filter(
     (o) =>
-      (o.status === "recue" || o.status === "paiement_confirme") &&
+      o.status === "paiement_confirme" &&
       minutesSince(o.createdAt, now) >= NEW_STALE_MINUTES,
   );
   if (staleNew.length > 0) {
@@ -195,11 +271,15 @@ export function buildAdminKpis(
   }
 
   return {
-    dateLabel: today.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    }),
+    dateLabel:
+      period === "today"
+        ? now.toLocaleDateString("fr-FR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })
+        : KPI_PERIOD_LABELS[period],
+    comparisonLabel: COMPARISON_LABELS[period],
     ordersToday: ordersToday.length,
     revenueToday,
     avgTicket:
@@ -240,7 +320,7 @@ export function buildAdminKpis(
         status: "prete",
         label: "Prêtes",
         count: pretes,
-        tone: "bg-accent text-text",
+        tone: "bg-accent text-accent-foreground",
         href: "/admin/commandes?tab=livraison",
       },
       {

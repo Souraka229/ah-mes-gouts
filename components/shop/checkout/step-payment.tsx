@@ -626,7 +626,7 @@ export function StepPayment() {
       )}
 
       <Button
-        className="h-11 w-full cursor-pointer bg-accent text-text hover:bg-accent/90 sm:w-auto sm:min-w-64"
+        className="h-11 w-full cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90 sm:w-auto sm:min-w-64"
         disabled={!paymentMethod || uiState === "loading" || uiState === "pending" || !scheduledSlot}
         onClick={handlePay}
       >

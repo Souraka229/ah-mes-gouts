@@ -65,7 +65,7 @@ export function LandingHero({
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
             <Link
               href={ctaHref}
-              className="inline-flex min-h-[3rem] w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-8 py-3.5 font-body text-base font-semibold text-text shadow-sm transition-[transform,box-shadow] duration-200 hover:scale-[1.02] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:hover:scale-100 sm:w-auto sm:min-h-11 sm:text-sm"
+              className="inline-flex min-h-[3rem] w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-8 py-3.5 font-body text-base font-semibold text-accent-foreground shadow-sm transition-[transform,box-shadow] duration-200 hover:scale-[1.02] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:hover:scale-100 sm:w-auto sm:min-h-11 sm:text-sm"
             >
               {ctaLabel}
               <ArrowRight className="size-4" strokeWidth={2} aria-hidden />

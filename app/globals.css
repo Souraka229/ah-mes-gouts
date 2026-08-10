@@ -440,6 +440,38 @@ html.custom-cursor-active * {
   }
 }
 
+/* ─── Panneau sombre texturé — CTA final landing : grain + lueurs rouge/bleu très
+   discrètes sur fond quasi-noir. Le texte reste blanc, le CTA rouge continue de ressortir. ─── */
+.dark-grain-panel {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 60% 55% at 88% 8%, rgba(214, 40, 40, 0.12), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 8% 95%, rgba(0, 119, 179, 0.08), transparent 60%),
+    linear-gradient(165deg, #1c1d21 0%, #17181b 55%, #101114 100%);
+}
+
+.dark-grain-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.6px, transparent 0.7px),
+    radial-gradient(rgba(255, 255, 255, 0.5) 0.5px, transparent 0.6px);
+  background-size: 3px 3px, 5px 5px;
+  background-position:
+    0 0,
+    1px 2px;
+}
+
+.dark-grain-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ─── Logo « reflet liquide » — sheen bleu Telegram qui balaye lentement le mot-symbole
    (le rouge reste réservé aux CTA, jamais en décoratif ambiant) ─── */
 @keyframes logo-sheen {

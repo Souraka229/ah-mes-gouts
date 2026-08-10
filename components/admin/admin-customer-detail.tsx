@@ -119,7 +119,7 @@ export function AdminCustomerDetailPage({ customerId }: { customerId: string }) 
           </div>
           <a
             href={`tel:${customer.phone}`}
-            className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-text"
+            className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-accent-foreground"
           >
             Appeler
           </a>

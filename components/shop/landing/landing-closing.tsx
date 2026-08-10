@@ -18,7 +18,7 @@ export function LandingClosing({ footer }: LandingClosingProps) {
   return (
     <footer
       id="contact"
-      className="bg-primary px-4 py-16 text-primary-foreground sm:px-6 sm:py-20"
+      className="dark-grain-panel px-4 py-16 text-primary-foreground sm:px-6 sm:py-20"
     >
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 text-center">
         <p className="font-body text-[11px] font-semibold uppercase tracking-[0.28em] text-secondary/90">
@@ -34,7 +34,7 @@ export function LandingClosing({ footer }: LandingClosingProps) {
 
         <Link
           href="/catalogue"
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-8 py-3 font-body text-sm font-semibold text-text transition-transform duration-200 hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:hover:scale-100"
+          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-8 py-3 font-body text-sm font-semibold text-accent-foreground transition-transform duration-200 hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:hover:scale-100"
         >
           Commander maintenant
           <ArrowRight className="size-4" aria-hidden />

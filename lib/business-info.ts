@@ -7,7 +7,7 @@ export const BOUTIQUE_HOURS = {
   label: "13h – 19h",
   open: "13:00",
   close: "19:00",
-  daysLabel: "Tous les jours",
+  daysLabel: "Tous les jours sauf le lundi",
 } as const;
 
 export const ORDER_PHONE = {
@@ -16,11 +16,14 @@ export const ORDER_PHONE = {
   tel: "+22997310742",
 } as const;
 
-/** WhatsApp obligatoire pour le retrait en boutique */
+/**
+ * WhatsApp obligatoire pour le retrait en boutique — c'est le même numéro
+ * que le téléphone (ORDER_PHONE), dérivé pour ne jamais désynchroniser les deux.
+ */
 export const WHATSAPP_PICKUP = {
-  display: "+229 01 90 51 327",
-  tel: "+229019051327",
-  waMe: "https://wa.me/229019051327",
+  display: ORDER_PHONE.display,
+  tel: ORDER_PHONE.tel,
+  waMe: `https://wa.me/${ORDER_PHONE.tel.replace(/\D/g, "")}`,
 } as const;
 
 export const BOUTIQUE_LOCATION = {

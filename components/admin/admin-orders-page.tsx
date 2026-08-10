@@ -198,6 +198,8 @@ export function AdminOrdersPage() {
     () =>
       orders
         .filter((order) => {
+          // Paiement pas confirmé (en cours ou échoué) : ne doit jamais remonter côté admin.
+          if (order.status === "recue") return false;
           if (order.status === "annulee") return false;
           if (!order.scheduledSlotStart) return false;
           const start = new Date(order.scheduledSlotStart);

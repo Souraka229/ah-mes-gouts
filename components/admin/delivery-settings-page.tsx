@@ -291,7 +291,7 @@ export function DeliverySettingsPage() {
           </h2>
           <Button
             type="button"
-            className="cursor-pointer gap-2 bg-accent text-text hover:bg-accent/90"
+            className="cursor-pointer gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
             onClick={() => void addZone()}
           >
             <Plus className="size-4" aria-hidden />

@@ -66,7 +66,7 @@ export default function DeliveryZonesPage() {
                   <h2 className="font-display text-2xl font-semibold text-primary">
                     {section.headline}
                   </h2>
-                  <span className="rounded-full bg-accent px-4 py-1 font-body text-sm font-semibold text-text">
+                  <span className="rounded-full bg-accent px-4 py-1 font-body text-sm font-semibold text-accent-foreground">
                     {formatPrice(zone.price)}
                   </span>
                 </div>
@@ -132,7 +132,7 @@ export default function DeliveryZonesPage() {
             href="/catalogue"
             className={cn(
               buttonVariants(),
-              "cursor-pointer bg-accent text-text hover:bg-accent/90",
+              "cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90",
             )}
           >
             Commander une glace en ligne

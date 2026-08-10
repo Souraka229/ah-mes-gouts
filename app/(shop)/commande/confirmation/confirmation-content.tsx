@@ -188,7 +188,7 @@ export default function ConfirmationContent() {
           href={`/suivi/${order.id}`}
           className={cn(
             buttonVariants(),
-            "cursor-pointer bg-accent text-text hover:bg-accent/90",
+            "cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90",
           )}
         >
           Suivre ma commande

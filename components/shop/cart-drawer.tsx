@@ -206,7 +206,7 @@ export function CartDrawer() {
               onClick={closeCart}
               className={cn(
                 buttonVariants(),
-                "mt-4 flex min-h-12 w-full cursor-pointer items-center justify-center bg-accent text-base font-bold text-text hover:bg-accent/90 active:scale-[0.99]",
+                "mt-4 flex min-h-12 w-full cursor-pointer items-center justify-center bg-accent text-base font-bold text-accent-foreground hover:bg-accent/90 active:scale-[0.99]",
               )}
             >
               Passer commande

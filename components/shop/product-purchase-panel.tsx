@@ -129,7 +129,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
           "h-12 w-full cursor-pointer text-base font-semibold transition-all duration-200",
           addedFeedback
             ? "bg-success text-primary-foreground hover:bg-success/90"
-            : "bg-accent text-text hover:bg-accent/90",
+            : "bg-accent text-accent-foreground hover:bg-accent/90",
         )}
         disabled={isAdding}
         onClick={handleAddToCart}

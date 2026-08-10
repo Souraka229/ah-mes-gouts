@@ -14,7 +14,9 @@ import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminSeedButton } from "@/components/admin/admin-seed-button";
 import {
   buildAdminKpis,
+  KPI_PERIOD_LABELS,
   type AdminAlert,
+  type AdminKpiPeriod,
 } from "@/lib/admin/kpis";
 import { formatPrice } from "@/lib/format";
 import { isDevAdminOpen } from "@/lib/server/admin-auth";
@@ -24,13 +26,19 @@ import { getVisitStats } from "@/lib/server/site-visits";
 import { ORDER_STATUS_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
 import { cn } from "@/lib/utils";
 
-export async function AdminDashboard() {
+type AdminDashboardProps = {
+  period?: AdminKpiPeriod;
+};
+
+export async function AdminDashboard({
+  period = "today",
+}: AdminDashboardProps) {
   const [orders, menuProducts, visits] = await Promise.all([
     getAllServerOrders(),
     getShopProductsFromActiveMenu(),
     getVisitStats(),
   ]);
-  const kpis = buildAdminKpis(orders, { menuProducts });
+  const kpis = buildAdminKpis(orders, { menuProducts, period });
   const showSeedButton = isDevAdminOpen();
   const masterIsAttention = kpis.attentionCount > 0;
 
@@ -39,20 +47,22 @@ export async function AdminDashboard() {
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-body text-[11px] font-semibold tracking-[0.28em] text-muted-foreground uppercase">
-            Cockpit du jour
+            Cockpit
           </p>
           <h1 className="mt-1 font-display text-4xl font-semibold tracking-tight text-primary sm:text-5xl">
-            Aujourd&apos;hui
+            {KPI_PERIOD_LABELS[period]}
           </h1>
-          <p className="mt-1 font-body text-sm capitalize text-muted-foreground">
-            {kpis.dateLabel}
-          </p>
+          {period === "today" && (
+            <p className="mt-1 font-body text-sm capitalize text-muted-foreground">
+              {kpis.dateLabel}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {showSeedButton && <AdminSeedButton />}
           <Link
             href="/admin/commandes?tab=nouvelles"
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-text transition-transform hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-body text-sm font-semibold text-white transition-transform hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {kpis.nouvelles > 0
               ? `Traiter (${kpis.nouvelles})`
@@ -61,6 +71,26 @@ export async function AdminDashboard() {
           </Link>
         </div>
       </header>
+
+      <nav
+        aria-label="Période analysée"
+        className="flex w-fit gap-1 rounded-2xl border border-border bg-muted/30 p-1"
+      >
+        {(Object.keys(KPI_PERIOD_LABELS) as AdminKpiPeriod[]).map((p) => (
+          <Link
+            key={p}
+            href={p === "today" ? "/admin/cockpit" : `/admin/cockpit?period=${p}`}
+            className={cn(
+              "min-h-9 cursor-pointer rounded-xl px-3 py-1.5 font-body text-sm font-medium transition-colors",
+              p === period
+                ? "bg-card text-primary shadow-sm"
+                : "text-muted-foreground hover:text-text",
+            )}
+          >
+            {KPI_PERIOD_LABELS[p]}
+          </Link>
+        ))}
+      </nav>
 
       {/* Cadran maître + secondaires — pas 4 cartes clones */}
       <section className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
@@ -94,6 +124,7 @@ export async function AdminDashboard() {
               </p>
               <DeltaLine
                 delta={kpis.comparedToYesterday.revenueDelta}
+                comparisonLabel={kpis.comparisonLabel}
                 money
               />
             </>
@@ -124,9 +155,11 @@ export async function AdminDashboard() {
             label="Terminées"
             value={String(kpis.livrees)}
             hint={
-              kpis.comparedToYesterday.ordersDelta === 0
-                ? `${kpis.giftShare}% cadeaux · vs hier stable`
-                : `${kpis.giftShare}% cadeaux · ${kpis.comparedToYesterday.ordersDelta > 0 ? "+" : ""}${kpis.comparedToYesterday.ordersDelta} cmd vs hier`
+              !kpis.comparisonLabel
+                ? `${kpis.giftShare}% cadeaux`
+                : kpis.comparedToYesterday.ordersDelta === 0
+                  ? `${kpis.giftShare}% cadeaux · ${kpis.comparisonLabel} stable`
+                  : `${kpis.giftShare}% cadeaux · ${kpis.comparedToYesterday.ordersDelta > 0 ? "+" : ""}${kpis.comparedToYesterday.ordersDelta} cmd ${kpis.comparisonLabel}`
             }
           />
         </div>
@@ -263,9 +296,26 @@ export async function AdminDashboard() {
   );
 }
 
-function DeltaLine({ delta, money }: { delta: number; money?: boolean }) {
+function DeltaLine({
+  delta,
+  money,
+  comparisonLabel,
+}: {
+  delta: number;
+  money?: boolean;
+  comparisonLabel: string | null;
+}) {
   const positive = delta > 0;
   const negative = delta < 0;
+
+  if (!comparisonLabel) {
+    return (
+      <p className="mt-2 font-body text-xs font-medium text-muted-foreground">
+        Cumul depuis la création
+      </p>
+    );
+  }
+
   return (
     <p
       className={cn(
@@ -281,8 +331,8 @@ function DeltaLine({ delta, money }: { delta: number; money?: boolean }) {
         <ArrowDownRight className="size-3.5" aria-hidden />
       ) : null}
       {delta === 0
-        ? "Stable vs hier"
-        : `${positive ? "+" : ""}${money ? formatPrice(delta) : delta} vs hier`}
+        ? `Stable ${comparisonLabel}`
+        : `${positive ? "+" : ""}${money ? formatPrice(delta) : delta} ${comparisonLabel}`}
     </p>
   );
 }
@@ -377,7 +427,7 @@ function QuickAction({
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-xl",
-          hot ? "bg-accent text-text" : "bg-primary/8 text-primary",
+          hot ? "bg-accent text-accent-foreground" : "bg-primary/8 text-accent-foreground",
         )}
       >
         <Icon className="size-4" aria-hidden />

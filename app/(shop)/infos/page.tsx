@@ -176,7 +176,7 @@ export default function InfosPage() {
             href="/catalogue"
             className={cn(
               buttonVariants(),
-              "min-h-11 cursor-pointer bg-accent text-text hover:bg-accent/90",
+              "min-h-11 cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90",
             )}
           >
             Voir la carte

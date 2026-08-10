@@ -334,7 +334,7 @@ export function AdminMenusPage() {
         <Button
           type="button"
           size="lg"
-          className="cursor-pointer gap-2 bg-accent text-text hover:bg-accent/90"
+          className="cursor-pointer gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
           onClick={openCreateTomorrow}
         >
           <Calendar className="size-5" aria-hidden />

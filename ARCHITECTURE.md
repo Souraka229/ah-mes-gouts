@@ -609,19 +609,23 @@ Déclaration : `vercel.json`.
 
 ## 15. Design system (rappel)
 
-Refonte août 2026 — palette rouge / bleu clair / noir, règle 60/30/10 (neutre dominant, bleu en
-soutien, rouge réservé CTA/prix). Fond crème et fond photo **volontairement inchangés** : les
-photos produit réelles sont shootées dessus (raccord sans couture, `product-image-frame.tsx`).
+Refonte août 2026 (v2) — palette bleu Telegram / rouge / noir, règle 60/30/10 : neutre crème/noir
+dominant · bleu = couleur d'action (liens, secondaire, nav, badges) · rouge = accent rare et fort
+(CTA principal, prix — jamais l'inverse). Fond crème et fond photo **volontairement inchangés** :
+les photos produit réelles sont shootées dessus (raccord sans couture, `product-image-frame.tsx`).
 
 | Token | Valeur | Usage |
 |-------|--------|-------|
 | Background | `#FAF7F5` | Fond crème (inchangé) |
 | Primary | `#17181B` | Noir — texte, nav, titres |
-| Secondary | `#DCE9F2` | Bleu clair — sections, badges |
-| Accent | `#A6283A` | Rouge bordeaux — CTA uniquement |
+| Secondary | `#0077B3` | Bleu Telegram assombri (accessible) — boutons secondaires, liens, badges |
+| Accent | `#D62828` | Rouge vif — CTA principal, prix uniquement |
 | Text | `#221F1E` | Texte principal |
-| Destructive | `#C1462F` | Erreur — distinct de l'accent |
+| Destructive | `#B3532E` | Erreur — distinct de l'accent |
 | Success | `#6B8F71` | Commande confirmée |
+
+Bleu décoratif `#0088CC` (le vrai bleu Telegram) réservé aux grandes surfaces non-texte — son
+contraste avec texte/blanc est insuffisant (3.9:1) pour boutons/liens, d'où la version assombrie.
 
 Fonts : **Fraunces** (display) + **Plus Jakarta Sans** (UI) — `lib/fonts.ts`.
 

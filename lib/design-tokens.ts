@@ -5,8 +5,8 @@
 export const colors = {
   bg: "#FAF7F5",
   primary: "#17181B",
-  secondary: "#DCE9F2",
-  accent: "#A6283A",
+  secondary: "#0077B3",
+  accent: "#D62828",
   text: "#221F1E",
   success: "#6B8F71",
   photoBg: "#E8DFD4",

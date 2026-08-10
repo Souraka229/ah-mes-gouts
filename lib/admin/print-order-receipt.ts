@@ -72,7 +72,7 @@ export function printOrderReceipt(order: SavedOrder): void {
   <style>
     :root {
       --primary: #17181b;
-      --accent: #a6283a;
+      --accent: #d62828;
       --text: #221f1e;
       --muted: #6b6660;
       --border: #e4ddd6;

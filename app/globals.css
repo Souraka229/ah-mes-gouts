@@ -4,28 +4,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ─── Design tokens Gift & ENTREMETS — rouge / bleu clair / noir — toutes les valeurs hex ici uniquement ───
+/* ─── Design tokens Gift & ENTREMETS — bleu Telegram / rouge / noir — toutes les valeurs hex ici uniquement ───
    Fond crème (--color-bg) et fond photo (--color-photo-bg) volontairement inchangés : les photos
    produit réelles sont shootées sur ce fond exact pour un raccord sans couture (product-image-frame.tsx).
-   Ne jamais les modifier sans reshooter le catalogue. */
+   Ne jamais les modifier sans reshooter le catalogue.
+   Logique 60/30/10 : neutre crème/noir dominant · bleu = couleur d'action (liens, secondaire, nav,
+   badges) · rouge = accent rare et fort (CTA principal, prix) — jamais l'inverse. */
 @theme inline {
   --color-bg: #faf7f5;
   --color-primary: #17181b;
-  --color-secondary: #dce9f2;
-  --color-accent: #a6283a;
+  --color-secondary: #0077b3;
+  --color-accent: #d62828;
   --color-text: #221f1e;
   --color-success: #6b8f71;
   --color-white: #ffffff;
   --color-muted: #f0ebe8;
   --color-muted-foreground: #5c5750;
-  --color-destructive: #c1462f;
+  --color-destructive: #b3532e;
   --color-border: #e8e0dc;
   --color-photo-bg: #e8dfd4;
-  /* Écrin de nuit — second froid minéral (jamais en CTA) + respiration jour */
-  --color-nuit: #12141c;
-  --color-bluegray: #e1edf5;
-  /* Ops admin — état « en cours / info » (pas un bleu SaaS) */
-  --color-ops: #3a6b87;
+  /* Écrin de nuit — dérivé du bleu Telegram (jamais en CTA) + respiration jour */
+  --color-nuit: #0e1f29;
+  --color-bluegray: #e6f3fa;
+  /* Ops admin — état « en cours / info » — même famille que le bleu identité */
+  --color-ops: #0a7aa8;
 
   --font-display: var(--font-family-display);
   --font-body: var(--font-family-body);
@@ -75,11 +77,12 @@
   --primary: var(--color-primary);
   --primary-foreground: var(--color-white);
   --secondary: var(--color-secondary);
-  --secondary-foreground: var(--color-text);
+  /* Secondary = bleu Telegram plein désormais (contraste blanc ≈ 4.9:1) → texte blanc dessus */
+  --secondary-foreground: var(--color-white);
   --muted: var(--color-muted);
   --muted-foreground: var(--color-muted-foreground);
   --accent: var(--color-accent);
-  /* Accent = rouge foncé désormais → texte blanc dessus (contraste ≈ 7:1), plus var(--color-text) (gold-era) */
+  /* Accent = rouge vif → texte blanc dessus (contraste ≈ 5:1) */
   --accent-foreground: var(--color-white);
   --destructive: var(--color-destructive);
   --border: var(--color-border);
@@ -406,7 +409,7 @@ html.custom-cursor-active * {
     135deg,
     rgba(255, 255, 255, 0.6),
     rgba(255, 255, 255, 0) 40%,
-    rgba(166, 40, 58, 0.35) 100%
+    rgba(214, 40, 40, 0.35) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -418,7 +421,7 @@ html.custom-cursor-active * {
 
 /* Variante sombre — pour surfaces posées sur l'écrin de nuit / le primary */
 .glass-dark {
-  background-color: rgba(18, 20, 28, 0.35);
+  background-color: rgba(14, 31, 41,0.35);
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -433,11 +436,12 @@ html.custom-cursor-active * {
     background-color: rgba(255, 255, 255, 0.92);
   }
   .glass-dark {
-    background-color: rgba(18, 20, 28, 0.9);
+    background-color: rgba(14, 31, 41,0.9);
   }
 }
 
-/* ─── Logo « reflet liquide » — sheen rouge sourdine qui balaye lentement le mot-symbole ─── */
+/* ─── Logo « reflet liquide » — sheen bleu Telegram qui balaye lentement le mot-symbole
+   (le rouge reste réservé aux CTA, jamais en décoratif ambiant) ─── */
 @keyframes logo-sheen {
   0% {
     background-position: 200% center;
@@ -453,9 +457,9 @@ html.custom-cursor-active * {
     100deg,
     var(--logo-base) 0%,
     var(--logo-base) 38%,
-    #e3aab3 47%,
-    #a6283a 50%,
-    #e3aab3 53%,
+    #7dc9e8 47%,
+    #0088cc 50%,
+    #7dc9e8 53%,
     var(--logo-base) 62%,
     var(--logo-base) 100%
   );

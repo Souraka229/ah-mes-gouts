@@ -21,18 +21,22 @@ Site e-commerce haut de gamme : catalogue → personnalisation → panier → bo
 
 ## Design system
 
-Palette rouge / bleu clair / noir (refonte août 2026) — répartition 60/30/10 : neutre crème/noir
-dominant, bleu clair en soutien (sections, badges), rouge réservé aux CTA/prix/points forts.
+Palette bleu Telegram / rouge / noir (refonte août 2026) — répartition 60/30/10 : neutre crème/noir
+dominant, **bleu = couleur d'action** (liens, secondaire, nav, badges — présent mais jamais criard),
+**rouge = accent rare et fort** (CTA principal, prix — un seul par écran, jamais partout).
 
 | Token | Hex | Usage |
 |-------|-----|--------|
 | Background | `#FAF7F5` | Crème — **inchangé** : les photos produit réelles sont calées dessus |
-| Primary | `#17181B` | Noir (texte, nav, titres) — remplace le violet |
-| Secondary | `#DCE9F2` | Bleu clair — remplace le rose poudré |
-| Accent / CTA | `#A6283A` | Rouge bordeaux — actions clés uniquement (texte blanc dessus, contraste ≈ 7:1) |
+| Primary | `#17181B` | Noir (texte, nav, titres) |
+| Secondary | `#0077B3` | Bleu Telegram assombri (accessible, contraste blanc ≈ 4.9:1) — boutons secondaires, liens, badges |
+| Accent / CTA | `#D62828` | Rouge vif — CTA principal, prix uniquement (texte blanc dessus, contraste ≈ 5:1) |
 | Text | `#221F1E` | Quasi-noir chaud |
-| Destructive | `#C1462F` | Rouge distinct de l'accent (jamais confondu, toujours + icône) |
+| Destructive | `#B3532E` | Rouge distinct de l'accent (jamais confondu, toujours + icône) |
 | Success | `#6B8F71` | Vert sauge (inchangé) |
+
+Bleu décoratif (grandes surfaces, non-texte) : `#0088CC` — le vrai bleu Telegram, réservé au visuel
+pur (logo, larges aplats) car son contraste texte est insuffisant (3.9:1).
 
 Tous les tokens sont centralisés dans `app/globals.css` (`@theme`) + miroir JS `lib/design-tokens.ts`
 — ne jamais coder un hex en dur ailleurs.

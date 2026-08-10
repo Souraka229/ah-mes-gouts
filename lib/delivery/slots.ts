@@ -3,12 +3,68 @@ import {
   getShopDayOfWeek,
   shopDateTimeToUtc,
 } from "@/lib/business-date";
-import { DELIVERY_WAVES } from "@/lib/delivery/constants";
 import type {
   DeliveryScheduleConfig,
   FulfillmentType,
   TimeSlotOption,
 } from "@/lib/delivery/types";
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function minutesToTime(mins: number): string {
+  const h = Math.floor(mins / 60)
+    .toString()
+    .padStart(2, "0");
+  const m = (mins % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+/**
+ * Découpe l'horaire configuré par l'admin (startTime → endTime) en 2 vagues —
+ * choix volontairement simple pour la cliente. La 2ᵉ vague s'étend toujours
+ * jusqu'à l'heure de fermeture configurée (c'était codé en dur à 18h30 avant,
+ * indépendamment de ce que l'admin réglait).
+ */
+function buildWavesFromSchedule(
+  schedule: DeliveryScheduleConfig,
+): { start: string; end: string; label: string }[] {
+  const startMin = timeToMinutes(schedule.startTime);
+  const endMin = timeToMinutes(schedule.endTime);
+  const total = endMin - startMin;
+  if (total <= 0) return [];
+
+  // Battement de 30 min entre les 2 vagues si la plage est assez large.
+  const gap = total >= 150 ? 30 : 0;
+  const usable = total - gap;
+  const half = Math.floor(usable / 2);
+
+  const wave1Start = startMin;
+  const wave1End = startMin + half;
+  const wave2Start = wave1End + gap;
+  const wave2End = endMin;
+
+  const fmt = (mins: number) =>
+    new Date(2000, 0, 1, Math.floor(mins / 60), mins % 60).toLocaleTimeString(
+      "fr-FR",
+      { hour: "2-digit", minute: "2-digit" },
+    );
+
+  return [
+    {
+      start: minutesToTime(wave1Start),
+      end: minutesToTime(wave1End),
+      label: `Vague 1 · ${fmt(wave1Start)} – ${fmt(wave1End)}`,
+    },
+    {
+      start: minutesToTime(wave2Start),
+      end: minutesToTime(wave2End),
+      label: `Vague 2 · ${fmt(wave2Start)} – ${fmt(wave2End)}`,
+    },
+  ];
+}
 
 /** Clé unique partagée client/serveur : `delivery:2026-07-26T12:00:00.000Z`. */
 export function buildSlotKey(type: FulfillmentType, startIso: string): string {
@@ -77,8 +133,9 @@ export function isDateClosed(
 }
 
 /**
- * Créneaux proposés à la cliente.
- * Deux vagues fixes pour tous les modes (13h–15h30, 16h–18h30) en heure Cotonou.
+ * Créneaux proposés à la cliente — 2 vagues calculées depuis l'horaire
+ * configuré par l'admin (schedule.startTime → schedule.endTime), en heure
+ * Cotonou. La 2ᵉ vague va toujours jusqu'à l'heure de fermeture réglée.
  */
 export function buildSlotsForDate(
   schedule: DeliveryScheduleConfig,
@@ -87,8 +144,9 @@ export function buildSlotsForDate(
 ): TimeSlotOption[] {
   const dateKey = getShopDateKey(date);
   const today = dateKey === getShopDateKey(now);
+  const waves = buildWavesFromSchedule(schedule);
 
-  return DELIVERY_WAVES.flatMap((wave) => {
+  return waves.flatMap((wave) => {
     const start = shopDateTimeToUtc(dateKey, wave.start);
     const end = shopDateTimeToUtc(dateKey, wave.end);
     // La vague reste commandable jusqu'à sa fin (heure boutique).

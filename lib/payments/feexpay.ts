@@ -274,6 +274,10 @@ export async function initiateFeexPayPayment(
     };
 
     if (!response.ok) {
+      console.error(
+        `[FeexPay] Mobile Money rejeté — HTTP ${response.status}, endpoint ${MOBILE_REQUEST_ENDPOINT}:`,
+        JSON.stringify(data),
+      );
       return {
         status: "FAILED",
         error:
@@ -291,6 +295,10 @@ export async function initiateFeexPayPayment(
     }
 
     if (mapped === "FAILED") {
+      console.error(
+        `[FeexPay] Mobile Money statut FAILED — réponse brute:`,
+        JSON.stringify(data),
+      );
       return {
         status: "FAILED",
         error:

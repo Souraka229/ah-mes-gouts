@@ -158,6 +158,10 @@ export async function POST(request: Request) {
     );
 
     if (result.status === "FAILED") {
+      console.error(
+        `[payments/initiate] FeexPay FAILED — orderId=${orderId} method=${method}:`,
+        result.error,
+      );
       return NextResponse.json({ error: result.error }, { status: 402 });
     }
 

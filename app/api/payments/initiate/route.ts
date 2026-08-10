@@ -76,107 +76,121 @@ export async function POST(request: Request) {
   }
 
   const { orderId, method } = parsed.data;
-  const order = await getServerOrder(orderId);
 
-  if (!order) {
-    return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
-  }
+  // Tout le reste peut appeler des services externes (FeexPay, Prisma, notifications) —
+  // on ne laisse jamais une exception inattendue remonter en 500/502 brut au client.
+  try {
+    const order = await getServerOrder(orderId);
 
-  if (
-    order.status === "recue" &&
-    isPendingPaymentExpired(order.createdAt)
-  ) {
-    await expirePendingOrder(orderId);
+    if (!order) {
+      return NextResponse.json({ error: "Commande introuvable" }, { status: 404 });
+    }
+
+    if (
+      order.status === "recue" &&
+      isPendingPaymentExpired(order.createdAt)
+    ) {
+      await expirePendingOrder(orderId);
+      return NextResponse.json(
+        {
+          error:
+            "Le délai de paiement a expiré. Veuillez reprendre votre commande.",
+        },
+        { status: 410 },
+      );
+    }
+
+    if (order.status !== "recue") {
+      return NextResponse.json(
+        { error: "Cette commande a déjà été traitée." },
+        { status: 409 },
+      );
+    }
+
+    const deviceKey = request.headers.get("x-amg-device-key")?.trim() || null;
+
+    if (isMockPaymentAllowed()) {
+      const mock = await mockPayment(orderId, method, order.total);
+      if (mock.status === "error") {
+        return NextResponse.json({ error: mock.message }, { status: 402 });
+      }
+
+      const confirmed = await confirmOrderPayment(orderId, mock.reference, {
+        deviceKey,
+      });
+      if (!confirmed.ok) {
+        return NextResponse.json(
+          { error: confirmed.error },
+          { status: confirmed.status },
+        );
+      }
+
+      return NextResponse.json({
+        status: "SUCCESS",
+        reference: mock.reference,
+        orderId,
+      });
+    }
+
+    const config = getFeexPayConfig();
+    if (!config) {
+      return NextResponse.json(
+        { error: "Configuration FeexPay incomplète." },
+        { status: 503 },
+      );
+    }
+
+    const customerName = `${order.client.firstName} ${order.client.lastName}`.trim();
+    const result = await initiateFeexPayPayment(
+      {
+        orderId,
+        amount: order.total,
+        customerPhone: order.client.phone,
+        customerName,
+        paymentMethod: method,
+      },
+      config,
+    );
+
+    if (result.status === "FAILED") {
+      return NextResponse.json({ error: result.error }, { status: 402 });
+    }
+
+    if (result.status === "SUCCESS") {
+      const confirmed = await confirmOrderPayment(orderId, result.reference, {
+        deviceKey,
+      });
+      if (!confirmed.ok) {
+        return NextResponse.json(
+          { error: confirmed.error },
+          { status: confirmed.status },
+        );
+      }
+
+      return NextResponse.json({
+        status: "SUCCESS",
+        reference: result.reference,
+        orderId,
+      });
+    }
+
+    return NextResponse.json({
+      status: "PENDING",
+      reference: result.reference,
+      message: result.message,
+      paymentUrl: result.paymentUrl,
+      orderId,
+    });
+  } catch (error) {
+    console.error("[payments/initiate] POST échoué:", error);
     return NextResponse.json(
       {
         error:
-          "Le délai de paiement a expiré. Veuillez reprendre votre commande.",
+          "Le paiement n'a pas pu être traité pour le moment. Réessayez dans un instant.",
       },
-      { status: 410 },
+      { status: 500 },
     );
   }
-
-  if (order.status !== "recue") {
-    return NextResponse.json(
-      { error: "Cette commande a déjà été traitée." },
-      { status: 409 },
-    );
-  }
-
-  const deviceKey = request.headers.get("x-amg-device-key")?.trim() || null;
-
-  if (isMockPaymentAllowed()) {
-    const mock = await mockPayment(orderId, method, order.total);
-    if (mock.status === "error") {
-      return NextResponse.json({ error: mock.message }, { status: 402 });
-    }
-
-    const confirmed = await confirmOrderPayment(orderId, mock.reference, {
-      deviceKey,
-    });
-    if (!confirmed.ok) {
-      return NextResponse.json(
-        { error: confirmed.error },
-        { status: confirmed.status },
-      );
-    }
-
-    return NextResponse.json({
-      status: "SUCCESS",
-      reference: mock.reference,
-      orderId,
-    });
-  }
-
-  const config = getFeexPayConfig();
-  if (!config) {
-    return NextResponse.json(
-      { error: "Configuration FeexPay incomplète." },
-      { status: 503 },
-    );
-  }
-
-  const customerName = `${order.client.firstName} ${order.client.lastName}`.trim();
-  const result = await initiateFeexPayPayment(
-    {
-      orderId,
-      amount: order.total,
-      customerPhone: order.client.phone,
-      customerName,
-      paymentMethod: method,
-    },
-    config,
-  );
-
-  if (result.status === "FAILED") {
-    return NextResponse.json({ error: result.error }, { status: 402 });
-  }
-
-  if (result.status === "SUCCESS") {
-    const confirmed = await confirmOrderPayment(orderId, result.reference, {
-      deviceKey,
-    });
-    if (!confirmed.ok) {
-      return NextResponse.json(
-        { error: confirmed.error },
-        { status: confirmed.status },
-      );
-    }
-
-    return NextResponse.json({
-      status: "SUCCESS",
-      reference: result.reference,
-      orderId,
-    });
-  }
-
-  return NextResponse.json({
-    status: "PENDING",
-    reference: result.reference,
-    message: result.message,
-    paymentUrl: result.paymentUrl,
-    orderId,
-  });
 }
 
 /** Poll statut FeexPay et confirme la commande si SUCCESS. */
@@ -191,50 +205,58 @@ export async function GET(request: Request) {
     );
   }
 
-  if (isMockPaymentAllowed()) {
-    return NextResponse.json({ status: "SUCCESS", reference, orderId });
-  }
+  try {
+    if (isMockPaymentAllowed()) {
+      return NextResponse.json({ status: "SUCCESS", reference, orderId });
+    }
 
-  const config = getFeexPayConfig();
-  if (!config) {
-    return NextResponse.json(
-      { error: "Configuration FeexPay incomplète." },
-      { status: 503 },
-    );
-  }
+    const config = getFeexPayConfig();
+    if (!config) {
+      return NextResponse.json(
+        { error: "Configuration FeexPay incomplète." },
+        { status: 503 },
+      );
+    }
 
-  const txStatus = await getFeexPayTransactionStatus(reference, config);
+    const txStatus = await getFeexPayTransactionStatus(reference, config);
 
-  if (txStatus.status === "PENDING") {
+    if (txStatus.status === "PENDING") {
+      return NextResponse.json({
+        status: "PENDING",
+        reference,
+        orderId,
+      });
+    }
+
+    if (txStatus.status === "FAILED") {
+      return NextResponse.json({
+        status: "FAILED",
+        reference,
+        orderId,
+        error: txStatus.error,
+      });
+    }
+
+    const deviceKey = request.headers.get("x-amg-device-key")?.trim() || null;
+    const confirmed = await confirmOrderPayment(orderId, reference, { deviceKey });
+
+    if (!confirmed.ok) {
+      return NextResponse.json(
+        { error: confirmed.error, status: txStatus.status },
+        { status: confirmed.status },
+      );
+    }
+
     return NextResponse.json({
-      status: "PENDING",
+      status: "SUCCESS",
       reference,
       orderId,
     });
-  }
-
-  if (txStatus.status === "FAILED") {
-    return NextResponse.json({
-      status: "FAILED",
-      reference,
-      orderId,
-      error: txStatus.error,
-    });
-  }
-
-  const deviceKey = request.headers.get("x-amg-device-key")?.trim() || null;
-  const confirmed = await confirmOrderPayment(orderId, reference, { deviceKey });
-
-  if (!confirmed.ok) {
+  } catch (error) {
+    console.error("[payments/initiate] GET échoué:", error);
     return NextResponse.json(
-      { error: confirmed.error, status: txStatus.status },
-      { status: confirmed.status },
+      { error: "Statut de paiement indisponible pour le moment.", status: "PENDING" },
+      { status: 200 },
     );
   }
-
-  return NextResponse.json({
-    status: "SUCCESS",
-    reference,
-    orderId,
-  });
 }

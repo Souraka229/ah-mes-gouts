@@ -99,6 +99,23 @@ function authHeaders(config: FeexPayConfig): HeadersInit {
   };
 }
 
+/** Timeout FeexPay — marge sous la limite d'exécution des fonctions Vercel (10s par défaut). */
+const FEEXPAY_TIMEOUT_MS = 8_000;
+
+/** fetch avec timeout — une réponse FeexPay qui traîne ne doit jamais faire planter la fonction. */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FEEXPAY_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function splitName(full?: string): { firstName: string; lastName: string } {
   const parts = (full ?? "Client Gift").trim().split(/\s+/);
   if (parts.length === 1) {
@@ -159,7 +176,7 @@ export async function initiateFeexPayPayment(
           ? `${config.siteUrl}/commande/confirmation?orderId=${encodeURIComponent(input.orderId)}`
           : undefined;
 
-      const response = await fetch(`${API_BASE}/initcard`, {
+      const response = await fetchWithTimeout(`${API_BASE}/initcard`, {
         method: "POST",
         headers: authHeaders(config),
         body: JSON.stringify({
@@ -217,7 +234,7 @@ export async function initiateFeexPayPayment(
     }
 
     const endpoint = MOBILE_ENDPOINTS[input.paymentMethod];
-    const response = await fetch(endpoint, {
+    const response = await fetchWithTimeout(endpoint, {
       method: "POST",
       headers: authHeaders(config),
       body: JSON.stringify({
@@ -277,7 +294,12 @@ export async function initiateFeexPayPayment(
   } catch (error) {
     return {
       status: "FAILED",
-      error: error instanceof Error ? error.message : "Erreur FeexPay",
+      error:
+        error instanceof Error && error.name === "AbortError"
+          ? "FeexPay met trop de temps à répondre. Réessayez dans un instant."
+          : error instanceof Error
+            ? error.message
+            : "Erreur FeexPay",
     };
   }
 }
@@ -288,7 +310,7 @@ export async function getFeexPayTransactionStatus(
   config: FeexPayConfig,
 ): Promise<FeexPayStatusResult> {
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${API_BASE}/single/status/${encodeURIComponent(reference)}`,
       {
         method: "GET",

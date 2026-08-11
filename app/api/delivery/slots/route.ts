@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { getShopDateKey } from "@/lib/business-date";
+import {
+  getShopDateKey,
+  getTomorrowShopDateKey,
+  isNextDayOrderingOpen,
+} from "@/lib/business-date";
 import type { FulfillmentType } from "@/lib/delivery/types";
-import { getAvailableSlotsToday } from "@/lib/server/slot-bookings";
+import { getAvailableSlots } from "@/lib/server/slot-bookings";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Créneaux du jour encore libres (heure Cotonou + capacité réelle).
- * Le front n'affiche que cette liste — plus de créneau « fantôme » plein.
+ * Créneaux encore libres (heure Cotonou + capacité réelle) : ceux du jour, plus
+ * ceux de demain dès 20 h. Le front n'affiche que cette liste — plus de créneau
+ * « fantôme » plein.
  */
 export async function GET(request: Request) {
   const type = new URL(request.url).searchParams.get("type");
@@ -19,10 +24,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const slots = await getAvailableSlotsToday(type as FulfillmentType);
+  const now = new Date();
+  const slots = await getAvailableSlots(type as FulfillmentType, now);
 
   return NextResponse.json({
-    dateKey: getShopDateKey(),
+    dateKey: getShopDateKey(now),
+    tomorrowDateKey: getTomorrowShopDateKey(now),
+    nextDayOpen: isNextDayOrderingOpen(now),
     slots,
   });
 }

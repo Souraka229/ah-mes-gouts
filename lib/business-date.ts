@@ -4,6 +4,12 @@ export const SHOP_TIME_ZONE = "Africa/Porto-Novo";
 /** Offset fixe Porto-Novo (pas de DST) — pour construire des ISO stables. */
 export const SHOP_UTC_OFFSET = "+01:00";
 
+/**
+ * Heure (boutique) à partir de laquelle la journée du lendemain s'ouvre à la
+ * commande. Avant cette heure on ne vend que le menu du jour.
+ */
+export const NEXT_DAY_ORDERING_OPENS_AT = 20;
+
 const WEEKDAY_TO_INDEX: Record<string, number> = {
   Sun: 0,
   Mon: 1,
@@ -26,6 +32,52 @@ export function getShopDateKey(date: Date | string = new Date()): string {
 
 export function isTodayAtShop(date: Date | string, now = new Date()): boolean {
   return getShopDateKey(date) === getShopDateKey(now);
+}
+
+/** Heure locale boutique (0-23), indépendante du fuseau du serveur. */
+export function getShopHour(date: Date | string = new Date()): number {
+  const hour = new Intl.DateTimeFormat("en-US", {
+    timeZone: SHOP_TIME_ZONE,
+    hour: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
+  // `en-US` en 24 h rend « 24 » pour minuit — on le ramène à 0.
+  return Number(hour) % 24;
+}
+
+/** Décale une clé calendrier boutique de N jours (arithmétique calendaire). */
+export function addShopDays(dateKey: string, days: number): string {
+  const [year = 0, month = 1, day = 1] = dateKey.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1, day + days));
+  return shifted.toISOString().slice(0, 10);
+}
+
+export function getTomorrowShopDateKey(now = new Date()): string {
+  return addShopDays(getShopDateKey(now), 1);
+}
+
+export function isTomorrowAtShop(date: Date | string, now = new Date()): boolean {
+  return getShopDateKey(date) === getTomorrowShopDateKey(now);
+}
+
+/**
+ * Vrai à partir de 20 h (heure boutique) : la cliente peut alors réserver un
+ * créneau du lendemain, en plus des créneaux restants du jour.
+ */
+export function isNextDayOrderingOpen(now = new Date()): boolean {
+  return getShopHour(now) >= NEXT_DAY_ORDERING_OPENS_AT;
+}
+
+/**
+ * Un créneau est commandable s'il tombe aujourd'hui, ou demain une fois la
+ * fenêtre du lendemain ouverte. Source de vérité unique client + serveur.
+ */
+export function isOrderableShopDate(
+  date: Date | string,
+  now = new Date(),
+): boolean {
+  if (isTodayAtShop(date, now)) return true;
+  return isNextDayOrderingOpen(now) && isTomorrowAtShop(date, now);
 }
 
 /** Jour de la semaine (0 = dimanche) dans le fuseau boutique. */

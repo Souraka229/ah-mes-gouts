@@ -18,7 +18,17 @@ export type UploadResult = {
   provider: "supabase" | "local";
 };
 
+/**
+ * Secours dev uniquement : en production le disque est en lecture seule (et le
+ * fichier disparaîtrait au déploiement suivant) — mieux vaut échouer clairement
+ * que d'enregistrer une URL qui ne s'affichera jamais.
+ */
 async function uploadLocal(file: File): Promise<UploadResult> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Stockage d'images indisponible : vérifiez la configuration Supabase.",
+    );
+  }
   const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "bin";
   const dir = path.join(process.cwd(), "public", "images", "uploads");
   mkdirSync(dir, { recursive: true });
@@ -38,6 +48,7 @@ export async function uploadSiteImage(file: File): Promise<UploadResult> {
 
   const supabase = getSupabaseServerClient();
   if (!supabase) {
+    console.error("[upload] SUPABASE_SERVICE_ROLE_KEY absent — pas de stockage distant.");
     return uploadLocal(file);
   }
 
@@ -52,6 +63,7 @@ export async function uploadSiteImage(file: File): Promise<UploadResult> {
   });
 
   if (error) {
+    console.error("[upload] Supabase Storage a refusé le fichier:", error);
     return uploadLocal(file);
   }
 

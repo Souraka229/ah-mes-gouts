@@ -7,7 +7,12 @@ import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
 import { getPendingPaymentCutoff } from "@/lib/orders/payment-expiration";
-import { getShopDateKey, isTodayAtShop } from "@/lib/business-date";
+import {
+  getTomorrowShopDateKey,
+  isNextDayOrderingOpen,
+  isOrderableShopDate,
+  shopDateTimeToUtc,
+} from "@/lib/business-date";
 
 export { buildSlotKey, parseSlotKey };
 
@@ -50,6 +55,22 @@ export async function isSlotAvailable(slotKey: string): Promise<boolean> {
   return usage < max;
 }
 
+/**
+ * Créneaux ouverts à la commande : ceux qui restent aujourd'hui, plus ceux de
+ * demain dès 20 h (heure boutique). Ancre midi = Instant stable du jour visé.
+ */
+function getOrderableSlots(
+  schedules: Parameters<typeof getSlotsForDate>[0],
+  type: FulfillmentType,
+  now: Date,
+): TimeSlotOption[] {
+  const slots = getSlotsForDate(schedules, type, now, now);
+  if (!isNextDayOrderingOpen(now)) return slots;
+
+  const tomorrowNoon = shopDateTimeToUtc(getTomorrowShopDateKey(now), "12:00");
+  return [...slots, ...getSlotsForDate(schedules, type, tomorrowNoon, now)];
+}
+
 export async function findNextAvailableSlot(
   type: FulfillmentType,
   afterStartIso: string,
@@ -57,9 +78,9 @@ export async function findNextAvailableSlot(
   const { schedules } = await getDeliveryConfig();
   const after = new Date(afterStartIso);
   const now = new Date();
-  if (!isTodayAtShop(after, now)) return null;
+  if (!isOrderableShopDate(after, now)) return null;
 
-  const slots = getSlotsForDate(schedules, type, now, now);
+  const slots = getOrderableSlots(schedules, type, now);
   for (const slot of slots) {
     // Inclut le créneau courant s'il est encore libre (réessai après sync TZ).
     if (new Date(slot.start).getTime() < after.getTime()) continue;
@@ -69,13 +90,16 @@ export async function findNextAvailableSlot(
   return null;
 }
 
-/** Créneaux du jour encore libres (capacité restante > 0). */
-export async function getAvailableSlotsToday(
+/**
+ * Créneaux encore libres (capacité restante > 0) : aujourd'hui, et demain une
+ * fois passé 20 h — c'est la seule liste que le front affiche.
+ */
+export async function getAvailableSlots(
   type: FulfillmentType,
   now = new Date(),
 ): Promise<TimeSlotOption[]> {
   const { schedules, options } = await getDeliveryConfig();
-  const slots = getSlotsForDate(schedules, type, now, now);
+  const slots = getOrderableSlots(schedules, type, now);
   const max = options.maxOrdersPerSlot;
 
   const checked = await Promise.all(
@@ -88,6 +112,10 @@ export async function getAvailableSlotsToday(
   return checked.filter((slot): slot is TimeSlotOption => slot !== null);
 }
 
-export function assertSlotIsToday(startIso: string, now = new Date()): boolean {
-  return getShopDateKey(startIso) === getShopDateKey(now);
+/** Le créneau tombe-t-il sur une journée encore commandable ? */
+export function assertSlotIsOrderable(
+  startIso: string,
+  now = new Date(),
+): boolean {
+  return isOrderableShopDate(startIso, now);
 }

@@ -1,6 +1,21 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+/**
+ * Hôte Supabase Storage — les images importées depuis le back-office y
+ * atterrissent. Sans ce host dans `remotePatterns`, `/_next/image` renvoie 400
+ * et la page n'affiche que le texte alternatif.
+ */
+const supabaseHostname = (() => {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
@@ -30,6 +45,15 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
+      },
+      // Projet Supabase courant + filet de sécurité si l'URL du projet change.
+      ...(supabaseHostname
+        ? [{ protocol: "https" as const, hostname: supabaseHostname }]
+        : []),
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
       },
     ],
   },

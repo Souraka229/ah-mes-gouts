@@ -8,10 +8,12 @@ import {
   Pencil,
   Phone,
   Printer,
+  Sunrise,
   Trash2,
   X,
 } from "lucide-react";
 
+import { isTomorrowAtShop } from "@/lib/business-date";
 import { Button } from "@/components/ui/button";
 import {
   STATUS_BORDER_CLASS,
@@ -98,6 +100,8 @@ export function OrderBoardCard({
   onEdit,
   onDelete,
 }: OrderBoardCardProps) {
+  const isForTomorrow =
+    !!order.scheduledSlotStart && isTomorrowAtShop(order.scheduledSlotStart);
   const canDelete = order.status === "recue" || order.status === "annulee";
   const phone = getClientPhone(order);
   const address = getDeliveryAddress(order);
@@ -151,6 +155,13 @@ export function OrderBoardCard({
               {ORDER_STATUS_LABELS[order.status]}
             </span>
           </div>
+
+          {isForTomorrow && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-body text-xs font-semibold text-primary">
+              <Sunrise className="size-3.5 shrink-0" aria-hidden />
+              Pour demain — {formatRetraitDate(order)}
+            </p>
+          )}
 
           {flags.unreachableAt && (
             <div className="mt-2 flex items-center gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 font-body text-sm font-semibold text-red-700">

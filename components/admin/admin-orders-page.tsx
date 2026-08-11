@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Bell, BellOff, Loader2, Plus, RefreshCw, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  getShopDateKey,
+  getTomorrowShopDateKey,
+  isTomorrowAtShop,
+  SHOP_TIME_ZONE,
+} from "@/lib/business-date";
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminOrderFormSheet } from "@/components/admin/admin-order-form-sheet";
@@ -41,6 +47,16 @@ function parseTab(value: string | null): OrderBoardTab {
     return value;
   }
   return "nouvelles";
+}
+
+/** Date lisible dans le fuseau boutique — jamais celui du navigateur admin. */
+function formatShopDayLabel(date: Date): string {
+  return date.toLocaleDateString("fr-FR", {
+    timeZone: SHOP_TIME_ZONE,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
 const LIVRAISON_SORT: Record<string, number> = {
@@ -188,13 +204,14 @@ export function AdminOrdersPage() {
     });
   }, [searchParams, loading, orders, activeTab, setActiveTab]);
 
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+  // Le tableau couvre la journée boutique en cours + le lendemain : dès 20 h les
+  // clientes réservent pour demain, la prod doit les voir tout de suite.
+  const boardDateKeys = useMemo(() => {
+    const now = new Date();
+    return new Set([getShopDateKey(now), getTomorrowShopDateKey(now)]);
   }, []);
 
-  const todayOrders = useMemo(
+  const boardOrders = useMemo(
     () =>
       orders
         .filter((order) => {
@@ -202,8 +219,7 @@ export function AdminOrdersPage() {
           if (order.status === "recue") return false;
           if (order.status === "annulee") return false;
           if (!order.scheduledSlotStart) return false;
-          const start = new Date(order.scheduledSlotStart);
-          return start.toDateString() === today.toDateString();
+          return boardDateKeys.has(getShopDateKey(order.scheduledSlotStart));
         })
         .sort((a, b) => {
           const ta = a.scheduledSlotStart
@@ -214,31 +230,35 @@ export function AdminOrdersPage() {
             : 0;
           return ta - tb;
         }),
-    [orders, today],
+    [orders, boardDateKeys],
   );
 
-  const tabCounts = useMemo(() => countByTab(todayOrders), [todayOrders]);
+  const tabCounts = useMemo(() => countByTab(boardOrders), [boardOrders]);
 
   const tabOrders = useMemo(() => {
-    const filtered = filterOrdersByTab(todayOrders, activeTab);
+    const filtered = filterOrdersByTab(boardOrders, activeTab);
     if (activeTab !== "livraison") return filtered;
     return [...filtered].sort(
       (a, b) =>
         (LIVRAISON_SORT[a.status] ?? 9) - (LIVRAISON_SORT[b.status] ?? 9),
     );
-  }, [todayOrders, activeTab]);
+  }, [boardOrders, activeTab]);
 
   const cancelledToday = useMemo(
     () =>
       orders.filter((order) => {
         if (order.status !== "annulee") return false;
         if (!order.scheduledSlotStart) return false;
-        return (
-          new Date(order.scheduledSlotStart).toDateString() ===
-          today.toDateString()
-        );
+        return boardDateKeys.has(getShopDateKey(order.scheduledSlotStart));
       }),
-    [orders, today],
+    [orders, boardDateKeys],
+  );
+
+  const tomorrowCount = useMemo(
+    () =>
+      boardOrders.filter((order) => isTomorrowAtShop(order.scheduledSlotStart!))
+        .length,
+    [boardOrders],
   );
 
   const updateStatus = useCallback(
@@ -360,11 +380,7 @@ export function AdminOrdersPage() {
             Commandes
           </h1>
           <p className="mt-1 font-body text-sm text-muted-foreground">
-            {today.toLocaleDateString("fr-FR", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
+            {formatShopDayLabel(new Date())}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -449,13 +465,22 @@ export function AdminOrdersPage() {
         </p>
       )}
 
-      {todayOrders.length > 0 && (
+      {tomorrowCount > 0 && (
+        <p className="rounded-xl border border-primary/40 bg-primary/5 px-4 py-2.5 font-body text-sm text-text">
+          {tomorrowCount === 1
+            ? "1 commande est réservée pour demain"
+            : `${tomorrowCount} commandes sont réservées pour demain`}{" "}
+          — elles portent le badge « Demain » et sont à préparer le lendemain.
+        </p>
+      )}
+
+      {boardOrders.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4">
           <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Aujourd&apos;hui
+            Aujourd&apos;hui et demain
           </h2>
           <ul className="mt-3 divide-y divide-border">
-            {todayOrders.map((order) => (
+            {boardOrders.map((order) => (
               <li key={order.id}>
                 <button
                   type="button"
@@ -479,6 +504,11 @@ export function AdminOrdersPage() {
                     aria-hidden
                   />
                   <span className="font-medium text-primary">{order.id}</span>
+                  {isTomorrowAtShop(order.scheduledSlotStart!) && (
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      Demain
+                    </span>
+                  )}
                   <span className="truncate text-text">
                     {clientLabel(order)}
                   </span>
@@ -566,7 +596,7 @@ export function AdminOrdersPage() {
       {cancelledToday.length > 0 && (
         <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
           <h2 className="font-display text-sm font-semibold text-destructive">
-            Annulées aujourd&apos;hui ({cancelledToday.length})
+            Annulées ({cancelledToday.length})
           </h2>
           <ul className="mt-2 space-y-1 font-body text-sm text-muted-foreground">
             {cancelledToday.map((o) => (

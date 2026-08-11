@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { CalendarDays, MapPin } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, MapPin, Sunrise } from "lucide-react";
 
+import { getShopDateKey, isTodayAtShop } from "@/lib/business-date";
 import { formatSlotDate } from "@/lib/delivery/slots";
 import type { TimeSlotOption } from "@/lib/delivery/types";
 import { useCheckoutStore } from "@/lib/checkout-store";
@@ -69,6 +70,26 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
     void loadSlots();
   }, [loadSlots]);
 
+  // Les créneaux couvrent aujourd'hui, et demain dès 20 h — on les sépare en
+  // deux blocs pour que la cliente ne se trompe jamais de journée.
+  const slotsByDay = useMemo(() => {
+    const groups = new Map<string, { date: Date; slots: TimeSlotOption[] }>();
+    for (const slot of slots) {
+      const key = getShopDateKey(slot.start);
+      const group = groups.get(key);
+      if (group) group.slots.push(slot);
+      else groups.set(key, { date: new Date(slot.start), slots: [slot] });
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dateKey, group]) => ({
+        dateKey,
+        isToday: isTodayAtShop(group.date),
+        label: formatSlotDate(group.date),
+        slots: group.slots,
+      }));
+  }, [slots]);
+
   if (!mode) return null;
 
   const loading = configLoading || slotsLoading;
@@ -89,7 +110,8 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
             Choisissez votre créneau
           </h1>
           <p className="mt-2 font-body text-muted-foreground">
-            Votre commande concerne uniquement le menu d&apos;aujourd&apos;hui.
+            Le menu est journalier. Dès 20 h, vous pouvez aussi réserver un
+            créneau pour demain.
           </p>
         </div>
       )}
@@ -104,24 +126,7 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
         </div>
       )}
 
-      <div className="flex items-center gap-3 rounded-2xl border border-secondary/60 bg-secondary/15 px-4 py-3">
-        <CalendarDays className="size-5 shrink-0 text-primary" aria-hidden />
-        <div>
-          <p className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Commande du jour
-          </p>
-          <p className="font-body text-sm font-semibold capitalize text-primary">
-            {formatSlotDate(new Date())}
-          </p>
-        </div>
-      </div>
-
       <div className="space-y-3">
-        <div className="flex items-center gap-2 font-body text-sm font-medium text-primary">
-          <CalendarDays className="size-4" aria-hidden />
-          Créneaux disponibles aujourd&apos;hui
-        </div>
-
         {slotsError ? (
           <div className="space-y-3">
             <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
@@ -135,43 +140,73 @@ export function StepSchedule({ embedded = false }: { embedded?: boolean }) {
               Actualiser
             </button>
           </div>
-        ) : slots.length === 0 ? (
+        ) : slotsByDay.length === 0 ? (
           <p className="rounded-2xl border border-border bg-muted/30 px-4 py-6 text-center font-body text-sm text-muted-foreground">
-            Plus de créneau disponible aujourd&apos;hui. Le prochain menu sera
-            ouvert demain.
+            Plus de créneau disponible aujourd&apos;hui. Les créneaux de demain
+            ouvrent à 20 h.
           </p>
         ) : (
-          <div
-            className={cn(
-              "grid gap-3",
-              slots.length === 1 ? "grid-cols-1" : "grid-cols-2",
-            )}
-          >
-            {slots.map((slot) => {
-              const selected = scheduledSlot?.slotKey === slot.slotKey;
-              return (
-                <button
-                  key={slot.slotKey}
-                  type="button"
-                  onClick={() => {
-                    setScheduledSlot({
-                      start: slot.start,
-                      end: slot.end,
-                      slotKey: slot.slotKey,
-                    });
-                  }}
-                  className={cn(
-                    "min-h-14 cursor-pointer rounded-2xl border px-4 py-3 font-body text-sm font-semibold transition-all duration-[250ms]",
-                    selected
-                      ? "border-primary bg-primary text-primary-foreground shadow-md"
-                      : "border-border bg-card text-text hover:border-primary/40",
-                  )}
-                >
-                  {slot.label}
-                </button>
-              );
-            })}
-          </div>
+          slotsByDay.map((day) => (
+            <div key={day.dateKey} className="space-y-3">
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border px-4 py-3",
+                  day.isToday
+                    ? "border-secondary/60 bg-secondary/15"
+                    : "border-primary/40 bg-primary/5",
+                )}
+              >
+                {day.isToday ? (
+                  <CalendarDays
+                    className="size-5 shrink-0 text-primary"
+                    aria-hidden
+                  />
+                ) : (
+                  <Sunrise className="size-5 shrink-0 text-primary" aria-hidden />
+                )}
+                <div>
+                  <p className="font-body text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {day.isToday ? "Aujourd’hui" : "Demain"}
+                  </p>
+                  <p className="font-body text-sm font-semibold capitalize text-primary">
+                    {day.label}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "grid gap-3",
+                  day.slots.length === 1 ? "grid-cols-1" : "grid-cols-2",
+                )}
+              >
+                {day.slots.map((slot) => {
+                  const selected = scheduledSlot?.slotKey === slot.slotKey;
+                  return (
+                    <button
+                      key={slot.slotKey}
+                      type="button"
+                      onClick={() => {
+                        setScheduledSlot({
+                          start: slot.start,
+                          end: slot.end,
+                          slotKey: slot.slotKey,
+                        });
+                      }}
+                      className={cn(
+                        "min-h-14 cursor-pointer rounded-2xl border px-4 py-3 font-body text-sm font-semibold transition-all duration-[250ms]",
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : "border-border bg-card text-text hover:border-primary/40",
+                      )}
+                    >
+                      {slot.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

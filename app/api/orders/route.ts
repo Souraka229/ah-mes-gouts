@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { isTodayAtShop } from "@/lib/business-date";
+import { isNextDayOrderingOpen } from "@/lib/business-date";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { getSlotsForDate } from "@/lib/delivery/slots";
 import { resolveDeliveryDisplayName } from "@/lib/delivery-zones";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/validation/order-server";
 import { withRetry } from "@/lib/server/retry";
 import {
+  assertSlotIsOrderable,
   buildSlotKey,
   findNextAvailableSlot,
   isSlotAvailable,
@@ -130,11 +131,13 @@ export async function POST(request: Request) {
 
   const slotStart = order.scheduledSlotStart;
   const slotEnd = order.scheduledSlotEnd;
-  if (!isTodayAtShop(slotStart) || !isTodayAtShop(slotEnd)) {
+  // Menu journalier : aujourd'hui, et le lendemain seulement à partir de 20 h.
+  if (!assertSlotIsOrderable(slotStart) || !assertSlotIsOrderable(slotEnd)) {
     return NextResponse.json(
       {
-        error:
-          "Le menu est journalier : choisissez un créneau d’aujourd’hui.",
+        error: isNextDayOrderingOpen()
+          ? "Choisissez un créneau d’aujourd’hui ou de demain."
+          : "Le menu est journalier : choisissez un créneau d’aujourd’hui. Les créneaux de demain ouvrent à 20 h.",
       },
       { status: 409 },
     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Loader2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
@@ -135,8 +136,14 @@ export function MenuProductEditor({
                   </p>
                   <div className="relative mt-2 aspect-square overflow-hidden rounded-lg bg-bg">
                     {url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={url} alt="" className="size-full object-cover" />
+                      <Image
+                        src={url}
+                        alt=""
+                        fill
+                        sizes="120px"
+                        className="object-cover"
+                        unoptimized={url.startsWith("/")}
+                      />
                     ) : (
                       <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
                         Vide

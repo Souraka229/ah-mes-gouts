@@ -30,7 +30,7 @@ const emptyForm = {
   imageUrl: "",
 };
 
-const ADMIN_TABS = ["Tous", "Entremets", "Nounours", "Carte", "Menu du jour"] as const;
+const ADMIN_TABS = ["Tous", "Entremets", "Nounours", "Carte", "Menu du jour", "Promo"] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
 
 export function AdminProductsPage() {
@@ -47,6 +47,7 @@ export function AdminProductsPage() {
 
   const filteredProducts = products.filter((product) => {
     if (activeTab === "Tous") return true;
+    if (activeTab === "Promo") return Boolean(product.isPromotion);
     return (product.category ?? "Entremets") === activeTab;
   });
 

@@ -295,9 +295,12 @@ export async function getAllServerOrders(): Promise<SavedOrder[]> {
 }
 
 export type AdminOrdersQuery = {
-  /** Nombre max de commandes (défaut 100, plafond 200). */
+  /** Nombre max de commandes (défaut 100, plafond 3000 — le cockpit "Depuis
+   * la création" en a besoin ; le KDS s'en tient à des valeurs bien plus
+   * basses). */
   limit?: number;
-  /** Fenêtre glissante en jours (défaut 7). */
+  /** Fenêtre glissante en jours (défaut 7, plafond ~10 ans pour couvrir
+   * "Depuis la création" tant qu'il n'y a pas d'agrégat SQL dédié). */
   days?: number;
 };
 
@@ -305,8 +308,8 @@ export type AdminOrdersQuery = {
 export async function getServerOrdersForAdmin(
   query: AdminOrdersQuery = {},
 ): Promise<SavedOrder[]> {
-  const limit = Math.min(Math.max(query.limit ?? 100, 1), 200);
-  const days = Math.min(Math.max(query.days ?? 7, 1), 30);
+  const limit = Math.min(Math.max(query.limit ?? 100, 1), 3000);
+  const days = Math.min(Math.max(query.days ?? 7, 1), 3650);
   const since = new Date();
   since.setDate(since.getDate() - days);
 

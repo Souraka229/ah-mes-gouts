@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Calendar,
   ChevronDown,
@@ -62,7 +62,7 @@ type AdminMe = {
   adminName: string;
   role: string;
   isAdministrator: boolean;
-};
+} | null;
 
 function NavLink({
   item,
@@ -156,18 +156,16 @@ function NavSection({
   );
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  me,
+}: {
+  children: React.ReactNode;
+  me: AdminMe;
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [me, setMe] = useState<AdminMe | null>(null);
   const [showMore, setShowMore] = useState(false);
-
-  useEffect(() => {
-    void fetch("/api/admin/me", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setMe(data as AdminMe | null))
-      .catch(() => null);
-  }, []);
 
   const visibleNav = NAV_ITEMS.filter(
     (item) => !item.adminOnly || me?.isAdministrator !== false,
@@ -318,20 +316,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <PwaInstallButton label="Installer" className="hidden sm:inline-flex" />
             <BrandLogo compact className="lg:hidden" />
           </div>
-          <button
-            type="button"
-            className="hidden min-h-10 cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-3 py-1.5 font-body text-xs text-muted-foreground hover:border-primary/30 hover:text-primary sm:inline-flex"
-            onClick={() =>
-              window.dispatchEvent(
-                new KeyboardEvent("keydown", { key: "k", ctrlKey: true }),
-              )
-            }
-          >
-            Recherche
-            <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">
-              ⌘K
-            </kbd>
-          </button>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>

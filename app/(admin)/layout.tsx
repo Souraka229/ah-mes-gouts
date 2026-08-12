@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminProviders } from "@/components/admin/admin-providers";
 import { AdminErrorBoundary } from "@/components/admin/admin-error-boundary";
 import { PwaRegistrar } from "@/components/pwa/PwaRegistrar";
+import { getAdminContextAsync } from "@/lib/server/admin-auth";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -23,15 +24,26 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminPlatformLayout({
+export default async function AdminPlatformLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Résolu côté serveur (cookie de session déjà là) — évite le fetch client
+  // et le flash de sidebar incomplète le temps qu'il réponde.
+  const context = await getAdminContextAsync();
+  const me = context
+    ? {
+        adminName: context.name,
+        role: context.role,
+        isAdministrator: context.role === "administrateur",
+      }
+    : null;
+
   return (
     <AdminProviders>
       <PwaRegistrar serviceWorker="/admin-sw.js" scope="/admin/" />
-      <AdminShell>
+      <AdminShell me={me}>
         <AdminErrorBoundary>{children}</AdminErrorBoundary>
       </AdminShell>
     </AdminProviders>

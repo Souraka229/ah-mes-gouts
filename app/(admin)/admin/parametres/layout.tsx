@@ -5,11 +5,9 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   Calendar,
-  Database,
   IceCreamCone,
   Info,
   ScrollText,
-  Sparkles,
   Truck,
   Users,
 } from "lucide-react";
@@ -29,16 +27,10 @@ const SETTINGS_NAV = [
   },
   { href: "/admin/menus", label: "Menus & packs", icon: Calendar },
   {
-    href: "/admin/parametres/promotions",
-    label: "Promotions",
-    icon: Sparkles,
-  },
-  {
     href: "/admin/parametres/utilisateurs",
     label: "Utilisateurs & rôles",
     icon: Users,
   },
-  { href: "/admin/donnees", label: "Données", icon: Database },
   { href: "/admin/parametres/journal", label: "Journal des actions", icon: ScrollText },
   {
     href: "/admin/parametres/notifications",

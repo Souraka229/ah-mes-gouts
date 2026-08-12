@@ -20,7 +20,7 @@ import {
 } from "@/lib/admin/kpis";
 import { formatPrice } from "@/lib/format";
 import { isDevAdminOpen } from "@/lib/server/admin-auth";
-import { getAllServerOrders } from "@/lib/server/order-repository";
+import { getServerOrdersForAdmin } from "@/lib/server/order-repository";
 import { getShopProductsFromActiveMenu } from "@/lib/server/menu-repository";
 import { getVisitStats } from "@/lib/server/site-visits";
 import { ORDER_STATUS_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
@@ -30,11 +30,27 @@ type AdminDashboardProps = {
   period?: AdminKpiPeriod;
 };
 
+/**
+ * Fenêtre de requête par période — doit couvrir la période affichée ET la
+ * période de comparaison ("vs hier" / "vs semaine dernière" / "vs mois
+ * dernier"). "all" ("Depuis la création") n'a pas de comparaison mais doit
+ * couvrir tout l'historique, d'où la fenêtre large.
+ */
+const ORDERS_WINDOW_BY_PERIOD: Record<
+  AdminKpiPeriod,
+  { days: number; limit: number }
+> = {
+  today: { days: 2, limit: 300 },
+  week: { days: 15, limit: 600 },
+  month: { days: 65, limit: 1200 },
+  all: { days: 3650, limit: 3000 },
+};
+
 export async function AdminDashboard({
   period = "today",
 }: AdminDashboardProps) {
   const [orders, menuProducts, visits] = await Promise.all([
-    getAllServerOrders(),
+    getServerOrdersForAdmin(ORDERS_WINDOW_BY_PERIOD[period]),
     getShopProductsFromActiveMenu(),
     getVisitStats(),
   ]);

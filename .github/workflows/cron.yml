@@ -1,0 +1,49 @@
+name: Tâches planifiées
+
+# Le plan Vercel Hobby limite les crons à un passage par jour, ce qui est très
+# insuffisant pour la réconciliation des paiements : une cliente qui valide son
+# Mobile Money après l'abandon du suivi attendrait le lendemain pour voir sa
+# commande confirmée. GitHub Actions assure donc la cadence réelle, gratuitement.
+#
+# Les entrées de vercel.json restent en place comme filet quotidien, au cas où
+# ce workflow serait désactivé.
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   CRON_SECRET  — identique à la variable d'environnement Vercel
+#   SITE_URL     — https://giftentremets.com
+
+on:
+  schedule:
+    # Toutes les 5 minutes. GitHub applique parfois du retard en période de
+    # charge : c'est acceptable ici, la réconciliation n'est pas temps réel.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: cron
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Réconciliation des paiements
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/reconcile-payments")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          # Un échec doit être visible : sans ça, un paiement perdu passe inaperçu.
+          test "$code" = "200"
+
+      - name: Activation des menus dus
+        if: always()
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/activate-menus")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          test "$code" = "200"

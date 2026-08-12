@@ -1,13 +1,13 @@
 {
+  "//crons": "Le plan Hobby limite Vercel a UN passage par jour et par cron. Ces deux entrees ne sont donc qu'un filet de securite quotidien. La cadence reelle vient de .github/workflows/cron.yml, qui appelle les memes routes toutes les 5 minutes. Passer en Pro permettrait de tout ramener ici.",
   "crons": [
     {
       "path": "/api/cron/activate-menus",
-      "//": "Horaire : un menu ouvre a 20h heure boutique (19h UTC). Un cron quotidien a 8h UTC l'activait 13h en retard, et l'activation ne tenait que grace au declenchement paresseux sur trafic.",
-      "schedule": "5 * * * *"
+      "schedule": "0 19 * * *"
     },
     {
       "path": "/api/cron/reconcile-payments",
-      "schedule": "*/5 * * * *"
+      "schedule": "30 19 * * *"
     }
   ],
   "headers": [

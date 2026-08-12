@@ -3,9 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import {
-  ADMIN_SESSION_COOKIE,
+  buildAdminSessionCookie,
   issueAdminSession,
-  ADMIN_SESSION_TTL_HOURS,
 } from "@/lib/server/admin-session";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -83,17 +82,11 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(new URL(redirectTo, request.url));
 
-  response.cookies.set({
-    name: ADMIN_SESSION_COOKIE,
-    value: jwt,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    // "strict" : aucune raison qu'une navigation externe porte la session admin.
-    sameSite: "strict",
-    path: "/",
-    expires: expiresAt,
-    maxAge: ADMIN_SESSION_TTL_HOURS * 3600,
-  });
+  // `sameSite: lax` et non `strict` : le lien magique arrive depuis WhatsApp
+  // ou un mail, donc d'un autre site. En `strict`, le cookie ne partirait pas
+  // sur cette première navigation et la session paraîtrait perdue aussitôt
+  // créée. `lax` continue de bloquer les POST inter-sites.
+  response.cookies.set({ ...buildAdminSessionCookie(jwt), expires: expiresAt });
 
   // Le token magique ne doit fuir ni par le Referer, ni par un cache partagé.
   response.headers.set("Referrer-Policy", "no-referrer");

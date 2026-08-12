@@ -2,12 +2,10 @@ import { createHash } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import {
-  ADMIN_SESSION_MAX_AGE_SECONDS,
-  getAdminContextAsync,
-} from "@/lib/server/admin-auth";
+import { getAdminContextAsync } from "@/lib/server/admin-auth";
 import {
   ADMIN_SESSION_COOKIE,
+  buildAdminSessionCookie,
   issueAdminSession,
   revokeAdminSession,
   verifyAdminSession,
@@ -98,16 +96,7 @@ export async function POST(request: Request) {
     name: entry.name,
   });
 
-  response.cookies.set({
-    name: ADMIN_SESSION_COOKIE,
-    value: jwt,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    expires: expiresAt,
-    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
-  });
+  response.cookies.set({ ...buildAdminSessionCookie(jwt), expires: expiresAt });
   response.headers.set("Cache-Control", "no-store, private");
 
   return response;
@@ -130,7 +119,7 @@ export async function DELETE() {
     value: "",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge: 0,
   });

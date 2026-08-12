@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 import {
   ADMIN_SESSION_COOKIE,
-  ADMIN_SESSION_TTL_HOURS,
+  ADMIN_SESSION_TTL_DAYS,
   verifyAdminSession,
 } from "@/lib/server/admin-session";
 import {
@@ -20,7 +20,8 @@ export {
   type AdminContext,
 } from "@/lib/server/admin-auth-edge";
 
-export const ADMIN_SESSION_MAX_AGE_SECONDS = ADMIN_SESSION_TTL_HOURS * 3600;
+export const ADMIN_SESSION_MAX_AGE_SECONDS =
+  ADMIN_SESSION_TTL_DAYS * 24 * 3600;
 
 /**
  * Contexte admin pour les routes API et pages serveur.

@@ -6,6 +6,10 @@ import {
   isAdministratorFromRequest,
 } from "@/lib/server/admin-auth-edge";
 import {
+  ADMIN_SESSION_COOKIE,
+  buildAdminSessionCookie,
+} from "@/lib/server/admin-session";
+import {
   DEVICE_COOKIE,
   DEVICE_COOKIE_OPTIONS,
 } from "@/lib/server/device-cookie";
@@ -104,6 +108,16 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   response.headers.set("x-amg-admin-role", context.role);
   response.headers.set("x-amg-admin-name", context.name);
+
+  // Repose le cookie à chaque passage : sa date d'expiration glisse avec
+  // l'usage. Sans ça, le cookie finirait par expirer côté navigateur même
+  // avec une session toujours vivante en base, et le back-office demanderait
+  // une reconnexion sans raison.
+  const current = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  if (current) {
+    response.cookies.set(buildAdminSessionCookie(current));
+  }
+
   return response;
 }
 

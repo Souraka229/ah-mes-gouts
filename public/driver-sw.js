@@ -1,5 +1,5 @@
 const CACHE_NAME = "amg-driver-assets-v2";
-const ASSETS = ["/pwa/driver-icon.svg"];
+const ASSETS = ["/pwa/icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));

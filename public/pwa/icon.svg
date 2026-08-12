@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="0" fill="#17181B"/>
+  <text x="256" y="279.04" text-anchor="middle" dominant-baseline="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-weight="700"
+        font-size="174.08" fill="#FAF7F5" letter-spacing="2.56">G&amp;E</text>
+  <text x="256" y="376.32" text-anchor="middle" dominant-baseline="middle"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="41.984" fill="#FAF7F5" opacity="0.72"
+        letter-spacing="9.216">ENTREMETS</text>
+  <path d="M 381.44 120.32 L 390.4512 139.4688 L 409.6 148.48 L 390.4512 157.4912 L 381.44 176.64 L 372.4288 157.4912 L 353.28 148.48 L 372.4288 139.4688 Z"
+        fill="#0077B3"/>
+</svg>

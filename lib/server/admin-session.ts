@@ -19,7 +19,25 @@ const ISSUER = "gift-entremets";
 const AUDIENCE = "admin";
 
 export const ADMIN_SESSION_COOKIE = "ge_admin";
-export const ADMIN_SESSION_TTL_HOURS = 12;
+
+/**
+ * Durée de vie d'une session : 400 jours, le plafond accepté par les
+ * navigateurs pour un cookie.
+ *
+ * La session se prolonge d'elle-même à chaque utilisation (voir
+ * `verifyAdminSession`) : tant que la boutique ouvre son back-office au moins
+ * une fois tous les 400 jours, personne ne se reconnecte jamais.
+ *
+ * Ce qui reste possible, et qui doit le rester : révoquer une session depuis
+ * la base. Sans ça, un téléphone perdu donnerait un accès admin définitif,
+ * sans aucun moyen de le couper autrement qu'en changeant le secret et en
+ * déconnectant toute l'équipe d'un coup.
+ */
+export const ADMIN_SESSION_TTL_DAYS = 400;
+const TTL_MS = ADMIN_SESSION_TTL_DAYS * 24 * 3_600_000;
+
+/** Prolongation anticipée : on rafraîchit dès qu'il reste moins de 300 jours. */
+const RENEW_WHEN_REMAINING_MS = 300 * 24 * 3_600_000;
 
 export type AdminClaims = {
   /** Identifiant de session en base — permet la révocation. */
@@ -45,15 +63,23 @@ export function isAdminSessionConfigured(): boolean {
   return Boolean(raw && raw.length >= 32);
 }
 
+async function signSession(claims: AdminClaims): Promise<string> {
+  return new SignJWT({ ...claims })
+    .setProtectedHeader({ alg: ALG })
+    .setIssuedAt()
+    .setIssuer(ISSUER)
+    .setAudience(AUDIENCE)
+    .setExpirationTime(`${ADMIN_SESSION_TTL_DAYS}d`)
+    .sign(secret());
+}
+
 export async function issueAdminSession(input: {
   role: AdminRole;
   name: string;
   userAgent?: string | null;
   ipHash?: string | null;
 }): Promise<{ jwt: string; expiresAt: Date }> {
-  const expiresAt = new Date(
-    Date.now() + ADMIN_SESSION_TTL_HOURS * 3_600_000,
-  );
+  const expiresAt = new Date(Date.now() + TTL_MS);
 
   const session = await getPrisma().adminSession.create({
     data: {
@@ -66,17 +92,11 @@ export async function issueAdminSession(input: {
     select: { id: true },
   });
 
-  const jwt = await new SignJWT({
+  const jwt = await signSession({
     sid: session.id,
     role: input.role,
     name: input.name,
-  })
-    .setProtectedHeader({ alg: ALG })
-    .setIssuedAt()
-    .setIssuer(ISSUER)
-    .setAudience(AUDIENCE)
-    .setExpirationTime(`${ADMIN_SESSION_TTL_HOURS}h`)
-    .sign(secret());
+  });
 
   return { jwt, expiresAt };
 }
@@ -111,14 +131,21 @@ export async function verifyAdminJwt(
   }
 }
 
-/** Vérification complète, révocation incluse. Runtime Node uniquement. */
+/**
+ * Vérification complète, révocation incluse. Runtime Node uniquement.
+ *
+ * Prolonge la session au passage : tant que le back-office est utilisé, la
+ * date d'expiration recule. C'est ce qui fait qu'on ne se déconnecte jamais,
+ * sans renoncer à pouvoir couper un accès.
+ */
 export async function verifyAdminSession(
   token: string | undefined,
 ): Promise<AdminClaims | null> {
   const claims = await verifyAdminJwt(token);
   if (!claims) return null;
 
-  const session = await getPrisma().adminSession.findUnique({
+  const prisma = getPrisma();
+  const session = await prisma.adminSession.findUnique({
     where: { id: claims.sid },
     select: { revokedAt: true, expiresAt: true },
   });
@@ -127,16 +154,38 @@ export async function verifyAdminSession(
     return null;
   }
 
-  // Trace de présence — non bloquante, une session valide ne doit jamais
-  // échouer parce que l'écriture de télémétrie a échoué.
-  void getPrisma()
-    .adminSession.update({
-      where: { id: claims.sid },
-      data: { lastSeenAt: new Date() },
-    })
+  const remaining = session.expiresAt.getTime() - Date.now();
+  const data: { lastSeenAt: Date; expiresAt?: Date } = { lastSeenAt: new Date() };
+  if (remaining < RENEW_WHEN_REMAINING_MS) {
+    data.expiresAt = new Date(Date.now() + TTL_MS);
+  }
+
+  // Non bloquant : une session valide ne doit jamais échouer parce que
+  // l'écriture de présence a échoué.
+  void prisma.adminSession
+    .update({ where: { id: claims.sid }, data })
     .catch(() => null);
 
   return claims;
+}
+
+/**
+ * Cookie de session à reposer sur la réponse.
+ *
+ * Le cookie est renvoyé à chaque passage pour que sa date d'expiration
+ * glisse avec la session : un cookie posé une seule fois finirait par expirer
+ * côté navigateur même avec une session vivante en base.
+ */
+export function buildAdminSessionCookie(jwt: string) {
+  return {
+    name: ADMIN_SESSION_COOKIE,
+    value: jwt,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: Math.floor(TTL_MS / 1000),
+  };
 }
 
 export async function revokeAdminSession(sid: string): Promise<void> {

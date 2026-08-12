@@ -99,6 +99,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Un service worker mis en cache par le CDN fige la version installée
+        // chez les clientes : il doit toujours être revalidé.
+        source: "/shop-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
         source: "/admin-sw.js",
         headers: [
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },

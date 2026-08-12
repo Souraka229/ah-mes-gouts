@@ -1,5 +1,4 @@
 {
-  "//crons": "Le plan Hobby limite Vercel a UN passage par jour et par cron. Ces deux entrees ne sont donc qu'un filet de securite quotidien. La cadence reelle vient de .github/workflows/cron.yml, qui appelle les memes routes toutes les 5 minutes. Passer en Pro permettrait de tout ramener ici.",
   "crons": [
     {
       "path": "/api/cron/activate-menus",

@@ -8,6 +8,15 @@ import {
   notifyTelegramSafe,
 } from "@/lib/notifications/telegram";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
+import {
+  formatSlotDateShort,
+  formatSlotRange,
+} from "@/lib/delivery/slots";
+import {
+  buildSlotKey,
+  getSlotOccupancy,
+} from "@/lib/server/slot-bookings";
+import type { SavedOrder } from "@/types/order";
 import { attachOrderToCustomer } from "@/lib/server/crm/customer-service";
 import {
   confirmServerOrderPayment,
@@ -15,6 +24,38 @@ import {
   getServerOrder,
 } from "@/lib/server/order-repository";
 import { isPendingPaymentExpired } from "@/lib/orders/payment-expiration";
+
+/**
+ * Prévient la boutique dès qu'une vague de livraison est complète (35).
+ *
+ * C'est le signal opérationnel : à partir de là, la tournée peut être
+ * constituée et assignée à un ou plusieurs livreurs. L'information de
+ * capacité reste interne — la cliente ne voit que la disponibilité.
+ */
+async function notifyIfDeliveryWaveFull(order: SavedOrder): Promise<void> {
+  if (order.fulfillmentType !== "delivery" || !order.scheduledSlotStart) {
+    return;
+  }
+
+  const slotKey = buildSlotKey("delivery", order.scheduledSlotStart);
+  const { used, capacity, isFull } = await getSlotOccupancy(slotKey);
+
+  // Uniquement au franchissement exact : sinon chaque commande suivante
+  // renverrait une alerte alors que la vague est déjà pleine.
+  if (!isFull || used !== capacity) return;
+
+  const creneau = formatSlotRange(
+    order.scheduledSlotStart,
+    order.scheduledSlotEnd ?? order.scheduledSlotStart,
+  );
+  const jour = formatSlotDateShort(order.scheduledSlotStart);
+
+  notifyTelegramSafe(
+    `🚚 Vague de livraison complète — ${capacity} commandes\n` +
+      `${jour}, entre ${creneau}.\n` +
+      `La tournée peut être constituée et assignée.`,
+  );
+}
 
 export type ConfirmPaymentResult =
   | { ok: true; orderId: string; alreadyConfirmed?: boolean }
@@ -151,6 +192,10 @@ export async function confirmOrderPayment(
       clientName: `${confirmed.client.firstName} ${confirmed.client.lastName}`.trim(),
     }),
   );
+
+  void notifyIfDeliveryWaveFull(confirmed).catch(() => {
+    /* non bloquant */
+  });
 
   return { ok: true, orderId };
 }

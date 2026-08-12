@@ -3,6 +3,7 @@ import {
   getShopDayOfWeek,
   shopDateTimeToUtc,
 } from "@/lib/business-date";
+import { DELIVERY_WAVES } from "@/lib/delivery/constants";
 import type {
   DeliveryScheduleConfig,
   FulfillmentType,
@@ -22,11 +23,30 @@ function minutesToTime(mins: number): string {
   return `${h}:${m}`;
 }
 
+function formatWaveLabel(label: string, start: string, end: string): string {
+  const fmt = (time: string) => time.replace(":", "h");
+  return `${label} · ${fmt(start)} – ${fmt(end)}`;
+}
+
 /**
- * Découpe l'horaire configuré par l'admin (startTime → endTime) en 2 vagues —
- * choix volontairement simple pour la cliente. La 2ᵉ vague s'étend toujours
- * jusqu'à l'heure de fermeture configurée (c'était codé en dur à 18h30 avant,
- * indépendamment de ce que l'admin réglait).
+ * Vagues de livraison — horaires fixes (13h30–15h30, 15h30–17h30,
+ * 17h30–19h30), et non plus une plage découpée en deux par calcul.
+ *
+ * Ce sont trois tournées réelles calées sur la disponibilité des livreurs :
+ * les dériver d'un couple startTime/endTime donnait des horaires qui ne
+ * correspondaient à aucune tournée effective.
+ */
+function buildDeliveryWaves(): { start: string; end: string; label: string }[] {
+  return DELIVERY_WAVES.map((wave) => ({
+    start: wave.start,
+    end: wave.end,
+    label: formatWaveLabel(wave.label, wave.start, wave.end),
+  }));
+}
+
+/**
+ * Retrait : l'horaire configuré par l'admin (startTime → endTime) reste
+ * découpé en 2 vagues — la cliente vient quand elle veut dans la plage.
  */
 function buildWavesFromSchedule(
   schedule: DeliveryScheduleConfig,
@@ -144,7 +164,10 @@ export function buildSlotsForDate(
 ): TimeSlotOption[] {
   const dateKey = getShopDateKey(date);
   const today = dateKey === getShopDateKey(now);
-  const waves = buildWavesFromSchedule(schedule);
+  const waves =
+    schedule.type === "delivery"
+      ? buildDeliveryWaves()
+      : buildWavesFromSchedule(schedule);
 
   return waves.flatMap((wave) => {
     const start = shopDateTimeToUtc(dateKey, wave.start);

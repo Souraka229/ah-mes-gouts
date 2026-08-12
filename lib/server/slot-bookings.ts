@@ -3,6 +3,7 @@ import {
   getSlotsForDate,
   parseSlotKey,
 } from "@/lib/delivery/slots";
+import { DELIVERY_WAVE_CAPACITY } from "@/lib/delivery/constants";
 import type { FulfillmentType, TimeSlotOption } from "@/lib/delivery/types";
 import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
 import { getPrisma } from "@/lib/prisma";
@@ -37,7 +38,17 @@ export async function countOrdersForSlot(slotKey: string): Promise<number> {
   });
 }
 
-export async function getMaxOrdersPerSlot(): Promise<number> {
+/**
+ * Capacité d'un créneau.
+ *
+ * Livraison : 35 par vague, fixé par la boutique d'après ce qu'une tournée
+ * peut absorber. Retrait : réglable par l'admin, la contrainte n'étant pas la
+ * même (personne ne transporte les commandes).
+ */
+export async function getMaxOrdersPerSlot(
+  type: FulfillmentType,
+): Promise<number> {
+  if (type === "delivery") return DELIVERY_WAVE_CAPACITY;
   const { options } = await getDeliveryConfig();
   return options.maxOrdersPerSlot;
 }
@@ -48,11 +59,29 @@ export async function getSlotUsageCount(slotKey: string): Promise<number> {
 }
 
 export async function isSlotAvailable(slotKey: string): Promise<boolean> {
+  const { type } = parseSlotKey(slotKey);
   const [usage, max] = await Promise.all([
     getSlotUsageCount(slotKey),
-    getMaxOrdersPerSlot(),
+    getMaxOrdersPerSlot(type as FulfillmentType),
   ]);
   return usage < max;
+}
+
+/**
+ * Remplissage d'une vague — réservé au back-office.
+ * La cliente ne voit jamais ces chiffres, seulement si une vague est ouverte.
+ */
+export async function getSlotOccupancy(slotKey: string): Promise<{
+  used: number;
+  capacity: number;
+  isFull: boolean;
+}> {
+  const { type } = parseSlotKey(slotKey);
+  const [used, capacity] = await Promise.all([
+    getSlotUsageCount(slotKey),
+    getMaxOrdersPerSlot(type as FulfillmentType),
+  ]);
+  return { used, capacity, isFull: used >= capacity };
 }
 
 /**
@@ -98,9 +127,9 @@ export async function getAvailableSlots(
   type: FulfillmentType,
   now = new Date(),
 ): Promise<TimeSlotOption[]> {
-  const { schedules, options } = await getDeliveryConfig();
+  const { schedules } = await getDeliveryConfig();
   const slots = getOrderableSlots(schedules, type, now);
-  const max = options.maxOrdersPerSlot;
+  const max = await getMaxOrdersPerSlot(type);
 
   const checked = await Promise.all(
     slots.map(async (slot) => {

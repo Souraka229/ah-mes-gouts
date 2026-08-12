@@ -30,6 +30,7 @@ import {
   assertSlotIsOrderable,
   buildSlotKey,
   findNextAvailableSlot,
+  getMaxOrdersPerSlot,
   isSlotAvailable,
 } from "@/lib/server/slot-bookings";
 import type { SavedOrder } from "@/types/order";
@@ -151,7 +152,7 @@ export async function POST(request: Request) {
   const scheduleType = fulfillmentType === "delivery" ? "delivery" : "pickup";
 
   try {
-    const { schedules, options } = await getDeliveryConfig();
+    const { schedules } = await getDeliveryConfig();
     const slots = getSlotsForDate(
       schedules,
       scheduleType,
@@ -250,13 +251,16 @@ export async function POST(request: Request) {
       status: "recue",
     };
 
+    // 35 par vague de livraison, réglage admin pour le retrait.
+    const slotCapacity = await getMaxOrdersPerSlot(scheduleType);
+
     try {
       await withRetry(
         () =>
           saveServerOrderWithSlotReservation(order, {
             scheduledSlotStart: new Date(slotStart),
             fulfillmentType: scheduleType,
-            maxOrdersPerSlot: options.maxOrdersPerSlot,
+            maxOrdersPerSlot: slotCapacity,
           }),
         {
           label: "saveServerOrderWithSlotReservation",

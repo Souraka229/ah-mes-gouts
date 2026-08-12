@@ -1,14 +1,15 @@
-import { Bike, Hand, MapPin, Sparkles } from "lucide-react";
+import { Hand, Heart, Sunrise, Truck } from "lucide-react";
 
 import { BRAND_VALUES } from "@/lib/business-info";
 
 /**
  * Repères — quatre cartes blanches sur fond muted.
  *
- * Icônes en pastilles alternées bleu/neutre : le rouge n'apparaît pas ici,
- * il reste réservé au CTA principal et aux prix.
+ * Pastilles alternées : crème + icône rouge, puis bleu clair + icône bleue.
+ * Le rouge est ici purement iconographique, à petite dose et sans concurrencer
+ * le CTA — choix validé sur maquette.
  */
-const ICONS = [Sparkles, Hand, Bike, MapPin] as const;
+const ICONS = [Sunrise, Hand, Truck, Heart] as const;
 
 export function LandingBrandValues() {
   return (
@@ -30,7 +31,9 @@ export function LandingBrandValues() {
               >
                 <span
                   className={`mb-5 flex size-13 items-center justify-center rounded-2xl ${
-                    isBlue ? "bg-bluegray text-secondary" : "bg-muted text-primary"
+                    isBlue
+                      ? "bg-bluegray text-secondary"
+                      : "bg-muted text-accent"
                   }`}
                   aria-hidden
                 >

@@ -1,8 +1,61 @@
 import { getProductImageUrl, LANDING_EXTRA_IMAGES, LANDING_POSTER_IMAGES } from "@/lib/product-images";
 
+/**
+ * Photos de la landing — shootings maison, optimisés en WebP.
+ * Régénérer avec : node scripts/import-landing-photos.mjs
+ */
+export const LANDING_PHOTOS = {
+  heroCoeurOr: "/images/landing/hero-coeur-or.webp",
+  nuitDoree: "/images/landing/gateau-nuit-doree.webp",
+  fruitsRouges: "/images/landing/entremets-fruits-rouges.webp",
+  surMesure: "/images/landing/gateau-sur-mesure.webp",
+  coffretRoses: "/images/landing/coffret-roses.webp",
+} as const;
+
+/** Ambiance de la page d'accueil — utilisée quand aucun produit n'est publié. */
+export const LANDING_AMBIANCE = [
+  LANDING_PHOTOS.fruitsRouges,
+  LANDING_PHOTOS.nuitDoree,
+  LANDING_PHOTOS.coffretRoses,
+  LANDING_PHOTOS.surMesure,
+] as const;
+
+/**
+ * Signatures de la maison — vitrine éditoriale, pas le menu du jour.
+ *
+ * Volontairement statique : ces six pastilles racontent le savoir-faire et
+ * restent identiques d'un jour à l'autre. Ce qui est réellement commandable
+ * aujourd'hui vit dans la section « menu du jour », qui n'apparaît qu'une fois
+ * le menu planifié et publié.
+ */
+export const LANDING_SIGNATURES = [
+  { id: "coeur-or", name: "Cœur Ivoire", image: LANDING_PHOTOS.heroCoeurOr },
+  {
+    id: "fruits-rouges",
+    name: "Rose des Bois",
+    image: LANDING_PHOTOS.fruitsRouges,
+  },
+  { id: "nuit-doree", name: "Nuit Dorée", image: LANDING_PHOTOS.nuitDoree },
+  {
+    id: "sur-mesure",
+    name: "Éclat Sur Mesure",
+    image: LANDING_PHOTOS.surMesure,
+  },
+  {
+    id: "coffret",
+    name: "Attention Particulière",
+    image: LANDING_PHOTOS.coffretRoses,
+  },
+  {
+    id: "coeur-or-2",
+    name: "Vanille Feuille d'Or",
+    image: LANDING_PHOTOS.heroCoeurOr,
+  },
+] as const;
+
 /** Visuels landing — photos réelles client WebP (+ import Gift) */
 export const LANDING_IMAGES = {
-  hero: "/images/produits/hero-coeur-signature.webp",
+  hero: LANDING_PHOTOS.heroCoeurOr,
   goyaveVanille: getProductImageUrl("goyave-vanille"),
   tiramisuPoster: LANDING_POSTER_IMAGES.tiramisuPoster,
   nutella: getProductImageUrl("nutella-caramel"),

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { BOUTIQUE_HOURS, BOUTIQUE_LOCATION, SLOGAN } from "@/lib/business-info";
+import { LANDING_PHOTOS } from "@/lib/landing-data";
 import { SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
 
@@ -27,7 +28,9 @@ export function LandingHero({
   ctaLabel,
   menuCount,
 }: LandingHeroProps) {
-  const image = featured?.image ?? fallbackImage;
+  // La photo de marque passe devant le produit du jour : c'est le meilleur
+  // shooting de la maison, et il ne change pas au gré du menu.
+  const image = fallbackImage || featured?.image || LANDING_PHOTOS.heroCoeurOr;
   const name = featured?.name;
 
   return (

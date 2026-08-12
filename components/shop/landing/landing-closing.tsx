@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Share2 } from "lucide-react";
 
-import { footerNavLinks } from "@/lib/landing-data";
+import { footerNavLinks, LANDING_AMBIANCE } from "@/lib/landing-data";
 import { INSTAGRAM_URL } from "@/lib/social-links";
 import { ORIGIN_BRAND, SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
@@ -10,7 +10,7 @@ import type { FooterSectionContent } from "@/types/site-content";
 
 type LandingClosingProps = {
   footer: FooterSectionContent;
-  /** Vraies créations du menu — elles flottent autour du bloc de texte. */
+  /** Créations du menu, si publiées. Sinon on retombe sur les photos maison. */
   photos: MenuShowcaseItem[];
 };
 
@@ -40,8 +40,9 @@ export function LandingClosing({ footer, photos }: LandingClosingProps) {
 
         <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden>
           {FLOATERS.map((floater, index) => {
-            const photo = photos[index % Math.max(photos.length, 1)];
-            if (!photo) return null;
+            const src =
+              photos[index]?.image ??
+              LANDING_AMBIANCE[index % LANDING_AMBIANCE.length]!;
             return (
               <div
                 key={index}
@@ -55,7 +56,7 @@ export function LandingClosing({ footer, photos }: LandingClosingProps) {
                 }
               >
                 <Image
-                  src={photo.image}
+                  src={src}
                   alt=""
                   fill
                   sizes="120px"

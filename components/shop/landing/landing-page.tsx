@@ -16,35 +16,33 @@ import type { HomePageContent } from "@/lib/server/home-content";
  * Zéro JS client sur toute la page — chaque carte est un lien.
  */
 export function LandingPage({ content }: { content: HomePageContent }) {
-  // Le hero et les visuels d'ambiance retombent sur les signatures quand le
-  // menu du jour n'est pas encore publié — la page n'est jamais vide.
-  const featured = content.menuShowcase[0] ?? content.signatures[0] ?? null;
+  // Le menu du jour est la seule section pilotée par les données : elle
+  // n'apparaît qu'une fois le menu planifié puis publié (activation à 20 h la
+  // veille). Le reste de la page est une vitrine éditoriale stable.
   const menuItems = content.menuShowcase.slice(0, 4);
-  const showMenuGrid = content.menuShowcase.length > 0;
-  const ambiance =
-    content.menuShowcase.length > 0 ? content.menuShowcase : content.signatures;
+  const hasPublishedMenu = menuItems.length > 0;
 
   return (
     <LandingShell>
       <LandingHero
-        featured={featured}
+        featured={content.menuShowcase[0] ?? null}
         fallbackImage={content.hero.imageUrl}
         ctaHref={content.hero.ctaHref}
         ctaLabel={content.hero.ctaLabel}
         menuCount={content.menuShowcase.length}
       />
 
-      {showMenuGrid && <LandingMenuSection items={menuItems} />}
+      {hasPublishedMenu && <LandingMenuSection items={menuItems} />}
 
-      <LandingSignatures items={content.signatures} />
+      <LandingSignatures />
 
       <LandingBrandValues />
 
       <LandingTrustBar />
 
-      <LandingGiftBanner thumbs={ambiance} />
+      <LandingGiftBanner />
 
-      <LandingClosing footer={content.footer} photos={ambiance} />
+      <LandingClosing footer={content.footer} photos={menuItems} />
     </LandingShell>
   );
 }

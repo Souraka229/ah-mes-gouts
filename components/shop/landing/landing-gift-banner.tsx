@@ -1,12 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
-
-type LandingGiftBannerProps = {
-  /** Vignettes utilisées comme preuve visuelle — vraies créations, pas des avatars. */
-  thumbs: MenuShowcaseItem[];
-};
+import { LANDING_AMBIANCE } from "@/lib/landing-data";
 
 /**
  * Bannière cadeau — écrin de nuit.
@@ -14,8 +9,8 @@ type LandingGiftBannerProps = {
  * Un grand aplat rouge casserait le 60/30/10 : le rouge reste réservé au CTA,
  * qui est ici l'unique touche colorée de la section.
  */
-export function LandingGiftBanner({ thumbs }: LandingGiftBannerProps) {
-  const visible = thumbs.slice(0, 3);
+export function LandingGiftBanner() {
+  const thumbs = LANDING_AMBIANCE.slice(0, 3);
 
   return (
     <section className="px-4 pb-20 sm:px-6 sm:pb-28 lg:px-8">
@@ -41,31 +36,23 @@ export function LandingGiftBanner({ thumbs }: LandingGiftBannerProps) {
             Composer un cadeau
           </Link>
 
-          {visible.length > 0 && (
-            <div className="mt-9 flex items-center gap-4">
-              <div className="flex" aria-hidden>
-                {visible.map((item, index) => (
-                  <span
-                    key={item.id}
-                    className={`relative block size-10 overflow-hidden rounded-full border-[2.5px] border-nuit bg-photo-bg ${
-                      index > 0 ? "-ml-3" : ""
-                    }`}
-                  >
-                    <Image
-                      src={item.image}
-                      alt=""
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                  </span>
-                ))}
-              </div>
-              <p className="font-body text-sm text-white/70">
-                Emballage cadeau et mot manuscrit offerts
-              </p>
+          <div className="mt-9 flex items-center gap-4">
+            <div className="flex" aria-hidden>
+              {thumbs.map((src, index) => (
+                <span
+                  key={src}
+                  className={`relative block size-10 overflow-hidden rounded-full border-[2.5px] border-nuit bg-photo-bg ${
+                    index > 0 ? "-ml-3" : ""
+                  }`}
+                >
+                  <Image src={src} alt="" fill sizes="40px" className="object-cover" />
+                </span>
+              ))}
             </div>
-          )}
+            <p className="font-body text-sm text-white/70">
+              Emballage cadeau et mot manuscrit offerts
+            </p>
+          </div>
         </div>
       </div>
     </section>

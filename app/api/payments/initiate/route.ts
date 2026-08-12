@@ -4,11 +4,13 @@ import { z } from "zod";
 import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment";
 import {
   getFeexPayConfig,
-  getFeexPayTransactionStatus,
   initiateFeexPayPayment,
   isMockPaymentAllowed,
 } from "@/lib/payments/feexpay";
+import { settlePaymentByReference } from "@/lib/payments/settle-payment";
+import { getPrisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { toPrismaPaymentMethod } from "@/lib/server/order-mapper";
 import {
   expirePendingOrder,
   getServerOrder,
@@ -165,14 +167,63 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result.error }, { status: 402 });
     }
 
-    if (result.status === "SUCCESS") {
-      const confirmed = await confirmOrderPayment(orderId, result.reference, {
-        deviceKey,
-      });
-      if (!confirmed.ok) {
+    // La tentative est enregistrée AVANT toute confirmation possible.
+    // Le @unique sur `reference` est la garantie anti-rejeu : elle vit au
+    // niveau base, pas dans une vérification applicative contournable.
+    // `amount` est figé ici depuis le total serveur.
+    const existingAttempt = await getPrisma().paymentAttempt.findUnique({
+      where: { reference: result.reference },
+      select: { orderId: true, status: true },
+    });
+
+    if (existingAttempt) {
+      // Une référence déjà rattachée à une AUTRE commande : c'est exactement
+      // le scénario de rejeu. On refuse, toujours.
+      if (existingAttempt.orderId !== orderId) {
+        console.error(
+          `[payments/initiate] référence ${result.reference} déjà liée à ${existingAttempt.orderId}`,
+        );
         return NextResponse.json(
-          { error: confirmed.error },
-          { status: confirmed.status },
+          { error: "Référence de paiement déjà utilisée." },
+          { status: 409 },
+        );
+      }
+
+      // Même commande : FeexPay renvoie une référence de repli déterministe
+      // (`FP-<orderId>`) quand il n'en fournit pas. Une seconde tentative sur
+      // la même commande doit rester possible — sinon la cliente est bloquée.
+      if (existingAttempt.status !== "PENDING") {
+        return NextResponse.json(
+          { error: "Cette tentative de paiement est close." },
+          { status: 409 },
+        );
+      }
+    } else {
+      try {
+        await getPrisma().paymentAttempt.create({
+          data: {
+            orderId,
+            reference: result.reference,
+            method: toPrismaPaymentMethod(method),
+            amount: order.total,
+            status: "PENDING",
+          },
+        });
+      } catch (error) {
+        console.error("[payments/initiate] tentative non enregistrée:", error);
+        return NextResponse.json(
+          { error: "Paiement impossible à enregistrer. Réessayez." },
+          { status: 409 },
+        );
+      }
+    }
+
+    if (result.status === "SUCCESS") {
+      const settled = await settlePaymentByReference(result.reference);
+      if (!settled.ok) {
+        return NextResponse.json(
+          { error: settled.error },
+          { status: settled.status === 202 ? 200 : settled.status },
         );
       }
 
@@ -202,69 +253,73 @@ export async function POST(request: Request) {
   }
 }
 
-/** Poll statut FeexPay et confirme la commande si SUCCESS. */
+/**
+ * Poll du statut de paiement.
+ *
+ * `orderId` n'est PLUS un paramètre : c'est lui qui rendait le contournement
+ * possible. Tant que l'appelant choisit la commande à créditer, aucune
+ * vérification en aval ne peut rattraper le problème. La commande est
+ * désormais déduite de la tentative liée à la référence.
+ */
 export async function GET(request: Request) {
   const reference = new URL(request.url).searchParams.get("reference")?.trim();
-  const orderId = new URL(request.url).searchParams.get("orderId")?.trim();
 
-  if (!reference || !orderId) {
+  if (!reference) {
+    return NextResponse.json({ error: "reference requise" }, { status: 400 });
+  }
+
+  // Cette route n'avait aucun rate-limit.
+  const ip = getClientIp(request);
+  const { allowed, retryAfterSec } = await checkRateLimit(
+    `payments:status:${ip}`,
+    60,
+    60_000,
+  );
+  if (!allowed) {
     return NextResponse.json(
-      { error: "reference et orderId requis" },
-      { status: 400 },
+      { error: "Trop de requêtes." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
     );
   }
 
   try {
     if (isMockPaymentAllowed()) {
-      return NextResponse.json({ status: "SUCCESS", reference, orderId });
+      return NextResponse.json({ status: "SUCCESS", reference });
     }
 
-    const config = getFeexPayConfig();
-    if (!config) {
-      return NextResponse.json(
-        { error: "Configuration FeexPay incomplète." },
-        { status: 503 },
-      );
-    }
+    const settled = await settlePaymentByReference(reference);
 
-    const txStatus = await getFeexPayTransactionStatus(reference, config);
-
-    if (txStatus.status === "PENDING") {
+    if (settled.ok) {
       return NextResponse.json({
-        status: "PENDING",
+        status: "SUCCESS",
         reference,
-        orderId,
+        orderId: settled.orderId,
       });
     }
 
-    if (txStatus.status === "FAILED") {
+    if (settled.status === 202) {
+      return NextResponse.json({ status: "PENDING", reference });
+    }
+
+    if (settled.status === 402) {
       return NextResponse.json({
         status: "FAILED",
         reference,
-        orderId,
-        error: txStatus.error,
+        error: settled.error,
       });
     }
 
-    const deviceKey = request.headers.get("x-amg-device-key")?.trim() || null;
-    const confirmed = await confirmOrderPayment(orderId, reference, { deviceKey });
-
-    if (!confirmed.ok) {
-      return NextResponse.json(
-        { error: confirmed.error, status: txStatus.status },
-        { status: confirmed.status },
-      );
-    }
-
-    return NextResponse.json({
-      status: "SUCCESS",
-      reference,
-      orderId,
-    });
+    return NextResponse.json(
+      { error: settled.error },
+      { status: settled.status },
+    );
   } catch (error) {
     console.error("[payments/initiate] GET échoué:", error);
     return NextResponse.json(
-      { error: "Statut de paiement indisponible pour le moment.", status: "PENDING" },
+      {
+        error: "Statut de paiement indisponible pour le moment.",
+        status: "PENDING",
+      },
       { status: 200 },
     );
   }

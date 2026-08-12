@@ -35,6 +35,13 @@ enum PaymentMethod {
   CARD
 }
 
+enum PaymentAttemptStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
 model DeliveryZone {
   id        String   @id @default(cuid())
   name      String
@@ -167,6 +174,12 @@ model Order {
   paymentMethod PaymentMethod
   paymentReference String?
 
+  /// Jeton de suivi opaque — remis une seule fois à la création.
+  /// Exigé par /api/orders/[id]/tracking : ferme l'énumération de commandes.
+  /// Nullable pour les commandes antérieures à la migration, qui restent
+  /// consultables par ID seul le temps qu'elles sortent du circuit.
+  trackingToken String? @unique
+
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
@@ -195,7 +208,8 @@ model Order {
   // Anti-fraude (IP hashée, jamais en clair)
   clientIpHash String?
 
-  items OrderItem[]
+  items    OrderItem[]
+  attempts PaymentAttempt[]
 
   @@index([clientPhone])
   @@index([customerId])
@@ -206,6 +220,51 @@ model Order {
   @@index([status])
   @@index([scheduledSlotStart, fulfillmentType, status])
   @@index([paymentReference])
+}
+
+/// Tentative de paiement — l'objet qui manquait.
+///
+/// Une commande a des tentatives ; une tentative appartient à une commande et
+/// une seule ; une référence FeexPay est unique GLOBALEMENT. C'est cette
+/// contrainte d'unicité, au niveau base, qui rend le rejeu impossible : une
+/// référence déjà encaissée ne peut plus créditer aucune autre commande.
+///
+/// `amount` est figé à l'initiation depuis le total serveur : le webhook
+/// compare à cette valeur, jamais à un montant relu du client.
+model PaymentAttempt {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  reference String               @unique
+  method    PaymentMethod
+  amount    Int
+  status    PaymentAttemptStatus @default(PENDING)
+
+  initiatedAt DateTime  @default(now())
+  settledAt   DateTime?
+
+  /// Dernière réponse FeexPay brute — indispensable en litige client.
+  lastRawResponse Json?
+  failureReason   String?
+
+  @@index([status, initiatedAt])
+  @@index([orderId])
+}
+
+/// Session admin signée et révocable — remplace le token statique en cookie.
+model AdminSession {
+  id         String    @id @default(cuid())
+  role       String
+  name       String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+  userAgent  String?
+  ipHash     String?
+
+  @@index([expiresAt])
 }
 
 /// Idempotence checkout — remplace le cache RAM multi-instance.

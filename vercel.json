@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/telegram-daily",
       "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-payments",
+      "schedule": "*/5 * * * *"
     }
   ],
   "headers": [
@@ -49,14 +53,6 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.ahmesgouts.bj" }],
-      "destination": "https://ahmesgouts.bj/:path*",
-      "permanent": true
     }
   ]
 }

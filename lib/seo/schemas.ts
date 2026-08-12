@@ -51,32 +51,28 @@ export function buildIceCreamShopSchema() {
       latitude: BUSINESS.geo.latitude,
       longitude: BUSINESS.geo.longitude,
     },
+    // Horaires dérivés de la source unique (business-info.ts). Trois jeux
+    // d'horaires contradictoires cohabitaient : celui publié ici était faux.
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
-        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "10:00",
-        closes: "20:00",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Saturday",
-        opens: "11:00",
-        closes: "22:00",
-      },
-      {
-        "@type": "OpeningHoursSpecification",
-        dayOfWeek: "Sunday",
-        opens: "12:00",
-        closes: "18:00",
+        dayOfWeek: [...BUSINESS.openingDays],
+        opens: BUSINESS.opens,
+        closes: BUSINESS.closes,
       },
     ],
-    areaServed: deliveryZones.flatMap((zone) =>
-      zone.areas.map((area) => ({
-        "@type": "City",
-        name: `${area}, Cotonou, Bénin`,
-      })),
-    ),
+    // Une zone de service géographique plutôt que 89 entrées « City », que
+    // Google ignore au-delà d'une poignée.
+    areaServed: {
+      "@type": "GeoCircle",
+      geoMidpoint: {
+        "@type": "GeoCoordinates",
+        latitude: BUSINESS.geo.latitude,
+        longitude: BUSINESS.geo.longitude,
+      },
+      geoRadius: "15000",
+      description: `Cotonou et environs — ${deliveryZones.length} zones de livraison`,
+    },
     paymentAccepted: BUSINESS.paymentAccepted.join(", "),
     hasMenu: {
       "@type": "Menu",

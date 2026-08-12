@@ -43,6 +43,23 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
+  // Jeton de suivi : si la commande en porte un, il est obligatoire.
+  // Les commandes antérieures à la migration n'en ont pas et restent
+  // consultables par ID seul le temps qu'elles sortent du circuit.
+  if (order.trackingToken) {
+    const provided =
+      new URL(request.url).searchParams.get("t")?.trim() ||
+      request.headers.get("x-tracking-token")?.trim();
+
+    if (provided !== order.trackingToken) {
+      // 404 plutôt que 403 : ne pas confirmer qu'une commande existe.
+      return NextResponse.json(
+        { error: "Commande introuvable" },
+        { status: 404 },
+      );
+    }
+  }
+
   const publicOrder = toPublicTrackingOrder(order);
 
   if (publicOrder.isAnonymousGift) {

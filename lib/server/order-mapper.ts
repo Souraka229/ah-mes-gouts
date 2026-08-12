@@ -117,6 +117,7 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
     total: order.total,
     paymentMethod: toPrismaPaymentMethod(order.paymentMethod),
     paymentReference: order.paymentReference ?? null,
+    trackingToken: order.trackingToken ?? null,
     clientFirstName: order.client.firstName,
     clientLastName: order.client.lastName,
     clientPhone: order.client.phone,
@@ -186,6 +187,7 @@ export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
       : null,
     paymentMethod: fromPrismaPaymentMethod(row.paymentMethod),
     paymentReference: row.paymentReference,
+    trackingToken: row.trackingToken,
     items: row.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,

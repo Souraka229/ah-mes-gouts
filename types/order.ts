@@ -77,6 +77,8 @@ export type SavedOrder = {
   subtotal: number;
   total: number;
   paymentReference?: string | null;
+  /** Jeton de suivi opaque — remis une seule fois, jamais exposé publiquement. */
+  trackingToken?: string | null;
   driverId?: string | null;
   driverName?: string | null;
   driverStartedAt?: string | null;

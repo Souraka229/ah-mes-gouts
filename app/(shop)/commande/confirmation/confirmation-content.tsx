@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { formatPrice } from "@/lib/format";
+import { buildTrackingUrl } from "@/lib/order-storage";
 import { cn } from "@/lib/utils";
 import {
   PAYMENT_METHOD_LABELS,
@@ -31,10 +32,10 @@ export default function ConfirmationContent() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(
-          `/api/orders/${encodeURIComponent(orderId)}/tracking`,
-          { cache: "no-store", signal: controller.signal },
-        );
+        const response = await fetch(buildTrackingUrl(orderId), {
+          cache: "no-store",
+          signal: controller.signal,
+        });
         const data = (await response.json()) as
           | PublicTrackingOrder
           | { error?: string };

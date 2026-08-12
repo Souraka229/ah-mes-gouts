@@ -11,6 +11,10 @@ import {
   rememberIdempotentOrder,
   resolveIdempotentOrder,
 } from "@/lib/server/order-idempotency";
+import {
+  generateOrderId,
+  generateTrackingToken,
+} from "@/lib/server/order-id";
 import { priceOrderItems } from "@/lib/server/order-pricing";
 import {
   getServerOrder,
@@ -87,7 +91,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
   }
 
-  if (!order.id || !order.client?.phone) {
+  if (!order.client?.phone) {
     return NextResponse.json(
       { error: "Commande incomplète" },
       { status: 400 },
@@ -222,9 +226,17 @@ export async function POST(request: Request) {
 
     const subtotal = priced.data.subtotal;
     const total = subtotal + deliveryFee;
+    const trackingToken = generateTrackingToken();
 
     order = {
       ...order,
+      // ID et date générés serveur : ce que le client envoie est ignoré.
+      // L'ancien ID client était un horodatage base36 tronqué — devinable et
+      // sujet aux collisions. Un createdAt client laissait par ailleurs choisir
+      // sa propre fenêtre d'expiration de paiement.
+      id: generateOrderId(),
+      createdAt: new Date().toISOString(),
+      trackingToken,
       mode,
       fulfillmentType,
       items: priced.data.items,
@@ -274,6 +286,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       orderId: order.id,
+      // Remis une seule fois : le client le conserve et le renvoie pour
+      // consulter le suivi. Ferme l'énumération des commandes.
+      trackingToken,
       status: order.status,
       subtotal: order.subtotal,
       deliveryFee: order.deliveryFee,

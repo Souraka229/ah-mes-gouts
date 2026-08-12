@@ -9,7 +9,7 @@ import { OrderStepper } from "@/components/shop/checkout/order-stepper";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
-import { getOrderById } from "@/lib/order-storage";
+import { buildTrackingUrl, getOrderById } from "@/lib/order-storage";
 import { SITE_NAME } from "@/lib/seo/site";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,7 @@ export function OrderTrackingView({ orderId }: TrackingPageProps) {
       setNotFound(false);
 
       try {
-        const response = await fetch(`/api/orders/${orderId}/tracking`);
+        const response = await fetch(buildTrackingUrl(orderId));
         if (response.ok) {
           const data = (await response.json()) as PublicTrackingOrder;
           if (!cancelled) setOrder(data);

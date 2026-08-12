@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "crypto";
+
 import type { AdminRole } from "@/lib/admin/types";
 
 export type AdminTokenEntry = {
@@ -47,11 +49,21 @@ function isTokenUsable(entry: AdminTokenEntry, now = new Date()): boolean {
   return true;
 }
 
+/** Comparaison à durée constante — jamais `===` sur un secret. */
+function secretEquals(a: string, b: string): boolean {
+  const ba = Buffer.from(a, "utf8");
+  const bb = Buffer.from(b, "utf8");
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
 export function findAdminTokenEntry(
   token: string | undefined,
 ): AdminTokenEntry | undefined {
   if (!token?.trim()) return undefined;
-  const entry = parseAdminAccessTokens().find((e) => e.token === token);
+  const entry = parseAdminAccessTokens().find((e) =>
+    secretEquals(e.token, token),
+  );
   if (!entry || !isTokenUsable(entry)) return undefined;
   return entry;
 }

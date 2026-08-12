@@ -35,8 +35,10 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30,
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [32, 48, 64, 96, 128, 256, 384],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: "inline",
+    // Aucun SVG distant n'est affiché : l'autoriser ouvrait un vecteur XSS
+    // via /_next/image sur n'importe quel hôte de remotePatterns.
+    dangerouslyAllowSVG: false,
+    contentDispositionType: "attachment",
     remotePatterns: [
       {
         protocol: "https",
@@ -58,7 +60,44 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // CSP — 'unsafe-inline' sur script-src est requis par le bootstrap inline
+    // de Next.js. Le reste est verrouillé : pas de frame, pas de form-action
+    // externe, connexions limitées à Supabase.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co https://images.unsplash.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      "frame-src 'self' https://www.google.com",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Content-Security-Policy", value: csp },
+          { key: "X-Frame-Options", value: "DENY" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=()",
+          },
+        ],
+      },
+      {
+        // Le back-office ne doit jamais être indexé ni mis en cache partagé.
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "no-store, private" },
+        ],
+      },
       {
         source: "/admin-sw.js",
         headers: [

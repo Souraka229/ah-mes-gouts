@@ -250,6 +250,17 @@ export async function getServerOrder(
  * Annule paresseusement une commande non payée arrivée à expiration.
  * Le updateMany rend l'opération atomique et sans effet sur une commande payée.
  */
+/**
+ * Une commande portant une tentative de paiement vivante (PENDING ou SUCCESS)
+ * n'est JAMAIS annulée à l'aveugle : c'est le cron de réconciliation qui
+ * tranche, après avoir interrogé FeexPay. Sans ce garde-fou, un paiement
+ * Mobile Money lent était encaissé puis la commande annulée — argent parti,
+ * commande perdue, aucune trace exploitable.
+ */
+const NO_LIVE_ATTEMPT: Prisma.OrderWhereInput = {
+  attempts: { none: { status: { in: ["PENDING", "SUCCESS"] } } },
+};
+
 export async function expirePendingOrder(
   orderId: string,
 ): Promise<boolean> {
@@ -259,6 +270,7 @@ export async function expirePendingOrder(
       id: orderId,
       status: "RECUE",
       createdAt: { lte: getPendingPaymentCutoff() },
+      ...NO_LIVE_ATTEMPT,
     },
     data: { status: "ANNULEE" },
   });
@@ -271,6 +283,7 @@ export async function expireAllPendingOrders(): Promise<number> {
     where: {
       status: "RECUE",
       createdAt: { lte: getPendingPaymentCutoff() },
+      ...NO_LIVE_ATTEMPT,
     },
     data: { status: "ANNULEE" },
   });

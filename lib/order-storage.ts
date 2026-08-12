@@ -28,7 +28,21 @@ export function getOrderById(orderId: string): SavedOrder | undefined {
   return loadOrders().find((order) => order.id === orderId);
 }
 
-export function generateOrderId(): string {
-  const suffix = Date.now().toString(36).toUpperCase().slice(-6);
-  return `AMG-${suffix}`;
+/**
+ * Jeton de suivi conservé localement à la création de la commande.
+ * Exigé par /api/orders/[id]/tracking pour lire une commande.
+ */
+export function getTrackingToken(orderId: string): string | null {
+  return getOrderById(orderId)?.trackingToken ?? null;
+}
+
+/**
+ * Construit l'URL de suivi en y joignant le jeton s'il est connu de cet
+ * appareil. Sans jeton, seules les commandes antérieures à la migration
+ * restent lisibles.
+ */
+export function buildTrackingUrl(orderId: string): string {
+  const base = `/api/orders/${encodeURIComponent(orderId)}/tracking`;
+  const token = getTrackingToken(orderId);
+  return token ? `${base}?t=${encodeURIComponent(token)}` : base;
 }

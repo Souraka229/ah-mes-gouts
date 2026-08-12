@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { confirmOrderPayment } from "@/lib/payments/confirm-order-payment";
-import { verifyFeexPayPaymentForOrder } from "@/lib/payments/feexpay-webhook";
+import { settlePaymentByReference } from "@/lib/payments/settle-payment";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
@@ -9,11 +8,10 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
  * URL : https://votre-domaine/api/payments/feexpay/webhook
  *
  * FeexPay n'envoie ni secret ni signature avec ses webhooks (confirmé dans
- * leur doc officielle — aucun mécanisme d'auth documenté). La sécurité vient
- * de la ré-vérification : on ne fait jamais confiance au body du webhook,
- * on revérifie toujours le statut via l'API FeexPay avant de confirmer un
- * paiement (verifyFeexPayPaymentForOrder). Le rate-limit reste actif contre
- * le spam/abus de l'URL.
+ * leur doc officielle — aucun mécanisme d'auth documenté). La sécurité ne
+ * vient donc jamais du body : on ne lit que la référence, et
+ * settlePaymentByReference() revérifie tout auprès de l'API FeexPay avant de
+ * confirmer quoi que ce soit. Le rate-limit reste actif contre le spam d'URL.
  */
 export async function POST(request: Request) {
   const ip = getClientIp(request);
@@ -41,17 +39,16 @@ export async function POST(request: Request) {
       callback_info?: string;
     };
 
-    const orderId =
-      body.order_id?.trim() ||
-      body.callback_info?.trim() ||
-      body.custom_id?.trim() ||
-      null;
     const reference = body.reference?.trim();
     const status = (body.status ?? "").toUpperCase();
 
-    if (!orderId) {
+    // La référence est la seule donnée du webhook qui compte : elle sert à
+    // retrouver la tentative en base. `order_id` et `callback_info` ne sont
+    // plus lus du tout — la commande est déduite de la tentative, jamais
+    // dictée par l'appelant.
+    if (!reference) {
       return NextResponse.json(
-        { error: "orderId manquant dans le webhook" },
+        { error: "reference manquante dans le webhook" },
         { status: 400 },
       );
     }
@@ -61,34 +58,25 @@ export async function POST(request: Request) {
       status === "SUCCESSFUL" ||
       status === "APPROVED"
     ) {
-      const verified = await verifyFeexPayPaymentForOrder({
-        orderId,
-        reference,
-      });
-      if (!verified.ok) {
-        return NextResponse.json(
-          { error: verified.error },
-          { status: verified.status },
-        );
-      }
+      const result = await settlePaymentByReference(reference);
 
-      const result = await confirmOrderPayment(orderId, reference);
-      if (!result.ok && result.status !== 409) {
-        return NextResponse.json({ error: result.error }, { status: result.status });
+      // 409 = déjà traitée, 202 = encore en attente côté FeexPay.
+      // Dans les deux cas le webhook a bien été reçu : répondre 200 évite
+      // des retries inutiles.
+      if (!result.ok && result.status !== 409 && result.status !== 202) {
+        return NextResponse.json(
+          { error: result.error },
+          { status: result.status },
+        );
       }
 
       return NextResponse.json({
         received: true,
-        orderId,
-        status: "CONFIRMED",
+        status: result.ok ? "CONFIRMED" : "PENDING",
       });
     }
 
-    return NextResponse.json({
-      received: true,
-      orderId,
-      status: "IGNORED",
-    });
+    return NextResponse.json({ received: true, status: "IGNORED" });
   } catch (error) {
     console.error("[FeexPay Webhook]", error);
     return NextResponse.json(

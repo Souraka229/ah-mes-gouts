@@ -10,10 +10,7 @@ import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { getLineUnitPrice } from "@/lib/cart-utils";
 import { getOrCreateDeviceKey } from "@/lib/crm/device-id";
-import {
-  generateOrderId,
-  saveOrder,
-} from "@/lib/order-storage";
+import { saveOrder } from "@/lib/order-storage";
 import {
   encodeOrderFlags,
   PACKAGING_LABELS,
@@ -66,14 +63,20 @@ const paymentMethods: {
 
 type PaymentUiState = "idle" | "loading" | "pending" | "error";
 
-async function persistOrderOnServer(
-  order: SavedOrder,
-  idempotencyKey: string,
-): Promise<{
+type PersistedOrder = {
+  /** Généré par le serveur — le client ne choisit plus son numéro de commande. */
+  orderId: string;
+  /** Remis une seule fois : conservé localement pour consulter le suivi. */
+  trackingToken?: string | null;
   subtotal: number;
   deliveryFee: number;
   total: number;
-}> {
+};
+
+async function persistOrderOnServer(
+  order: SavedOrder,
+  idempotencyKey: string,
+): Promise<PersistedOrder> {
   const deviceKey = getOrCreateDeviceKey();
   const response = await fetch("/api/orders", {
     method: "POST",
@@ -100,12 +103,7 @@ async function persistOrderOnServer(
     throw err;
   }
 
-  const payload = (await response.json()) as {
-    subtotal: number;
-    deliveryFee: number;
-    total: number;
-  };
-  return payload;
+  return (await response.json()) as PersistedOrder;
 }
 
 export function StepPayment() {
@@ -192,8 +190,10 @@ export function StepPayment() {
       }
 
       try {
+        // `orderId` n'est plus transmis : la commande est déduite serveur de
+        // la tentative liée à cette référence.
         const response = await fetch(
-          `/api/payments/initiate?reference=${encodeURIComponent(reference)}&orderId=${encodeURIComponent(orderId)}`,
+          `/api/payments/initiate?reference=${encodeURIComponent(reference)}`,
           {
             headers: deviceKey ? { "x-amg-device-key": deviceKey } : {},
           },
@@ -284,9 +284,11 @@ export function StepPayment() {
     setPendingMessage(null);
     stopPolling();
 
-    const orderId = generateOrderId();
+    // Le numéro de commande vient désormais du serveur. Ce brouillon ne sert
+    // qu'à construire une clé d'idempotence stable entre deux tentatives.
+    const draftKey = crypto.randomUUID();
     if (!idempotencyRef.current) {
-      idempotencyRef.current = `pay-${orderId}-${crypto.randomUUID()}`;
+      idempotencyRef.current = `pay-${draftKey}`;
     }
 
     const zone = zoneId;
@@ -298,7 +300,9 @@ export function StepPayment() {
     const buildOrder = (
       slot: NonNullable<typeof scheduledSlot>,
     ): SavedOrder => ({
-      id: orderId,
+      // Ignorés par le serveur, qui génère les siens. Conservés uniquement
+      // pour satisfaire le type avant persistance.
+      id: "",
       createdAt: new Date().toISOString(),
       status: "recue",
       mode,
@@ -336,20 +340,24 @@ export function StepPayment() {
     let activeSlot = scheduledSlot;
     let order = buildOrder(activeSlot);
     let persisted = false;
+    let orderId = "";
 
     for (let attempt = 0; attempt < 2 && !persisted; attempt++) {
       try {
         const key: string =
           attempt === 0
-            ? (idempotencyRef.current ?? `pay-${orderId}-${crypto.randomUUID()}`)
-            : `pay-${orderId}-slot-${crypto.randomUUID()}`;
+            ? (idempotencyRef.current ?? `pay-${draftKey}`)
+            : `pay-${draftKey}-slot-${crypto.randomUUID()}`;
         idempotencyRef.current = key;
-        const serverTotals = await persistOrderOnServer(order, key);
+        const saved = await persistOrderOnServer(order, key);
+        orderId = saved.orderId;
         saveOrder({
           ...order,
-          subtotal: serverTotals.subtotal,
-          deliveryFee: serverTotals.deliveryFee,
-          total: serverTotals.total,
+          id: saved.orderId,
+          trackingToken: saved.trackingToken ?? null,
+          subtotal: saved.subtotal,
+          deliveryFee: saved.deliveryFee,
+          total: saved.total,
         });
         persisted = true;
       } catch (error) {
@@ -405,7 +413,7 @@ export function StepPayment() {
       }
     }
 
-    if (!persisted) {
+    if (!persisted || !orderId) {
       setUiState("idle");
       payingRef.current = false;
       setStep("commande");

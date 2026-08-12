@@ -1,124 +1,81 @@
-"use client";
+import { Bell } from "lucide-react";
 
-import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, Loader2, Send } from "lucide-react";
-import { toast } from "sonner";
+const ALERTS = [
+  {
+    title: "Nouvelle commande payée",
+    detail: "Montant, mode de réception et nom de la cliente.",
+  },
+  {
+    title: "Vague de livraison complète",
+    detail: "Au 35ᵉ colis : la tournée peut être constituée et assignée.",
+  },
+  {
+    title: "Paiement rattrapé",
+    detail:
+      "Un paiement validé après l'abandon du suivi client, récupéré par la réconciliation automatique.",
+  },
+  {
+    title: "Paiement sans réponse",
+    detail: "Une tentative restée sans retour de l'opérateur depuis 2 h.",
+  },
+  {
+    title: "Stock bas",
+    detail: "Un produit passé sous son seuil d'alerte.",
+  },
+  {
+    title: "Alerte sécurité",
+    detail:
+      "Tentatives de connexion admin répétées, montant de paiement incohérent.",
+  },
+];
 
-type TelegramSettings = {
-  connectUrl: string | null;
-  botUsername: string | null;
-  configured: boolean;
-  highValueThresholdFcfa: number;
-  subscribers: Array<{
-    id: string;
-    chatId: string;
-    label: string;
-    isActive: boolean;
-  }>;
-};
-
+/**
+ * Telegram a été retiré. Le canal cible est la notification push (Web Push),
+ * pas encore branchée : les alertes ci-dessous sont déjà émises par le serveur
+ * et consultables dans les logs, elles arriveront ici une fois le push activé.
+ */
 export function AdminNotificationsPage() {
-  const [telegram, setTelegram] = useState<TelegramSettings | null>(null);
-  const [manualChatId, setManualChatId] = useState("");
-
-  const load = useCallback(async () => {
-    const telegramRes = await fetch("/api/admin/telegram", {
-      cache: "no-store",
-    });
-    if (telegramRes.ok) {
-      setTelegram((await telegramRes.json()) as TelegramSettings);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const linkManual = async () => {
-    try {
-      const res = await fetch("/api/admin/telegram", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId: manualChatId.trim(), label: "Manuelle" }),
-      });
-      if (!res.ok) throw new Error("fail");
-      toast.success("Chat Telegram lié");
-      setManualChatId("");
-      void load();
-    } catch {
-      toast.error("Liaison impossible");
-    }
-  };
-
-  if (!telegram) {
-    return <Loader2 className="size-8 animate-spin text-primary" />;
-  }
-
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-border bg-white p-5">
-        <div className="flex items-start gap-3">
-          <Send className="mt-0.5 size-5 text-primary" aria-hidden />
-          <div className="flex-1 space-y-3">
-            <div>
-              <h2 className="font-display text-xl font-semibold text-primary">
-                Alertes Telegram (cheffe)
-              </h2>
-              <p className="mt-1 font-body text-sm text-muted-foreground">
-                Push : nouvelle commande, stock bas, anomalie sécurité, résumé
-                19h. Jamais bloquant si Telegram est down.
-              </p>
-            </div>
-            {!telegram.configured ? (
-              <p className="font-body text-sm text-muted-foreground">
-                Bot non configuré — renseigner{" "}
-                <code className="text-xs">TELEGRAM_BOT_TOKEN</code> côté serveur.
-              </p>
-            ) : (
-              <>
-                {telegram.connectUrl && (
-                  <a
-                    href={telegram.connectUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-4 py-2 font-body text-sm font-semibold text-accent-foreground"
-                  >
-                    Connecter mon Telegram
-                    <ExternalLink className="size-4" aria-hidden />
-                  </a>
-                )}
-                <p className="font-body text-xs text-muted-foreground">
-                  Seuil commande importante :{" "}
-                  {telegram.highValueThresholdFcfa.toLocaleString("fr-FR")} FCFA
-                </p>
-                {telegram.subscribers.length > 0 && (
-                  <ul className="font-body text-sm text-muted-foreground">
-                    {telegram.subscribers.map((s) => (
-                      <li key={s.id}>
-                        {s.label || "Abonné"} · {s.isActive ? "actif" : "off"}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <input
-                    value={manualChatId}
-                    onChange={(e) => setManualChatId(e.target.value)}
-                    placeholder="Chat ID (secours)"
-                    className="min-h-11 rounded-xl border border-border px-3 font-body text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void linkManual()}
-                    className="min-h-11 cursor-pointer rounded-xl border border-border px-4 font-body text-sm font-medium"
-                  >
-                    Lier manuellement
-                  </button>
-                </div>
-              </>
-            )}
+      <header className="space-y-2">
+        <h1 className="font-display text-3xl font-semibold text-primary">
+          Notifications
+        </h1>
+        <p className="max-w-2xl font-body text-sm text-muted-foreground">
+          Les notifications push arrivent bientôt. En attendant, les alertes
+          ci-dessous sont bien émises par le serveur et consultables dans les
+          journaux — rien n&apos;est perdu, elles ne sont simplement pas encore
+          poussées sur vos téléphones.
+        </p>
+      </header>
+
+      <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+            <Bell className="size-5" aria-hidden />
+          </span>
+          <div>
+            <h2 className="font-display text-lg font-semibold text-primary">
+              Alertes suivies
+            </h2>
+            <p className="font-body text-xs text-muted-foreground">
+              Émises automatiquement, sans réglage à faire.
+            </p>
           </div>
         </div>
+
+        <ul className="divide-y divide-border">
+          {ALERTS.map((alert) => (
+            <li key={alert.title} className="py-3 first:pt-0 last:pb-0">
+              <p className="font-body text-sm font-semibold text-primary">
+                {alert.title}
+              </p>
+              <p className="font-body text-sm text-muted-foreground">
+                {alert.detail}
+              </p>
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   );

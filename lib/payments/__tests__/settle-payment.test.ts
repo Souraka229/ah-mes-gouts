@@ -31,10 +31,10 @@ vi.mock("@/lib/payments/confirm-order-payment", () => ({
   confirmOrderPayment: (...args: unknown[]) => confirmOrderPayment(...args),
 }));
 
-const notifyTelegramSafe = vi.fn();
-vi.mock("@/lib/notifications/telegram", () => ({
-  notifyTelegramSafe: (...args: unknown[]) => notifyTelegramSafe(...args),
-  formatSecurityAlert: (detail: string) => detail,
+const notifyOps = vi.fn();
+vi.mock("@/lib/notifications/ops-alerts", () => ({
+  notifyOps: (...args: unknown[]) => notifyOps(...args),
+  alertSecurity: (detail: string) => ({ kind: "security", title: detail }),
 }));
 
 const { settlePaymentByReference } = await import(
@@ -129,7 +129,7 @@ describe("contrôle de montant", () => {
 
     expect(result).toMatchObject({ ok: false, status: 409 });
     expect(confirmOrderPayment).not.toHaveBeenCalled();
-    expect(notifyTelegramSafe).toHaveBeenCalledOnce();
+    expect(notifyOps).toHaveBeenCalledOnce();
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: "FAILED" }),
@@ -163,7 +163,7 @@ describe("contrôle de montant", () => {
     const result = await settlePaymentByReference("FP-REF-1");
 
     expect(result).toEqual({ ok: true, orderId: "GE-ABCDEFGHJK" });
-    expect(notifyTelegramSafe).toHaveBeenCalledOnce();
+    expect(notifyOps).toHaveBeenCalledOnce();
   });
 });
 
@@ -220,7 +220,7 @@ describe("échec de confirmation", () => {
     const result = await settlePaymentByReference("FP-REF-1");
 
     expect(result).toMatchObject({ ok: false, status: 409 });
-    expect(notifyTelegramSafe).toHaveBeenCalledOnce();
+    expect(notifyOps).toHaveBeenCalledOnce();
     expect(update).not.toHaveBeenCalled();
   });
 });

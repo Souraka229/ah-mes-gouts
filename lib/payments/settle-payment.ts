@@ -1,9 +1,6 @@
 import type { Prisma } from "@prisma/client";
 
-import {
-  formatSecurityAlert,
-  notifyTelegramSafe,
-} from "@/lib/notifications/telegram";
+import { alertSecurity, notifyOps } from "@/lib/notifications/ops-alerts";
 import {
   getFeexPayConfig,
   getFeexPayTransactionStatus,
@@ -138,8 +135,7 @@ export async function settlePaymentByReference(
         lastRawResponse: rawResponse,
       },
     });
-    notifyTelegramSafe(
-      formatSecurityAlert(
+    notifyOps(alertSecurity(
         `Montant FeexPay incohérent — commande ${attempt.orderId} : ` +
           `${paidAmount} FCFA encaissés pour ${attempt.amount} FCFA attendus. ` +
           `Paiement NON confirmé.`,
@@ -149,8 +145,7 @@ export async function settlePaymentByReference(
   }
 
   if (paidAmount === null) {
-    notifyTelegramSafe(
-      formatSecurityAlert(
+    notifyOps(alertSecurity(
         `Montant absent de la réponse FeexPay — commande ${attempt.orderId} ` +
           `(${attempt.amount} FCFA attendus). Confirmée sur la référence seule : ` +
           `à vérifier sur le tableau de bord FeexPay.`,
@@ -162,8 +157,7 @@ export async function settlePaymentByReference(
   if (!confirmed.ok) {
     // On ne marque PAS la tentative en échec : l'argent est bien encaissé.
     // Le cron la reprendra, et l'alerte fait remonter le cas à l'équipe.
-    notifyTelegramSafe(
-      formatSecurityAlert(
+    notifyOps(alertSecurity(
         `Paiement encaissé mais commande non confirmée — ${attempt.orderId} : ` +
           `${confirmed.error}. Intervention manuelle requise.`,
       ),

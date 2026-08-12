@@ -379,12 +379,20 @@ model SiteVisitorDay {
   @@index([day])
 }
 
-/// Destinataires Telegram (cheffe + équipe) — non bloquant si indisponible
-model TelegramSubscriber {
+/// Abonnements Web Push (back-office) — remplace Telegram.
+/// Table posée pour le canal à venir ; aucun code ne l'écrit encore.
+model PushSubscription {
   id        String   @id @default(cuid())
-  chatId    String   @unique
+  /// Endpoint fourni par le navigateur — identifie l'abonnement de façon unique.
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  /// Rôle du destinataire : "administrateur" | "employe".
+  role      String   @default("administrateur")
   label     String   @default("")
   isActive  Boolean  @default(true)
-  linkedAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([isActive])
 }

@@ -13,10 +13,7 @@ import {
   verifyAdminSession,
 } from "@/lib/server/admin-session";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
-import {
-  formatSecurityAlert,
-  notifyTelegramSafe,
-} from "@/lib/notifications/telegram";
+import { alertSecurity, notifyOps } from "@/lib/notifications/ops-alerts";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +40,7 @@ export async function POST(request: Request) {
   );
 
   if (!allowed) {
-    notifyTelegramSafe(
-      formatSecurityAlert(
+    notifyOps(alertSecurity(
         `Trop de tentatives de connexion admin (IP hashée côté serveur). Bloqué ${retryAfterSec}s.`,
       ),
     );
@@ -69,8 +65,7 @@ export async function POST(request: Request) {
   if (!entry) {
     const fails = await checkRateLimit(`admin:auth:fail:${ip}`, 5, 15 * 60_000);
     if (!fails.allowed) {
-      notifyTelegramSafe(
-        formatSecurityAlert(
+      notifyOps(alertSecurity(
           "Plusieurs tokens admin invalides — possible tentative d'intrusion.",
         ),
       );

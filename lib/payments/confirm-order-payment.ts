@@ -4,9 +4,10 @@ import { getFullCatalog } from "@/lib/server/shop-catalog";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { sendOrderNotifications } from "@/lib/notifications/order-notifications";
 import {
-  formatNewOrderAlert,
-  notifyTelegramSafe,
-} from "@/lib/notifications/telegram";
+  alertDeliveryWaveFull,
+  alertNewOrder,
+  notifyOps,
+} from "@/lib/notifications/ops-alerts";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import {
   formatSlotDateShort,
@@ -44,16 +45,15 @@ async function notifyIfDeliveryWaveFull(order: SavedOrder): Promise<void> {
   // renverrait une alerte alors que la vague est déjà pleine.
   if (!isFull || used !== capacity) return;
 
-  const creneau = formatSlotRange(
-    order.scheduledSlotStart,
-    order.scheduledSlotEnd ?? order.scheduledSlotStart,
-  );
-  const jour = formatSlotDateShort(order.scheduledSlotStart);
-
-  notifyTelegramSafe(
-    `🚚 Vague de livraison complète — ${capacity} commandes\n` +
-      `${jour}, entre ${creneau}.\n` +
-      `La tournée peut être constituée et assignée.`,
+  notifyOps(
+    alertDeliveryWaveFull({
+      capacity,
+      dayLabel: formatSlotDateShort(order.scheduledSlotStart),
+      slotLabel: formatSlotRange(
+        order.scheduledSlotStart,
+        order.scheduledSlotEnd ?? order.scheduledSlotStart,
+      ),
+    }),
   );
 }
 
@@ -184,8 +184,8 @@ export async function confirmOrderPayment(
     /* non bloquant */
   });
 
-  notifyTelegramSafe(
-    formatNewOrderAlert({
+  notifyOps(
+    alertNewOrder({
       orderId: confirmed.id,
       total: confirmed.total,
       mode: confirmed.mode,

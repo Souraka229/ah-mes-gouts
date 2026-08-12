@@ -9,10 +9,7 @@ import {
 } from "@/lib/server/admin-session";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
-import {
-  formatSecurityAlert,
-  notifyTelegramSafe,
-} from "@/lib/notifications/telegram";
+import { alertSecurity, notifyOps } from "@/lib/notifications/ops-alerts";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -43,8 +40,7 @@ export async function GET(request: NextRequest) {
   );
 
   if (!allowed) {
-    notifyTelegramSafe(
-      formatSecurityAlert(
+    notifyOps(alertSecurity(
         `Trop de tentatives sur le lien magique admin. Bloqué ${retryAfterSec}s.`,
       ),
     );
@@ -62,8 +58,7 @@ export async function GET(request: NextRequest) {
 
   const entry = findAdminTokenEntry(token);
   if (!entry) {
-    notifyTelegramSafe(
-      formatSecurityAlert("Token admin invalide présenté sur /admin/entree."),
+    notifyOps(alertSecurity("Token admin invalide présenté sur /admin/entree."),
     );
     return NextResponse.redirect(new URL("/?admin=token-invalid", request.url));
   }

@@ -1,0 +1,1 @@
+insert into _prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) values (gen_random_uuid()::text, '6053a9f536f149987f74ca36bc22bfeb26346c6afbfa63463ea1a4c216b566dd', now(), '20260812100000_push_replaces_telegram', null, null, now(), 1);

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { notifyTelegramSafe } from "@/lib/notifications/telegram";
+import {
+  alertPaymentRecovered,
+  alertPaymentStuck,
+  notifyOps,
+} from "@/lib/notifications/ops-alerts";
 import { settlePaymentByReference } from "@/lib/payments/settle-payment";
 import { getPrisma } from "@/lib/prisma";
-import { formatPrice } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -67,10 +70,11 @@ export async function GET(request: Request) {
           recovered += 1;
           // Une commande rattrapée aurait été perdue. La cheffe doit le savoir :
           // la cliente attend peut-être depuis vingt minutes.
-          notifyTelegramSafe(
-            `💰 Paiement rattrapé — commande ${result.orderId}\n` +
-              `${formatPrice(attempt.amount)} confirmés par réconciliation ` +
-              `(pas par le webhook). À préparer.`,
+          notifyOps(
+            alertPaymentRecovered({
+              orderId: result.orderId,
+              amount: attempt.amount,
+            }),
           );
         } else if (!result.ok && result.status === 402) {
           failed += 1;
@@ -97,10 +101,7 @@ export async function GET(request: Request) {
     });
 
     if (stale.count > 0) {
-      notifyTelegramSafe(
-        `⚠️ ${stale.count} tentative(s) de paiement sans réponse depuis 2 h — ` +
-          `à vérifier sur le tableau de bord FeexPay.`,
-      );
+      notifyOps(alertPaymentStuck(stale.count));
     }
 
     return NextResponse.json({

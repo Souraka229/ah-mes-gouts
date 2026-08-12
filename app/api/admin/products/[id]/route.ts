@@ -10,7 +10,7 @@ import {
   updateCatalogStock,
   type CatalogProductPatch,
 } from "@/lib/server/admin-catalog-repository";
-import { notifyTelegramSafe } from "@/lib/notifications/telegram";
+import { alertStockLow, notifyOps } from "@/lib/notifications/ops-alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -80,8 +80,11 @@ export async function PATCH(request: Request, context: RouteContext) {
         updated &&
         updated.stockRemaining <= updated.stockMinimum
       ) {
-        notifyTelegramSafe(
-          `⚠️ Stock bas — ${updated.name}\nReste : ${updated.stockRemaining} (seuil ${updated.stockMinimum})`,
+        notifyOps(
+          alertStockLow({
+            productName: updated.name,
+            remaining: updated.stockRemaining,
+          }),
         );
       }
 

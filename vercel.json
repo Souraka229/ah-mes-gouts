@@ -54,5 +54,19 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.giftentremets.com" }],
+      "destination": "https://giftentremets.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "gift-entremets.vercel.app" }],
+      "destination": "https://giftentremets.com/:path*",
+      "permanent": true
+    }
   ]
 }

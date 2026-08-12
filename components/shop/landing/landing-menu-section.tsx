@@ -71,6 +71,7 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
                     alt={`${item.name} — entremets artisanal`}
                     fill
                     sizes="(min-width: 1024px) 24vw, (min-width: 640px) 46vw, 92vw"
+                    quality={85}
                     className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:group-hover:scale-100"
                     priority={index < 2}
                   />

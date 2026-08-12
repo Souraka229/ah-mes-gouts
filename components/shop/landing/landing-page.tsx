@@ -42,7 +42,7 @@ export function LandingPage({ content }: { content: HomePageContent }) {
 
       <LandingGiftBanner />
 
-      <LandingClosing footer={content.footer} photos={menuItems} />
+      <LandingClosing photos={menuItems} />
     </LandingShell>
   );
 }

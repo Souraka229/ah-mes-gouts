@@ -1,5 +1,5 @@
 import { DeferredShopChrome } from "@/components/shop/deferred-shop-chrome";
-import { ShopFooterGate } from "@/components/shop/shop-footer-gate";
+import { SiteFooter } from "@/components/shop/site-footer";
 import { ShopMain } from "@/components/shop/shop-main";
 import { SiteHeader } from "@/components/shop/site-header";
 
@@ -13,7 +13,7 @@ export default function ShopLayout({
       <DeferredShopChrome />
       <SiteHeader />
       <ShopMain>{children}</ShopMain>
-      <ShopFooterGate />
+      <SiteFooter />
     </div>
   );
 }

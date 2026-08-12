@@ -87,8 +87,8 @@ export function LandingHero({
           </div>
 
           <div className="lg:col-span-7">
-            <div className="relative mx-auto w-full max-w-[26rem] lg:max-w-none">
-              <div className="shadow-lift relative aspect-4/5 overflow-hidden rounded-[2rem] bg-photo-bg sm:aspect-4/3.4">
+            <div className="relative mx-auto w-full max-w-[26rem] lg:max-w-[32rem] lg:ml-auto lg:mr-0">
+              <div className="shadow-lift relative aspect-4/5 overflow-hidden rounded-[2rem] bg-photo-bg">
                 <Image
                   src={image}
                   alt={
@@ -98,7 +98,10 @@ export function LandingHero({
                   }
                   fill
                   priority
-                  sizes="(min-width: 1024px) 56vw, 92vw"
+                  // Borné à 32rem sur desktop : au-delà, une source de 526 px
+                  // serait agrandie et perdrait toute netteté.
+                  sizes="(min-width: 1024px) 32rem, (min-width: 640px) 26rem, 92vw"
+                  quality={85}
                   className="object-cover object-center"
                 />
               </div>

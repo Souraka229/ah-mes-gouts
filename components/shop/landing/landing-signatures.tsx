@@ -53,6 +53,7 @@ export function LandingSignatures() {
                     alt={item.name}
                     fill
                     sizes="152px"
+                    quality={85}
                     className="object-cover"
                   />
                 </span>

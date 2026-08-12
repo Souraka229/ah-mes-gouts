@@ -18,19 +18,38 @@ type LandingClosingProps = {
  * rendu sur toutes les pages, accueil comprise. Deux pieds de page différents
  * selon la page, c'était deux endroits à tenir à jour pour rien.
  *
- * Positions des photos flottantes — masquées sous 1024 px, où elles
- * chevaucheraient le texte au lieu de l'entourer.
+ * Photos flottantes — visibles dès 768 px.
+ *
+ * Le seuil précédent, 1024 px, les rendait invisibles sur un portable réglé à
+ * 125 ou 150 % d'échelle Windows : un écran 1366 px n'expose alors que 911 px
+ * CSS. Elles restent masquées sur mobile, où elles chevaucheraient le texte.
  */
 const FLOATERS = [
-  { className: "left-[3%] top-[14%] w-28 h-36", rotate: "-7deg", delay: "0s" },
-  { className: "right-[5%] top-[9%] w-24 h-32", rotate: "6deg", delay: "2s" },
-  { className: "left-[8%] bottom-[10%] w-26 h-34", rotate: "5deg", delay: "1s" },
-  { className: "right-[7%] bottom-[13%] w-25 h-32", rotate: "-6deg", delay: "3s" },
+  {
+    className: "left-[2%] top-[10%] w-24 h-32 lg:w-32 lg:h-40",
+    rotate: "-7deg",
+    delay: "0s",
+  },
+  {
+    className: "right-[3%] top-[7%] w-20 h-28 lg:w-28 lg:h-36",
+    rotate: "6deg",
+    delay: "2s",
+  },
+  {
+    className: "left-[5%] bottom-[8%] w-20 h-28 lg:w-28 lg:h-36",
+    rotate: "5deg",
+    delay: "1s",
+  },
+  {
+    className: "right-[4%] bottom-[11%] w-24 h-32 lg:w-32 lg:h-40",
+    rotate: "-6deg",
+    delay: "3s",
+  },
 ] as const;
 
 export function LandingClosing({ photos }: LandingClosingProps) {
   return (
-    <section className="relative overflow-hidden py-20 sm:py-28">
+    <section className="relative overflow-hidden py-20 sm:py-28 md:min-h-[34rem] md:flex md:items-center">
       <div
         className="blob blob-lg -left-32 -top-24 h-[34rem] w-[34rem] bg-muted opacity-70"
         aria-hidden
@@ -40,7 +59,7 @@ export function LandingClosing({ photos }: LandingClosingProps) {
         aria-hidden
       />
 
-      <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden>
+      <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden>
         {FLOATERS.map((floater, index) => {
           const src =
             photos[index]?.image ??
@@ -70,7 +89,7 @@ export function LandingClosing({ photos }: LandingClosingProps) {
         })}
       </div>
 
-      <div className="relative z-1 mx-auto flex max-w-xl flex-col items-center gap-7 px-4 text-center sm:px-6">
+      <div className="relative z-1 mx-auto flex w-full max-w-xl flex-col items-center gap-7 px-4 text-center sm:px-6">
         <p className="font-body text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
           {ORIGIN_BRAND}
         </p>

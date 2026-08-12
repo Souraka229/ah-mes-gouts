@@ -1,9 +1,12 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
-import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
 import {
   ADMIN_SESSION_COOKIE,
+  ADMIN_SESSION_TTL_HOURS,
+  verifyAdminSession,
+} from "@/lib/server/admin-session";
+import {
   getAdminContextFromRequest,
   isDevAdminOpen,
   type AdminContext,
@@ -17,14 +20,22 @@ export {
   type AdminContext,
 } from "@/lib/server/admin-auth-edge";
 
-export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const ADMIN_SESSION_MAX_AGE_SECONDS = ADMIN_SESSION_TTL_HOURS * 3600;
 
+/**
+ * Contexte admin pour les routes API et pages serveur.
+ *
+ * Vérification complète : signature + existence + révocation + expiration en
+ * base. C'est le contrôle qui fait autorité — le middleware ne valide que la
+ * signature, faute de pouvoir interroger Postgres depuis l'Edge.
+ */
 export async function getAdminContextAsync(): Promise<AdminContext | null> {
   const cookieStore = await cookies();
-  const entry = findAdminTokenEntry(
+  const claims = await verifyAdminSession(
     cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
   );
-  if (entry) return { role: entry.role, name: entry.name };
+  if (claims) return { role: claims.role, name: claims.name };
+
   if (isDevAdminOpen()) {
     return {
       role:
@@ -32,10 +43,11 @@ export async function getAdminContextAsync(): Promise<AdminContext | null> {
       name: process.env.ADMIN_DEV_NAME ?? "Administrateur",
     };
   }
+
   return null;
 }
 
-/** @deprecated Préférer getAdminContextFromRequest dans le middleware. */
+/** @deprecated Bypass dev uniquement — ne jamais utiliser pour autoriser une action. */
 export function isAdminAuthorized(): boolean {
   return isDevAdminOpen();
 }
@@ -60,6 +72,6 @@ export function buildAdminEntryUrl(
 /** Re-export pour compat — préférer admin-auth-edge dans le middleware. */
 export function resolveAdminFromRequest(
   request: NextRequest,
-): AdminContext | null {
+): Promise<AdminContext | null> {
   return getAdminContextFromRequest(request);
 }

@@ -13,7 +13,7 @@ import {
   saveClient,
 } from "@/lib/client-storage";
 import { useCheckoutStore } from "@/lib/checkout-store";
-import { linkDeviceToPhone, trackActivity } from "@/lib/crm/track";
+import { trackActivity } from "@/lib/crm/track";
 import {
   clientInfoSchema,
   giftDetailsSchema,
@@ -223,7 +223,6 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
 
     saveClient(savedClient);
     setClient(savedClient);
-    linkDeviceToPhone(savedClient.phone);
     trackActivity({ type: "checkout_start" });
     // Remonte avant le rendu paiement — le wizard renforce ensuite.
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });

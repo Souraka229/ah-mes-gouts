@@ -133,7 +133,7 @@ export function CartDrawer() {
       <SheetContent
         side={isMobile ? "bottom" : "right"}
         className={cn(
-          "flex flex-col gap-0 overflow-hidden border-border bg-bg p-0 shadow-2xl",
+          "glass-panel flex flex-col gap-0 overflow-hidden border-border p-0 shadow-2xl",
           isMobile
             ? "inset-x-0 bottom-0 top-auto h-[min(88dvh,100%)] max-h-[88dvh] w-full rounded-t-2xl border-t"
             : "h-dvh max-h-dvh w-full sm:max-w-md",
@@ -205,8 +205,8 @@ export function CartDrawer() {
               href="/checkout"
               onClick={closeCart}
               className={cn(
-                buttonVariants(),
-                "mt-4 flex min-h-12 w-full cursor-pointer items-center justify-center bg-accent text-base font-bold text-accent-foreground hover:bg-accent/90 active:scale-[0.99]",
+                buttonVariants({ variant: "cta", size: "lg" }),
+                "mt-4 flex w-full cursor-pointer",
               )}
             >
               Passer commande

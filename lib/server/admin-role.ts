@@ -45,6 +45,6 @@ export function getAdminDisplayName(): string {
 }
 
 /** Re-export pour pages server utilisant request. */
-export function getAdminContextForRequest(request: NextRequest) {
+export async function getAdminContextForRequest(request: NextRequest) {
   return getAdminContextFromRequest(request);
 }

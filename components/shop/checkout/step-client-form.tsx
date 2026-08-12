@@ -14,7 +14,7 @@ import {
   saveClient,
 } from "@/lib/client-storage";
 import { useCheckoutStore } from "@/lib/checkout-store";
-import { linkDeviceToPhone, trackActivity } from "@/lib/crm/track";
+import { trackActivity } from "@/lib/crm/track";
 import {
   clientInfoSchema,
   giftDetailsSchema,
@@ -67,7 +67,6 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
 
   const advanceAfterClient = (saved: ClientInfo) => {
     saveClient(saved);
-    linkDeviceToPhone(saved.phone);
     trackActivity({ type: "checkout_start" });
     if (!embedded) setStep("payment");
   };
@@ -161,7 +160,6 @@ export function StepClientForm({ embedded = false }: { embedded?: boolean }) {
     }
 
     saveClient(result.data);
-    linkDeviceToPhone(result.data.phone);
     trackActivity({ type: "checkout_start" });
     if (!embedded) setStep("payment");
   };

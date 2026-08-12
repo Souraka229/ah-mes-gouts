@@ -1,10 +1,17 @@
+import { createHash } from "crypto";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import {
-  ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_MAX_AGE_SECONDS,
   getAdminContextAsync,
 } from "@/lib/server/admin-auth";
+import {
+  ADMIN_SESSION_COOKIE,
+  issueAdminSession,
+  revokeAdminSession,
+  verifyAdminSession,
+} from "@/lib/server/admin-session";
 import { findAdminTokenEntry } from "@/lib/server/admin-tokens";
 import {
   formatSecurityAlert,
@@ -71,6 +78,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Token invalide." }, { status: 401 });
   }
 
+  // Le token n'est jamais stocké en cookie : il est échangé contre une
+  // session signée et révocable.
+  let jwt: string;
+  let expiresAt: Date;
+  try {
+    ({ jwt, expiresAt } = await issueAdminSession({
+      role: entry.role,
+      name: entry.name,
+      userAgent: request.headers.get("user-agent"),
+      ipHash: createHash("sha256").update(ip).digest("hex").slice(0, 32),
+    }));
+  } catch (error) {
+    console.error("[admin/auth] session non émise:", error);
+    return NextResponse.json(
+      { error: "Session indisponible. Contactez l'administrateur." },
+      { status: 503 },
+    );
+  }
+
   const response = NextResponse.json({
     ok: true,
     role: entry.role,
@@ -79,25 +105,37 @@ export async function POST(request: Request) {
 
   response.cookies.set({
     name: ADMIN_SESSION_COOKIE,
-    value: entry.token,
+    value: jwt,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
+    expires: expiresAt,
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   });
+  response.headers.set("Cache-Control", "no-store, private");
 
   return response;
 }
 
+/** Déconnexion — révoque la session en base, pas seulement le cookie. */
 export async function DELETE() {
+  const cookieStore = await cookies();
+  const claims = await verifyAdminSession(
+    cookieStore.get(ADMIN_SESSION_COOKIE)?.value,
+  );
+
+  if (claims) {
+    await revokeAdminSession(claims.sid);
+  }
+
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
     name: ADMIN_SESSION_COOKIE,
     value: "",
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: 0,
   });

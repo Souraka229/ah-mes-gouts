@@ -9,7 +9,8 @@
    produit réelles sont shootées sur ce fond exact pour un raccord sans couture (product-image-frame.tsx).
    Ne jamais les modifier sans reshooter le catalogue.
    Logique 60/30/10 : neutre crème/noir dominant · bleu = couleur d'action (liens, secondaire, nav,
-   badges) · rouge = accent rare et fort (CTA principal, prix) — jamais l'inverse. */
+   badges) · rouge = accent rare et fort (CTA principal, prix) — jamais l'inverse.
+   Le rouge s'applique via <Button variant="cta">, jamais par un bg-accent posé à la main. */
 @theme inline {
   --color-bg: #faf7f5;
   --color-primary: #17181b;
@@ -123,32 +124,6 @@
     overflow-x: clip;
   }
 
-  /* Grain global — texture CSS légère (pas de feTurbulence GPU-expensive) */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    pointer-events: none;
-    opacity: 0.028;
-    mix-blend-mode: multiply;
-    background-image: radial-gradient(
-        rgba(34, 31, 30, 0.35) 0.6px,
-        transparent 0.7px
-      ),
-      radial-gradient(rgba(34, 31, 30, 0.2) 0.5px, transparent 0.6px);
-    background-size: 3px 3px, 5px 5px;
-    background-position:
-      0 0,
-      1px 2px;
-  }
-
-  @media (max-width: 768px), (pointer: coarse) {
-    body::before {
-      display: none;
-    }
-  }
-
   h1,
   h2,
   h3,
@@ -167,15 +142,6 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-@keyframes landing-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
   }
 }
 
@@ -215,155 +181,6 @@
   }
 }
 
-.landing-marquee-track {
-  animation: landing-marquee 32s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-marquee-track {
-    animation: none;
-  }
-}
-
-.landing-story-photo {
-  transform: rotate(-1deg);
-}
-
-@media (min-width: 768px) {
-  .landing-story-photo {
-    transform: translateX(5vw) rotate(-3deg);
-  }
-}
-
-/* Bande typo — défilement droite → gauche, ≥25s */
-@keyframes typo-band-scroll-rtl {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.typo-band-scroll-track {
-  animation: typo-band-scroll-rtl linear infinite;
-}
-
-.typo-band-scroll-track:hover {
-  animation-play-state: paused;
-}
-
-.typo-band-scroll-paused {
-  animation-play-state: paused !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .typo-band-scroll-track {
-    animation: none;
-    width: 100%;
-    justify-content: center;
-  }
-  .typo-band-scroll-track p:last-child {
-    display: none;
-  }
-}
-
-html.custom-cursor-active,
-html.custom-cursor-active * {
-  cursor: none !important;
-}
-
-/* ─── Hero « écrin de nuit » — le CTA doré respire (lueur lente) ─── */
-@keyframes hero-cta-breathe {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.98);
-  }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.05);
-  }
-}
-
-.hero-cta-glow {
-  animation: hero-cta-breathe 5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-cta-glow {
-    animation: none;
-    opacity: 0.55;
-  }
-}
-
-/* ─── Footer wordmark — breakpoints distincts ─── */
-.footer-wordmark--mobile {
-  margin-left: 6vw;
-  margin-right: 6vw;
-  max-width: calc(100% - 12vw);
-  overflow: hidden;
-}
-
-.footer-wordmark--mobile .footer-wordmark__line {
-  font-size: clamp(2.5rem, 16vw, 4.5rem);
-  width: fit-content;
-  max-width: 100%;
-}
-
-.footer-wordmark--tablet {
-  margin-left: 4vw;
-  margin-right: 4vw;
-  max-width: calc(100% - 8vw);
-}
-
-.footer-wordmark--tablet .footer-wordmark__line {
-  font-size: clamp(2.75rem, 11vw, 7rem);
-  width: fit-content;
-  max-width: 100%;
-}
-
-.footer-wordmark--desktop {
-  margin-left: 4vw;
-  margin-right: 4vw;
-  max-width: calc(100% - 8vw);
-}
-
-.footer-wordmark--desktop .footer-wordmark__line {
-  font-size: clamp(3rem, 12vw, 11rem);
-  width: fit-content;
-  max-width: 100%;
-}
-
-/* ─── Bande typo — vw réduit sous 768px ─── */
-.typo-band-scroll-text {
-  font-size: clamp(1.75rem, 7vw, 3rem);
-}
-
-@media (min-width: 768px) {
-  .typo-band-scroll-text {
-    font-size: clamp(3rem, 9vw, 7rem);
-  }
-}
-
-.typo-band-scroll-text--compact {
-  font-size: clamp(1.25rem, 4vw, 2rem);
-}
-
-.typo-band-rotate-text {
-  font-size: clamp(1.5rem, 5vw, 2.5rem);
-}
-
-@media (min-width: 768px) {
-  .typo-band-rotate-text {
-    font-size: clamp(2rem, 6vw, 5rem);
-  }
-}
-
-.typo-band-rotate-text--compact {
-  font-size: clamp(1.25rem, 4vw, 2rem);
-}
-
 /* ─── Glassmorphism — surface translucide dépolie (header, panier, cartes) ─── */
 .glass {
   position: relative;
@@ -376,8 +193,17 @@ html.custom-cursor-active * {
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
+/* Panneau vitré opaque — panier, feuilles latérales. Assez dense pour que le
+   texte reste lisible par-dessus des photos produit, contrairement à `.glass`
+   qui est pensé pour de petites surfaces flottantes. */
+.glass-panel {
+  background-color: rgba(250, 247, 245, 0.82);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
 /* Liquid glass — reflet spéculaire diagonal + bord lumineux (façon verre épais).
-   À poser sur une surface `.glass` (ou `.glass-dark`) via la classe `.liquid`. */
+   À poser sur une surface `.glass` via la classe `.liquid`. */
 .liquid {
   position: relative;
   overflow: hidden;
@@ -419,61 +245,19 @@ html.custom-cursor-active * {
   pointer-events: none;
 }
 
-/* Variante sombre — pour surfaces posées sur l'écrin de nuit / le primary */
-.glass-dark {
-  background-color: rgba(14, 31, 41,0.35);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-}
-
 /* Navigateurs sans backdrop-filter : repli opaque lisible */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass {
     background-color: rgba(255, 255, 255, 0.92);
   }
-  .glass-dark {
-    background-color: rgba(14, 31, 41,0.9);
+  .glass-panel {
+    background-color: rgba(250, 247, 245, 0.98);
   }
 }
 
-/* ─── Panneau sombre texturé — CTA final landing : grain + lueurs rouge/bleu très
-   discrètes sur fond quasi-noir. Le texte reste blanc, le CTA rouge continue de ressortir. ─── */
-.dark-grain-panel {
-  position: relative;
-  isolation: isolate;
-  background:
-    radial-gradient(ellipse 60% 55% at 88% 8%, rgba(214, 40, 40, 0.12), transparent 60%),
-    radial-gradient(ellipse 55% 45% at 8% 95%, rgba(0, 119, 179, 0.08), transparent 60%),
-    linear-gradient(165deg, #1c1d21 0%, #17181b 55%, #101114 100%);
-}
-
-.dark-grain-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 0.6px, transparent 0.7px),
-    radial-gradient(rgba(255, 255, 255, 0.5) 0.5px, transparent 0.6px);
-  background-size: 3px 3px, 5px 5px;
-  background-position:
-    0 0,
-    1px 2px;
-}
-
-.dark-grain-panel > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* ─── Logo « reflet liquide » — sheen bleu Telegram qui balaye lentement le mot-symbole
-   (le rouge reste réservé aux CTA, jamais en décoratif ambiant) ─── */
+/* ─── Logo « reflet liquide » — sheen bleu Telegram au survol uniquement.
+   En boucle infinie, le reflet lisait « site web animé » plutôt que « maison
+   de pâtisserie » : le geste déclenche, rien ne bouge tout seul. ─── */
 @keyframes logo-sheen {
   0% {
     background-position: 200% center;
@@ -499,11 +283,19 @@ html.custom-cursor-active * {
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: logo-sheen 6s linear infinite;
+  background-position: 200% center;
+}
+
+.logo-liquid-sheen:hover,
+a:hover .logo-liquid-sheen,
+a:focus-visible .logo-liquid-sheen {
+  animation: logo-sheen 1.6s linear;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-liquid-sheen {
+  .logo-liquid-sheen:hover,
+  a:hover .logo-liquid-sheen,
+  a:focus-visible .logo-liquid-sheen {
     animation: none;
   }
 }

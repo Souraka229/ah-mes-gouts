@@ -36,16 +36,35 @@ export function trackActivity(input: TrackActivityInput): void {
   }).catch(() => null);
 }
 
-/** Relie l'appareil au téléphone (après saisie / commande). */
-export function linkDeviceToPhone(phone: string): void {
-  if (typeof window === "undefined") return;
-  const deviceKey = getOrCreateDeviceKey();
-  if (!deviceKey || !phone.trim()) return;
+/**
+ * Reconnaît la cliente à partir de son téléphone, sans jamais la lier.
+ *
+ * L'ancienne route /api/crm/link était publique et sans preuve de possession :
+ * n'importe qui pouvait rattacher son appareil à un numéro quelconque et,
+ * au passage, écraser le prénom et le nom du client en base. Elle est
+ * supprimée.
+ *
+ * La liaison appareil → client se fait désormais uniquement à la confirmation
+ * de paiement (attachOrderToCustomer), où le paiement effectif fait office de
+ * preuve. Ici, on ne fait que lire un signal d'accueil.
+ */
+export async function recognizeCustomer(phone: string): Promise<{
+  known: boolean;
+  trusted?: boolean;
+  firstName?: string;
+  ordersCount?: number;
+} | null> {
+  if (typeof window === "undefined" || !phone.trim()) return null;
 
-  void fetch("/api/crm/link", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ deviceKey, phone }),
-    keepalive: true,
-  }).catch(() => null);
+  try {
+    const response = await fetch("/api/customer/recognize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as { known: boolean };
+  } catch {
+    return null;
+  }
 }

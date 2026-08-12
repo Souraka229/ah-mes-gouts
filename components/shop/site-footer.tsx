@@ -125,6 +125,20 @@ export function SiteFooter() {
             ))}
           </nav>
         </div>
+
+        {/* Signature studio — délibérément en retrait : elle se lit quand on la
+            cherche, sans jamais concurrencer les informations de la boutique. */}
+        <p className="mt-6 text-center font-body text-[11px] text-muted-foreground/55 sm:text-left">
+          Designed &amp; built by{" "}
+          <a
+            href="https://restafy.shop"
+            target="_blank"
+            rel="noopener"
+            className="cursor-pointer font-medium underline-offset-4 transition-colors hover:text-secondary hover:underline"
+          >
+            RESTAFY
+          </a>
+        </p>
       </div>
     </footer>
   );

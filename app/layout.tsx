@@ -24,14 +24,9 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
-  icons: {
-    icon: [
-      { url: "/pwa/icon.svg", type: "image/svg+xml" },
-      { url: "/pwa/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/pwa/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/pwa/apple-touch-icon.png", sizes: "180x180" }],
-  },
+  // Les icônes ne sont pas déclarées ici : Next les génère depuis
+  // app/favicon.ico, app/icon.png et app/apple-icon.png. Une déclaration
+  // manuelle entrerait en conflit avec cette convention de fichiers.
   appleWebApp: {
     capable: true,
     title: SITE_NAME,

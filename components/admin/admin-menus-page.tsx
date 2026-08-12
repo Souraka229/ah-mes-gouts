@@ -131,6 +131,17 @@ export function AdminMenusPage() {
     return Array.from({ length: count }, (_, i) => addDays(weekStart, i));
   }, [weekStart, viewMonth]);
 
+  /** Menu réellement servi aux clientes : actif ET daté d'aujourd'hui. */
+  const todayMenu = useMemo(
+    () =>
+      menus.find(
+        (m) =>
+          m.status === "active" &&
+          new Date(m.date).toDateString() === new Date().toDateString(),
+      ) ?? null,
+    [menus],
+  );
+
   const menusByDay = useMemo(() => {
     const map = new Map<string, ScheduledMenu[]>();
     for (const menu of menus) {
@@ -356,6 +367,36 @@ export function AdminMenusPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
+      {/* État réel côté boutique. Un menu « publié » dont la date est passée
+          n'affiche plus aucun produit aux clientes : le back-office doit dire
+          ce que la cliente voit, pas ce qui a été saisi. */}
+      {!loading && (
+        <div
+          className={
+            todayMenu
+              ? "rounded-2xl border border-success/40 bg-success/10 px-5 py-4"
+              : "rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4"
+          }
+        >
+          {todayMenu ? (
+            <p className="font-body text-sm text-primary">
+              <span className="font-semibold">Menu du jour en ligne</span> —{" "}
+              {todayMenu.productIds.length} produit
+              {todayMenu.productIds.length > 1 ? "s" : ""} commandable
+              {todayMenu.productIds.length > 1 ? "s" : ""} par les clientes.
+            </p>
+          ) : (
+            <p className="font-body text-sm text-primary">
+              <span className="font-semibold">
+                Aucun menu publié pour aujourd&apos;hui.
+              </span>{" "}
+              Les clientes ne peuvent commander aucun entremets. Programmez le
+              menu du jour pour rouvrir les ventes.
+            </p>
+          )}
+        </div>
+      )}
+
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-semibold text-primary">

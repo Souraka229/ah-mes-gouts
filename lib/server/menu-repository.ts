@@ -297,10 +297,41 @@ async function resetDailyStock(menu: ScheduledMenu): Promise<void> {
  * la table) : évite qu'une activation concurrente à une édition admin écrase
  * le travail de l'autre.
  */
+/**
+ * Périme les menus actifs dont la journée est passée.
+ *
+ * Sans ça, un menu du 10 août restait affiché « Publié » dans le back-office
+ * indéfiniment, alors que la boutique ne montrait plus aucun produit :
+ * getShopProductsFromActiveMenu() filtre sur isTodayAtShop(). L'équipe voyait
+ * donc un menu publié et des clientes incapables de commander.
+ *
+ * Un menu ne vaut que pour sa journée. Passée minuit, il expire.
+ */
+async function expireStaleActiveMenus(): Promise<number> {
+  const prisma = getPrisma();
+  const activeRows = await prisma.menu.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, date: true },
+  });
+
+  const stale = activeRows.filter((row) => !isTodayAtShop(row.date));
+  if (stale.length === 0) return 0;
+
+  const result = await prisma.menu.updateMany({
+    where: { id: { in: stale.map((row) => row.id) } },
+    data: { status: "EXPIRED" },
+  });
+
+  return result.count;
+}
+
 export async function activateDueMenus(): Promise<ScheduledMenu[]> {
   try {
     const prisma = getPrisma();
     const now = new Date();
+
+    // D'abord le ménage : un menu d'hier ne doit pas rester « Publié ».
+    await expireStaleActiveMenus().catch(() => 0);
 
     const dueRows = await prisma.menu.findMany({
       where: { status: "SCHEDULED", activateAt: { lte: now } },

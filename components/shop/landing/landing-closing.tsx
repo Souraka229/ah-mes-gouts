@@ -81,7 +81,7 @@ export function LandingClosing({ photos }: LandingClosingProps) {
                 alt=""
                 fill
                 sizes="120px"
-                quality={80}
+                quality={85}
                 className="object-cover"
               />
             </div>

@@ -2,7 +2,8 @@
   "crons": [
     {
       "path": "/api/cron/activate-menus",
-      "schedule": "0 8 * * *"
+      "//": "Horaire : un menu ouvre a 20h heure boutique (19h UTC). Un cron quotidien a 8h UTC l'activait 13h en retard, et l'activation ne tenait que grace au declenchement paresseux sur trafic.",
+      "schedule": "5 * * * *"
     },
     {
       "path": "/api/cron/telegram-daily",

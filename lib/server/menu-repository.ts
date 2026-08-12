@@ -3,7 +3,13 @@ import type { MenuStatus as PrismaMenuStatus } from "@prisma/client";
 
 import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
-import { isTodayAtShop } from "@/lib/business-date";
+import {
+  addShopDays,
+  getShopDateKey,
+  isTodayAtShop,
+  NEXT_DAY_ORDERING_OPENS_AT,
+  shopDateTimeToUtc,
+} from "@/lib/business-date";
 import { getPrisma } from "@/lib/prisma";
 import type { MenuStatus, ScheduledMenu } from "@/types/menu";
 import type { Product } from "@/types/product";
@@ -66,10 +72,31 @@ function toMenuRow(menu: ScheduledMenu) {
   };
 }
 
-function defaultActivateAt(date: Date, hour = 20, minute = 0): string {
-  const d = new Date(date);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+/**
+ * Minuit du jour boutique, en UTC. `setHours(0,0,0,0)` donnait minuit dans le
+ * fuseau du *serveur* — soit 01 h à Cotonou sur Vercel (UTC), d'où les dates de
+ * menu à 01:00, 12:00 ou 23:00 observées en base.
+ */
+function shopMidnight(date: Date | string): string {
+  return shopDateTimeToUtc(getShopDateKey(date), "00:00").toISOString();
+}
+
+/**
+ * Ouverture d'un menu : 20 h (heure boutique) LA VEILLE du jour servi.
+ *
+ * Deux bugs corrigés ici :
+ *  - `setHours` utilisait le fuseau serveur (20 h UTC = 21 h à Cotonou) ;
+ *  - l'heure d'ouverture était posée le jour même du menu, donc un menu du
+ *    jour J s'ouvrait à 20 h de J — après la fermeture de la boutique (19 h).
+ *    La règle métier est bien « le menu du lendemain s'ouvre à 20 h la veille »
+ *    (NEXT_DAY_ORDERING_OPENS_AT), alignée sur isNextDayOrderingOpen().
+ */
+function defaultActivateAt(menuDate: Date | string): string {
+  const eve = addShopDays(getShopDateKey(menuDate), -1);
+  return shopDateTimeToUtc(
+    eve,
+    `${String(NEXT_DAY_ORDERING_OPENS_AT).padStart(2, "0")}:00`,
+  ).toISOString();
 }
 
 async function seedMenus(): Promise<ScheduledMenu[]> {
@@ -82,13 +109,14 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
   // Stock du jour par défaut = stock actuel du produit.
   const dailyStock = selected.map((p) => p.stockRemaining);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayKey = getShopDateKey();
+  const tomorrowKey = addShopDays(todayKey, 1);
 
   const active: ScheduledMenu = {
     id: randomUUID(),
-    date: today.toISOString(),
-    activateAt: defaultActivateAt(today, 8, 0),
+    date: shopMidnight(new Date()),
+    // Le menu du jour est déjà ouvert : son heure d'ouverture est passée.
+    activateAt: defaultActivateAt(todayKey),
     status: "active",
     productIds,
     displayOrder,
@@ -96,13 +124,10 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
     createdAt: new Date().toISOString(),
   };
 
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
   const scheduled: ScheduledMenu = {
     id: randomUUID(),
-    date: tomorrow.toISOString(),
-    activateAt: defaultActivateAt(tomorrow, 20, 0),
+    date: shopDateTimeToUtc(tomorrowKey, "00:00").toISOString(),
+    activateAt: defaultActivateAt(tomorrowKey),
     status: "scheduled",
     productIds: [...productIds],
     displayOrder: [...displayOrder],
@@ -230,15 +255,14 @@ export async function duplicateMenu(
   const source = await getMenuById(id);
   if (!source) throw new Error("Menu introuvable");
 
-  const date = targetDate ?? new Date();
-  if (!targetDate) {
-    date.setDate(date.getDate() + 1);
-  }
-  date.setHours(0, 0, 0, 0);
+  // Par défaut : le lendemain (jour boutique), ouvert à 20 h ce soir.
+  const dateKey = targetDate
+    ? getShopDateKey(targetDate)
+    : addShopDays(getShopDateKey(), 1);
 
   return createMenu({
-    date: date.toISOString(),
-    activateAt: defaultActivateAt(date, 20, 0),
+    date: shopDateTimeToUtc(dateKey, "00:00").toISOString(),
+    activateAt: defaultActivateAt(dateKey),
     productIds: [...source.productIds],
     displayOrder: [...source.displayOrder],
     dailyStock: [...source.dailyStock],

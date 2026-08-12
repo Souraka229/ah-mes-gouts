@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  addShopDays,
+  NEXT_DAY_ORDERING_OPENS_AT,
+  shopDateTimeToIso,
+} from "@/lib/business-date";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
@@ -45,10 +50,25 @@ function toDateInput(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function defaultActivateAtISO(date: Date, hour = 20, minute = 0): string {
-  const d = new Date(date);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+/**
+ * Ouverture d'un menu : à l'heure choisie (20 h par défaut) LA VEILLE du jour
+ * servi, en heure boutique.
+ *
+ * Avant, l'ouverture était posée le jour même du menu : un menu du 12 août
+ * s'ouvrait le 12 à 20 h, soit une heure après la fermeture de la boutique.
+ * Résultat en base : des menus qui n'étaient jamais réellement vendables.
+ * `setHours` utilisait en plus le fuseau du navigateur, pas celui de la
+ * boutique.
+ */
+function defaultActivateAtISO(
+  menuDateKey: string,
+  hour = NEXT_DAY_ORDERING_OPENS_AT,
+  minute = 0,
+): string {
+  const eve = addShopDays(menuDateKey, -1);
+  const hh = String(hour).padStart(2, "0");
+  const mm = String(minute).padStart(2, "0");
+  return shopDateTimeToIso(eve, `${hh}:${mm}`);
 }
 
 export function AdminMenusPage() {
@@ -234,8 +254,15 @@ export function AdminMenusPage() {
     }
 
     const [h, m] = activateTime.split(":").map(Number);
-    const dateObj = new Date(targetDate + "T12:00:00");
-    const activateAt = defaultActivateAtISO(dateObj, h ?? 20, m ?? 0);
+    // `targetDate` est déjà une clé calendrier boutique (YYYY-MM-DD).
+    // Minuit heure boutique, et non minuit du navigateur : c'est ce décalage
+    // qui produisait des dates de menu à 01:00, 12:00 ou 23:00 en base.
+    const menuDateIso = shopDateTimeToIso(targetDate, "00:00");
+    const activateAt = defaultActivateAtISO(
+      targetDate,
+      h ?? NEXT_DAY_ORDERING_OPENS_AT,
+      m ?? 0,
+    );
     const displayOrder = selectedIds.map((_, i) => i);
     // Stock du jour = quantité saisie par produit. À 20h (activation du menu),
     // le stock de chaque produit est remis à cette valeur.
@@ -260,7 +287,7 @@ export function AdminMenusPage() {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            date: dateObj.toISOString(),
+            date: menuDateIso,
             activateAt,
             productIds: selectedIds,
             displayOrder,
@@ -282,7 +309,7 @@ export function AdminMenusPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            date: dateObj.toISOString(),
+            date: menuDateIso,
             activateAt,
             productIds: selectedIds,
             displayOrder,

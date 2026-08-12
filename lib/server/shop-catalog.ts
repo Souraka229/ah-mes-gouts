@@ -63,6 +63,40 @@ export async function getMenuDuJourShowcaseForLanding(): Promise<
   }));
 }
 
+/**
+ * Classiques de la maison, pris dans tout le catalogue.
+ *
+ * Volontairement indépendant du menu du jour : entre deux publications, la
+ * page d'accueil se retrouvait sans le moindre produit. Ces créations ne sont
+ * pas présentées comme commandables aujourd'hui — elles mènent à leur fiche.
+ */
+export async function getSignatureShowcase(
+  limit = 6,
+): Promise<MenuShowcaseItem[]> {
+  const catalog = await getFullCatalog();
+
+  const ranked = catalog
+    .filter((product) => !product.isGiftCard && product.slug !== "carte-cadeau")
+    .sort((a, b) => {
+      const score = (p: Product) =>
+        (p.isPopular ? 2 : 0) + (p.isNew ? 1 : 0);
+      return score(b) - score(a);
+    })
+    .slice(0, limit);
+
+  return ranked.map((product) => ({
+    id: product.slug,
+    name: product.name,
+    keyword:
+      product.keyword?.trim() ||
+      (product.isPopular ? "Populaire" : product.isNew ? "Nouveau" : "Signature"),
+    price: getProductPrice(product),
+    image: product.imageUrl,
+    slug: product.slug,
+    product,
+  }));
+}
+
 export async function getGiftProductsBySlugs(
   slugs: string[],
 ): Promise<Product[]> {

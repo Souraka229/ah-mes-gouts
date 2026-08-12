@@ -2,6 +2,7 @@ import { LANDING_IMAGES } from "@/lib/landing-data";
 import { SITE_NAME } from "@/lib/seo/site";
 import {
   getMenuDuJourShowcaseForLanding,
+  getSignatureShowcase,
   type MenuShowcaseItem,
 } from "@/lib/server/shop-catalog";
 import type {
@@ -12,7 +13,12 @@ import type {
 export type HomePageContent = {
   hero: HeroSectionContent;
   footer: FooterSectionContent;
+  /** Créations réellement commandables aujourd'hui. Vide si le menu du jour
+   *  n'est pas encore publié. */
   menuShowcase: MenuShowcaseItem[];
+  /** Classiques de la maison — indépendants du menu du jour, pour que la page
+   *  d'accueil ne soit jamais vide entre deux publications. */
+  signatures: MenuShowcaseItem[];
 };
 
 const HERO: HeroSectionContent = {
@@ -32,12 +38,16 @@ const FOOTER: FooterSectionContent = {
 };
 
 export async function getHomePageContent(): Promise<HomePageContent> {
-  const menuShowcase = await getMenuDuJourShowcaseForLanding();
+  const [menuShowcase, signatures] = await Promise.all([
+    getMenuDuJourShowcaseForLanding(),
+    getSignatureShowcase(),
+  ]);
 
   return {
     hero: HERO,
     footer: FOOTER,
     menuShowcase,
+    signatures,
   };
 }
 

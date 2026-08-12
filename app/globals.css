@@ -181,6 +181,87 @@
   }
 }
 
+/* ─── Landing « écrin clair » ───────────────────────────────────────────────
+   Formes organiques floutées posées derrière les sections. Elles donnent de la
+   profondeur sans image de fond, donc sans coût de chargement. Toujours en
+   `pointer-events: none` et sous le contenu. */
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+.blob-lg {
+  filter: blur(120px);
+}
+
+/* Sur mobile, un blur de 90-120 px sur de grandes surfaces coûte cher au
+   rendu pour un effet à peine visible : on l'allège nettement. */
+@media (max-width: 768px) {
+  .blob,
+  .blob-lg {
+    filter: blur(52px);
+    opacity: 0.5;
+  }
+}
+
+.shadow-soft {
+  box-shadow: 0 18px 50px -20px rgba(23, 24, 27, 0.18);
+}
+.shadow-lift {
+  box-shadow: 0 34px 80px -28px rgba(23, 24, 27, 0.28);
+}
+
+/* Panneau « écrin de nuit » — bannière CTA. Lueurs rouge et bleue très
+   discrètes sur fond quasi noir : le rouge reste réservé au CTA lui-même. */
+.night-panel {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 60% 55% at 88% 8%, rgba(214, 40, 40, 0.16), transparent 62%),
+    radial-gradient(ellipse 55% 45% at 8% 95%, rgba(0, 119, 179, 0.16), transparent 62%),
+    linear-gradient(165deg, #1c1d21 0%, #17181b 52%, #0e1f29 100%);
+}
+.night-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.9) 0.6px, transparent 0.7px),
+    radial-gradient(rgba(255, 255, 255, 0.5) 0.5px, transparent 0.6px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 1px 2px;
+}
+.night-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Photos qui flottent en fin de page. */
+@keyframes landing-drift {
+  0%,
+  100% {
+    transform: translateY(0) var(--drift-rotate, rotate(0deg));
+  }
+  50% {
+    transform: translateY(-18px) var(--drift-rotate, rotate(0deg));
+  }
+}
+.landing-drift {
+  animation: landing-drift 14s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-drift {
+    animation: none;
+  }
+}
+
 /* ─── Glassmorphism — surface translucide dépolie (header, panier, cartes) ─── */
 .glass {
   position: relative;

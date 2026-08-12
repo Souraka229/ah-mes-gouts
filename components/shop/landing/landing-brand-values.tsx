@@ -1,27 +1,51 @@
+import { Bike, Hand, MapPin, Sparkles } from "lucide-react";
+
 import { BRAND_VALUES } from "@/lib/business-info";
 
 /**
- * Bandeau repères — fond bleu clair (respiration visuelle, casse le crème/blanc
- * partout), traitement typographique sobre : règle fine + texte, pas d'icône
- * en pastille.
+ * Repères — quatre cartes blanches sur fond muted.
+ *
+ * Icônes en pastilles alternées bleu/neutre : le rouge n'apparaît pas ici,
+ * il reste réservé au CTA principal et aux prix.
  */
+const ICONS = [Sparkles, Hand, Bike, MapPin] as const;
+
 export function LandingBrandValues() {
   return (
-    <section className="bg-bluegray py-12 sm:py-14" aria-label="Nos repères">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-8 px-4 sm:grid-cols-4 sm:gap-8 sm:px-6">
-        {BRAND_VALUES.map((value) => (
-          <div
-            key={value.id}
-            className="border-t-2 border-primary pt-3"
-          >
-            <p className="font-display text-base font-semibold text-primary sm:text-lg">
-              {value.title}
-            </p>
-            <p className="mt-1 font-body text-sm leading-snug text-text/70">
-              {value.detail}
-            </p>
-          </div>
-        ))}
+    <section className="bg-muted py-20 sm:py-24" aria-label="Nos repères">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 className="max-w-[20ch] font-display text-[clamp(1.9rem,4vw,2.75rem)] font-semibold leading-tight text-balance text-primary">
+          Pourquoi la maison plaît
+        </h2>
+
+        <ul className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {BRAND_VALUES.map((value, index) => {
+            const Icon = ICONS[index % ICONS.length]!;
+            const isBlue = index % 2 === 1;
+
+            return (
+              <li
+                key={value.id}
+                className="shadow-soft rounded-3xl bg-white p-7 transition-[transform,box-shadow] duration-400 hover:-translate-y-1.5 hover:shadow-lift motion-reduce:hover:translate-y-0"
+              >
+                <span
+                  className={`mb-5 flex size-13 items-center justify-center rounded-2xl ${
+                    isBlue ? "bg-bluegray text-secondary" : "bg-muted text-primary"
+                  }`}
+                  aria-hidden
+                >
+                  <Icon className="size-6" strokeWidth={1.7} />
+                </span>
+                <h3 className="font-display text-lg font-semibold text-primary">
+                  {value.title}
+                </h3>
+                <p className="mt-2 font-body text-sm leading-relaxed text-muted-foreground">
+                  {value.detail}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </section>
   );

@@ -2,93 +2,115 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Share2 } from "lucide-react";
 
-import { LANDING_IMAGES, footerNavLinks } from "@/lib/landing-data";
+import { footerNavLinks } from "@/lib/landing-data";
 import { INSTAGRAM_URL } from "@/lib/social-links";
-import {
-  ORIGIN_BRAND,
-  SITE_NAME_WITH_CREDIT,
-} from "@/lib/seo/site";
+import { ORIGIN_BRAND, SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
+import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
 import type { FooterSectionContent } from "@/types/site-content";
 
 type LandingClosingProps = {
   footer: FooterSectionContent;
+  /** Vraies créations du menu — elles flottent autour du bloc de texte. */
+  photos: MenuShowcaseItem[];
 };
 
 /**
- * Photos produit réelles, resserrées autour du bloc de texte (pas dispersées
- * dans les coins de l'écran) — pas d'icônes, pas de stock.
+ * Positions des photos flottantes. Masquées sous 1024 px : à cette largeur
+ * elles chevaucheraient le texte au lieu de l'entourer.
  */
-const CORNER_PHOTOS = [
-  { src: LANDING_IMAGES.oreos, className: "-top-5 -left-4 sm:-left-10 -rotate-6", size: 92 },
-  { src: LANDING_IMAGES.manguePassion, className: "-top-6 -right-4 sm:-right-10 rotate-4", size: 84 },
-  { src: LANDING_IMAGES.foretBlanche, className: "-bottom-6 -left-2 sm:-left-8 rotate-5", size: 80 },
-  { src: LANDING_IMAGES.tiramisuRose, className: "-bottom-5 -right-2 sm:-right-8 -rotate-4", size: 96 },
+const FLOATERS = [
+  { className: "left-[3%] top-[14%] w-28 h-36", rotate: "-7deg", delay: "0s" },
+  { className: "right-[5%] top-[9%] w-24 h-32", rotate: "6deg", delay: "2s" },
+  { className: "left-[8%] bottom-[10%] w-26 h-34", rotate: "5deg", delay: "1s" },
+  { className: "right-[7%] bottom-[13%] w-25 h-32", rotate: "-6deg", delay: "3s" },
 ] as const;
 
-/** Pied de page landing — fond bleu clair, vraies photos resserrées autour du texte. */
-export function LandingClosing({ footer }: LandingClosingProps) {
+export function LandingClosing({ footer, photos }: LandingClosingProps) {
   return (
-    <footer
-      id="contact"
-      className="overflow-hidden bg-bluegray px-4 py-16 text-text sm:px-6 sm:py-20"
-    >
-      <div className="relative mx-auto max-w-xl">
-        {CORNER_PHOTOS.map((photo, i) => (
-          <div
-            key={i}
-            className={`pointer-events-none absolute hidden overflow-hidden rounded-2xl shadow-lg ring-4 ring-white sm:block ${photo.className}`}
-            style={{ width: photo.size, height: photo.size }}
-            aria-hidden
-          >
-            <Image
-              src={photo.src}
-              alt=""
-              fill
-              sizes="100px"
-              className="object-cover"
-            />
-          </div>
-        ))}
+    <footer id="contact" className="relative overflow-hidden bg-bg">
+      <div className="relative py-20 sm:py-28">
+        <div
+          className="blob blob-lg -left-32 -top-24 h-[34rem] w-[34rem] bg-muted opacity-70"
+          aria-hidden
+        />
+        <div
+          className="blob -right-24 bottom-0 h-80 w-80 bg-bluegray opacity-60"
+          aria-hidden
+        />
 
-        <div className="relative z-10 flex flex-col items-center gap-8 text-center">
-          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.28em] text-primary/60">
+        <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden>
+          {FLOATERS.map((floater, index) => {
+            const photo = photos[index % Math.max(photos.length, 1)];
+            if (!photo) return null;
+            return (
+              <div
+                key={index}
+                className={`landing-drift shadow-soft absolute overflow-hidden rounded-3xl ring-4 ring-white ${floater.className}`}
+                style={
+                  {
+                    "--drift-rotate": `rotate(${floater.rotate})`,
+                    transform: `rotate(${floater.rotate})`,
+                    animationDelay: floater.delay,
+                  } as React.CSSProperties
+                }
+              >
+                <Image
+                  src={photo.image}
+                  alt=""
+                  fill
+                  sizes="120px"
+                  className="object-cover"
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="relative z-1 mx-auto flex max-w-xl flex-col items-center gap-7 px-4 text-center sm:px-6">
+          <p className="font-body text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
             {ORIGIN_BRAND}
           </p>
-          <h2 className="font-display text-[clamp(2rem,6vw,3.25rem)] font-semibold leading-tight text-primary">
-            Prêt à vous faire plaisir ?
+
+          <h2 className="font-display text-[clamp(2rem,5.5vw,3.25rem)] font-semibold leading-tight text-balance text-primary">
+            Prêt à vous faire plaisir&nbsp;?
           </h2>
-          <p className="max-w-lg font-body text-base text-text/80">
-            Parcours simple : choisissez, personnalisez, payez par Mobile Money ou
-            carte, suivez votre commande en direct.
+
+          <p className="max-w-lg font-body text-base leading-relaxed text-muted-foreground">
+            Choisissez, personnalisez, payez par Mobile Money ou carte, et
+            suivez votre commande en direct.
           </p>
 
           <Link
             href="/catalogue"
-            className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-accent px-8 py-3 font-body text-sm font-semibold text-accent-foreground transition-transform duration-200 hover:scale-[1.02] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent motion-reduce:hover:scale-100"
+            className="inline-flex min-h-13 cursor-pointer items-center gap-2 rounded-full bg-accent px-10 font-body text-base font-semibold text-accent-foreground shadow-sm transition-[transform,box-shadow] duration-300 hover:scale-[1.02] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary motion-reduce:hover:scale-100"
           >
             Commander maintenant
             <ArrowRight className="size-4" aria-hidden />
           </Link>
+        </div>
+      </div>
 
+      <div className="border-t border-border bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 py-12 text-center sm:px-6 lg:px-8">
           <nav
-            className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-4"
+            className="flex flex-wrap justify-center gap-x-7 gap-y-3"
             aria-label="Liens utiles"
           >
             {footerNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="cursor-pointer font-body text-sm text-text/75 underline-offset-4 hover:text-primary hover:underline"
+                className="cursor-pointer font-body text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-secondary hover:underline"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex flex-col items-center gap-2 pt-6 font-body text-sm text-text/70">
+          <div className="flex flex-col items-center gap-2 font-body text-sm text-muted-foreground">
             <a
               href={`tel:${footer.phone.replace(/\s/g, "")}`}
-              className="cursor-pointer hover:text-primary"
+              className="cursor-pointer transition-colors hover:text-secondary"
             >
               {footer.phone}
             </a>
@@ -96,21 +118,21 @@ export function LandingClosing({ footer }: LandingClosingProps) {
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex cursor-pointer items-center gap-2 hover:text-primary"
+              className="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-secondary"
             >
               <Share2 className="size-4" aria-hidden />
               {footer.instagramHandle}
             </a>
           </div>
 
-          <p className="pt-8 font-body text-xs text-text/45">
+          <p className="font-body text-xs text-muted-foreground/70">
             © {new Date().getFullYear()} {SITE_NAME_WITH_CREDIT}
           </p>
           <a
             href="https://restafy.shop"
             target="_blank"
             rel="noopener noreferrer"
-            className="cursor-pointer font-body text-[11px] text-text/35 hover:text-text/60"
+            className="cursor-pointer font-body text-[11px] text-muted-foreground/50 transition-colors hover:text-muted-foreground"
           >
             Powered by Restafy
           </a>

@@ -12,12 +12,13 @@ import {
   ORDER_PHONE,
 } from "@/lib/business-info";
 import {
+  AVAILABLE_PART_COUNTS,
   buildAboutFaq,
-  CAKE_FORMATS,
-  CLASSIC_FLAVOURS,
-  CLASSIC_PRICE_PER_PART,
+  CLASSIC_CAKES,
+  CLASSIC_PART_PRICE,
+  getNounoursRange,
   getYearsOfCraft,
-  SIGNATURE_RECIPES,
+  SIGNATURE_CAKES,
 } from "@/lib/about-content";
 import { formatPrice } from "@/lib/format";
 import { LANDING_PHOTOS } from "@/lib/landing-data";
@@ -36,7 +37,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = createPageMetadata({
   title: "La maison — pâtisserie à Fidjrossè",
   description:
-    "Pâtisserie artisanale à Fidjrossè, Cotonou. Entremets glacés faits main, créations signatures Tropicana, Afrodisiak et Bananut, formats sur commande et livraison à Cotonou.",
+    "Pâtisserie artisanale à Fidjrossè, Cotonou. Entremets glacés faits main, sept créations signatures dont Tropicana, Afrodisiak et Banoffee, vente à la part et livraison à Cotonou.",
   path: "/a-propos",
   ogImage: LANDING_PHOTOS.heroCoeurOr,
 });
@@ -95,15 +96,15 @@ export default function AboutPage() {
           {/* ── Ouverture ─────────────────────────────────────────── */}
           <header className="mt-6">
             <p className="font-body text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-              {BOUTIQUE_LOCATION.short} · {years} ans de maison
+              {BOUTIQUE_LOCATION.short} · {years}ᵉ année
             </p>
             <h1 className="mt-4 font-display text-[clamp(2.1rem,6vw,3.25rem)] font-semibold leading-[1.05] tracking-tight text-balance text-primary">
               Une pâtisserie de Fidjrossè, entièrement faite à la main
             </h1>
             <p className="mt-6 font-body text-lg leading-relaxed text-muted-foreground">
               {SITE_NAME} est un atelier de pâtisserie installé à Fidjrossè, à
-              Cotonou. Nous façonnons des entremets glacés en très petite série,
-              du montage au glaçage, sans moule industriel et sans stock dormant.
+              Cotonou. Nous façonnons des entremets en très petite série, du montage au
+              glaçage, sans moule industriel et sans stock dormant.
             </p>
           </header>
 
@@ -146,18 +147,18 @@ export default function AboutPage() {
           {/* ── Signatures ────────────────────────────────────────── */}
           <section className="mt-16">
             <h2 className="font-display text-[clamp(1.6rem,3.6vw,2.25rem)] font-semibold leading-tight text-balance text-primary">
-              Trois créations qui n&apos;existent qu&apos;ici
+              Sept créations qui n&apos;existent qu&apos;ici
             </h2>
             <p className="mt-4 font-body text-base leading-relaxed text-muted-foreground">
               Elles marient des produits d&apos;ici — bissap, ananas, gingembre,
-              arachide — à des techniques de pâtisserie française. Comptez 72 h,
-              elles se montent à la commande.
+              arachide — à des techniques de pâtisserie française. Toutes sont
+              vendues à la part et montées à la commande.
             </p>
 
             <ul className="mt-8 space-y-4">
-              {SIGNATURE_RECIPES.map((recipe) => (
+              {SIGNATURE_CAKES.map((recipe) => (
                 <li
-                  key={recipe.name}
+                  key={recipe.slug}
                   className="shadow-soft rounded-3xl bg-white p-6"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -173,11 +174,13 @@ export default function AboutPage() {
                     </p>
                   </div>
                   <p className="mt-2 font-body text-base text-muted-foreground">
-                    {recipe.composition}.
+                    {recipe.description}
                   </p>
-                  <p className="mt-1 font-body text-sm text-muted-foreground/80">
-                    {recipe.note}.
-                  </p>
+                  {recipe.leadTimeHours ? (
+                    <p className="mt-1 font-body text-sm text-muted-foreground/80">
+                      À commander au moins {recipe.leadTimeHours} h à l&apos;avance.
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -189,41 +192,42 @@ export default function AboutPage() {
               La carte permanente
             </h2>
             <p className="mt-4 font-body text-base leading-relaxed text-muted-foreground">
-              Dix parfums disponibles toute l&apos;année, à{" "}
-              {formatPrice(CLASSIC_PRICE_PER_PART)} la part, quel que soit le
-              format.
+              {CLASSIC_CAKES.length} parfums disponibles toute l&apos;année, à{" "}
+              {formatPrice(CLASSIC_PART_PRICE)} la part.
             </p>
 
             <ul className="mt-6 flex flex-wrap gap-2">
-              {CLASSIC_FLAVOURS.map((flavour) => (
+              {CLASSIC_CAKES.map((cake) => (
                 <li
-                  key={flavour}
+                  key={cake.slug}
                   className="rounded-full border border-border bg-white px-4 py-2 font-body text-sm text-primary"
                 >
-                  {flavour}
+                  {cake.name}
                 </li>
               ))}
             </ul>
 
             <h3 className="mt-10 font-display text-xl font-semibold text-primary">
-              Formats sur commande
+              Nombre de parts
             </h3>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full border-collapse font-body text-sm">
-                <tbody>
-                  {CAKE_FORMATS.map((format) => (
-                    <tr key={format.label} className="border-b border-border">
-                      <td className="py-3 pr-4 text-primary">{format.label}</td>
-                      <td className="py-3 text-right whitespace-nowrap text-muted-foreground tabular-nums">
-                        {format.from
-                          ? `à partir de ${formatPrice(format.from)}`
-                          : "sur devis"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <p className="mt-3 font-body text-base leading-relaxed text-muted-foreground">
+              Les grands entremets se commandent à partir de{" "}
+              {AVAILABLE_PART_COUNTS.join(", ")} parts selon la recette, les
+              cœurs à partir de 6 parts. Le minimum exact de chaque création
+              vous est confirmé à la commande.
+            </p>
+
+            <h3 className="mt-10 font-display text-xl font-semibold text-primary">
+              Nounours et bouquets
+            </h3>
+            <p className="mt-3 font-body text-base leading-relaxed text-muted-foreground">
+              Nounours en peluche de 20 à 140 cm, de{" "}
+              {formatPrice(getNounoursRange().min)} à{" "}
+              {formatPrice(getNounoursRange().max)}. Bouquets de roses fraîches
+              avec gypsophile, carte et emballage — une rose à l&apos;unité ou
+              jusqu&apos;à vingt. Un supplément chocolats peut s&apos;ajouter à
+              tout bouquet.
+            </p>
           </section>
 
           {/* ── Infos pratiques ───────────────────────────────────── */}

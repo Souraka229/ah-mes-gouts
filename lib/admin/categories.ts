@@ -4,7 +4,11 @@
 export const PRODUCT_CATEGORIES = [
   "Entremets",
   "Menu du jour",
+  /** Grands entremets vendus à la part, 72 h de préparation. */
+  "Sur commande",
   "Nounours",
+  /** Bouquets de roses fraîches — stock non suivi, montés à la demande. */
+  "Fleurs",
   "Carte",
   "Cadeaux",
   "Boissons",
@@ -13,8 +17,17 @@ export const PRODUCT_CATEGORIES = [
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 /** Stock non consommé à la commande — toujours commandables. */
+/**
+ * Stock non consommé à la commande.
+ *
+ * Ces produits ne dépendent pas du menu du jour : ils sont montés ou
+ * réapprovisionnés à la demande. Les inclure dans le suivi de stock
+ * bloquerait des ventes sans raison.
+ */
 export const UNLIMITED_STOCK_CATEGORIES: ProductCategory[] = [
   "Nounours",
+  "Fleurs",
+  "Sur commande",
   "Carte",
   "Cadeaux",
 ];

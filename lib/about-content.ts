@@ -1,82 +1,63 @@
+import {
+  AVAILABLE_PART_COUNTS,
+  BOUQUETS,
+  CLASSIC_CAKES,
+  CLASSIC_PART_PRICE,
+  NOUNOURS,
+  SIGNATURE_CAKES,
+  SIGNATURE_PART_PRICE,
+} from "@/lib/constants/catalogue-maison";
+
 /**
  * Contenu de la page « à propos ».
  *
- * Séparé du composant pour deux raisons : le schema.org FAQ est construit à
- * partir des mêmes objets que le rendu — impossible que la page dise une chose
- * et les données structurées une autre — et la cheffe peut corriger un prix
- * sans toucher au JSX.
+ * Les tarifs et compositions ne sont PAS redéclarés ici : ils viennent de
+ * catalogue-maison.ts, la même source que les produits injectés en base. La
+ * page, le schema.org FAQ et le catalogue ne peuvent donc pas diverger.
  *
- * Les faits pratiques (téléphone, horaires, adresse) ne sont PAS dupliqués
- * ici : ils viennent de business-info.ts, source unique.
+ * Les faits pratiques (téléphone, horaires, adresse) viennent de
+ * business-info.ts, pour la même raison.
  */
 
-/** Année de création — sert à calculer l'ancienneté sans la réécrire chaque année. */
-export const FOUNDED_YEAR = 2021;
+/**
+ * Année de création. La maison entre dans sa 10ᵉ année en 2026.
+ * Calculée plutôt qu'écrite en dur : le texte ne vieillit pas.
+ */
+export const FOUNDED_YEAR = 2016;
 
 export function getYearsOfCraft(now = new Date()): number {
   return Math.max(1, now.getFullYear() - FOUNDED_YEAR);
 }
 
-/**
- * Créations signatures — recettes propres à la maison.
- *
- * Ce sont les entrées les plus précieuses de la page : des noms qui
- * n'existent nulle part ailleurs, associés à une composition précise. C'est
- * exactement ce qu'un moteur génératif peut citer sans se tromper.
- */
-export const SIGNATURE_RECIPES = [
-  {
-    name: "Tropicana",
-    composition: "Mousse coco, insert bissap, ananas",
-    note: "À commander 72 h à l'avance",
-    pricePerPart: 3500,
-  },
-  {
-    name: "Afrodisiak",
-    composition: "Mousse chocolat, crémeux gingembre, confit d'ananas",
-    note: "À commander 72 h à l'avance",
-    pricePerPart: 3500,
-  },
-  {
-    name: "Bananut",
-    composition:
-      "Mousse chocolat, crémeux beurre d'arachide, banane flambée caramélisée",
-    note: "À commander 72 h à l'avance",
-    pricePerPart: 3500,
-  },
-] as const;
+export {
+  AVAILABLE_PART_COUNTS,
+  BOUQUETS,
+  CLASSIC_CAKES,
+  CLASSIC_PART_PRICE,
+  NOUNOURS,
+  SIGNATURE_CAKES,
+  SIGNATURE_PART_PRICE,
+};
 
-/** Parfums de la carte permanente, tous au même tarif par part. */
-export const CLASSIC_FLAVOURS = [
-  "Chocolat vanille",
-  "Chocolat caramel",
-  "Chocolat café",
-  "Chocolat baileys",
-  "Chocolat menthe",
-  "Chocolat mangue",
-  "Chocolat framboise",
-  "Mangue vanille",
-  "Framboise vanille",
-  "Framboise menthe",
-] as const;
+/** Fourchette des bouquets, pour l'annoncer sans lister les onze références. */
+export function getBouquetRange(): { min: number; max: number } {
+  const prices = BOUQUETS.map((b) => b.price);
+  return { min: Math.min(...prices), max: Math.max(...prices) };
+}
 
-export const CLASSIC_PRICE_PER_PART = 2500;
-
-/** Formats d'entremets sur commande. */
-export const CAKE_FORMATS = [
-  { label: "Entremets 10 parts", from: 25000 },
-  { label: "Entremets 12 parts", from: 30000 },
-  { label: "Entremets 20 parts", from: null },
-  { label: "Moule à forme spéciale", from: 20000 },
-  { label: "Gâteau d'enfant", from: null },
-] as const;
+export function getNounoursRange(): { min: number; max: number } {
+  const prices = NOUNOURS.map((n) => n.price);
+  return { min: Math.min(...prices), max: Math.max(...prices) };
+}
 
 export type AboutFaq = { question: string; answer: string };
 
+const fcfa = (value: number) =>
+  `${value.toLocaleString("fr-FR").replace(/ | /g, " ")} FCFA`;
+
 /**
  * FAQ au format extractible : chaque réponse est autonome, porte l'entité, le
- * lieu et le fait. C'est l'unité qu'un modèle reprend telle quelle.
- * Les valeurs variables sont injectées à la construction (voir la page).
+ * lieu et le fait. C'est l'unité qu'un modèle génératif reprend telle quelle.
  */
 export function buildAboutFaq(input: {
   siteName: string;
@@ -87,10 +68,14 @@ export function buildAboutFaq(input: {
   payments: string;
   years: number;
 }): AboutFaq[] {
+  const bouquets = getBouquetRange();
+  const nounours = getNounoursRange();
+  const parts = AVAILABLE_PART_COUNTS.join(", ");
+
   return [
     {
       question: `Qui est ${input.siteName} ?`,
-      answer: `${input.siteName} est une pâtisserie artisanale de Cotonou, au Bénin, spécialisée dans les entremets glacés. La maison façonne ses créations à la main depuis ${input.years} ans, en très petite série, dans son atelier de Fidjrossè.`,
+      answer: `${input.siteName} est une pâtisserie artisanale de Cotonou, au Bénin, spécialisée dans les entremets. La maison entre dans sa ${input.years}ᵉ année et façonne ses créations à la main dans son atelier de Fidjrossè.`,
     },
     {
       question: `Où se trouve ${input.siteName} à Cotonou ?`,
@@ -98,16 +83,15 @@ export function buildAboutFaq(input: {
     },
     {
       question: "Quelles sont les créations signatures de la maison ?",
-      answer:
-        "Trois recettes n'existent que chez Gift & ENTREMETS : le Tropicana, mousse coco avec un insert bissap et ananas ; l'Afrodisiak, mousse chocolat, crémeux gingembre et confit d'ananas ; et le Bananut, mousse chocolat, crémeux beurre d'arachide et banane flambée caramélisée. Ces trois créations se commandent 72 heures à l'avance.",
+      answer: `Sept recettes signatures : ${SIGNATURE_CAKES.map((c) => c.name).join(", ")}. Le Tropicana associe une mousse vanille mascarpone à un insert bissap et ananas ; l'Afrodisiak une mousse chocolat à un crémeux gingembre ; le Banoffee une mousse chocolat à un crémeux beurre d'arachide et une banane flambée caramélisée. Elles sont à ${fcfa(SIGNATURE_PART_PRICE)} la part.`,
     },
     {
       question: "Combien coûte un entremets à Cotonou ?",
-      answer: `Un entremets de 10 parts démarre à 25 000 FCFA, un 12 parts à 30 000 FCFA, et un moule à forme spéciale à 20 000 FCFA. Les parfums de la carte permanente sont à ${CLASSIC_PRICE_PER_PART} FCFA la part, les créations signatures à 3 500 FCFA la part.`,
+      answer: `Les grands entremets sont vendus à la part : ${fcfa(CLASSIC_PART_PRICE)} pour les parfums de la carte permanente, ${fcfa(SIGNATURE_PART_PRICE)} pour les créations signatures. Ils se commandent à partir de ${parts} parts selon la recette. Les entremets individuels du menu du jour vont de 3 000 à 7 000 FCFA la pièce.`,
     },
     {
       question: "Comment commander un entremets ?",
-      answer: `La commande se fait en ligne, sur le site. On choisit une création du menu du jour, un créneau de retrait ou de livraison, puis on paie par Mobile Money ou par carte. Pour un gâteau sur mesure ou une création signature, il faut compter 72 heures et passer par le ${input.phone}.`,
+      answer: `La commande se fait en ligne, sur le site. On choisit une création du menu du jour, un créneau de retrait ou de livraison, puis on paie par Mobile Money ou par carte. Pour un grand entremets à la part, comptez 72 heures pour le Tropicana, l'Afrodisiak et le Banoffee, et passez par le ${input.phone}.`,
     },
     {
       question: "Quels moyens de paiement sont acceptés ?",
@@ -117,6 +101,10 @@ export function buildAboutFaq(input: {
       question: `${input.siteName} livre-t-il à Cotonou ?`,
       answer:
         "Oui. La livraison couvre Cotonou et ses environs, en trois tournées quotidiennes : 13h30-15h30, 15h30-17h30 et 17h30-19h30. Le retrait en boutique à Fidjrossè reste possible sur tous les créneaux d'ouverture.",
+    },
+    {
+      question: `${input.siteName} vend-il autre chose que des gâteaux ?`,
+      answer: `Oui. La maison propose des bouquets de roses fraîches, de ${fcfa(bouquets.min)} pour une rose à l'unité à ${fcfa(bouquets.max)} pour un bouquet de vingt roses, ainsi que des nounours en peluche de ${fcfa(nounours.min)} à ${fcfa(nounours.max)} selon la taille, de 20 à 140 cm. Un supplément chocolats peut être ajouté à tout bouquet.`,
     },
     {
       question: "Peut-on offrir un entremets à quelqu'un ?",

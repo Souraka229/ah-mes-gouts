@@ -67,10 +67,14 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = pathname.startsWith("/admin");
 
   if (adminHostConfigured) {
-    // Le back-office n'existe pas sur le domaine public : 404, pas de
-    // redirection — une redirection confirmerait son existence.
+    // Le domaine public sert la boutique, pas le back-office : on renvoie
+    // vers l'hôte admin plutôt qu'un 404. Le sous-domaine est de toute façon
+    // visible dans le DNS, et un 404 ici enfermerait l'équipe dehors le jour
+    // où quelqu'un arrive par un ancien favori.
     if (!isAdminHost && isAdminPath) {
-      return new NextResponse(null, { status: 404 });
+      const target = new URL(request.nextUrl.pathname, `https://${ADMIN_HOST}`);
+      target.search = request.nextUrl.search;
+      return NextResponse.redirect(target, 308);
     }
     // L'hôte admin ne sert que le back-office.
     if (isAdminHost && !isAdminPath && !pathname.startsWith("/api/admin")) {

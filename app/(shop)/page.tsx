@@ -6,13 +6,20 @@ import { getHomePageContent } from "@/lib/server/home-content";
 import { getProductImageUrl } from "@/lib/product-images";
 import { SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
 import { createPageMetadata } from "@/lib/seo/metadata";
-import { buildIceCreamShopSchema } from "@/lib/seo/schemas";
+import {
+  buildIceCreamShopSchema,
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+} from "@/lib/seo/schemas";
 
 /** Cache ISR — page d'accueil régénérée toutes les 2 min max. */
 export const revalidate = 120;
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Glaces artisanales Cotonou — Sur place, à emporter ou livraison",
+  // 30 caractères : avec le suffixe de marque, le titre complet tient sous les
+  // 60 caractères affichés par Google. Le précédent était coupé par un « … »
+  // en pleine phrase dans les résultats de recherche.
+  title: "Entremets artisanaux à Cotonou",
   description:
     `Commandez vos glaces artisanales en ligne à Cotonou. Sur place, à emporter ou livraison. Paiement MoMo et carte. ${SITE_NAME_WITH_CREDIT}.`,
   path: "/",
@@ -24,7 +31,13 @@ export default async function HomePage() {
 
   return (
     <>
-      <JsonLd data={buildIceCreamShopSchema()} />
+      <JsonLd
+        data={[
+          buildOrganizationSchema(),
+          buildWebSiteSchema(),
+          buildIceCreamShopSchema(),
+        ]}
+      />
       <LandingPage content={content} />
     </>
   );

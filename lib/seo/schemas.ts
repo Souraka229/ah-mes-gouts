@@ -25,6 +25,58 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
   };
 }
 
+/**
+ * Identité de la marque. Distincte de l'IceCreamShop, qui décrit le point de
+ * vente : c'est cette entité que les moteurs — classiques comme génératifs —
+ * rattachent au nom « Gift & ENTREMETS ».
+ */
+export function buildOrganizationSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#brand`,
+    name: SITE_NAME,
+    legalName: BUSINESS.legalName,
+    url: SITE_URL,
+    logo: getOgImageUrl(DEFAULT_OG_IMAGE),
+    telephone: BUSINESS.phone,
+    email: BUSINESS.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS.streetAddress,
+      addressLocality: BUSINESS.addressLocality,
+      addressRegion: BUSINESS.addressRegion,
+      addressCountry: BUSINESS.addressCountry,
+    },
+    areaServed: {
+      "@type": "City",
+      name: "Cotonou",
+      containedInPlace: { "@type": "Country", name: "Bénin" },
+    },
+  };
+}
+
+/** Site lui-même — permet la boîte de recherche dans les résultats Google. */
+export function buildWebSiteSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}/#website`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    inLanguage: "fr-BJ",
+    publisher: { "@id": `${SITE_URL}/#brand` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/catalogue?search={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+}
+
 export function buildIceCreamShopSchema() {
   return {
     "@context": "https://schema.org",

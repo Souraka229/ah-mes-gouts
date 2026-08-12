@@ -57,7 +57,10 @@ function Get-SupabaseToken {
   finally { [Cred.Store]::CredFree($ptr) }
 }
 
-$sql = if ($File) { Get-Content -Path $File -Raw } else { $Query }
+$sql = if ($File) {
+  [string]::Join("`n", (Get-Content -Path $File -Encoding UTF8))
+}
+else { [string]$Query }
 $token = Get-SupabaseToken
 
 $body = @{ query = $sql } | ConvertTo-Json -Depth 3 -Compress

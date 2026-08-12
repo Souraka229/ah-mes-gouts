@@ -1,0 +1,1 @@
+insert into _prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) values (gen_random_uuid()::text, '2eab3a1f830210324e6bdc4f01d673f1789bc3e9ddfd8128d58c4df53d23d558', now(), '20260812090000_payment_attempts_admin_sessions', null, null, now(), 1);

@@ -16,6 +16,7 @@
     "seed:db": "node scripts/seed-db.mjs",
     "db:inspect": "node scripts/db-inspect.mjs",
     "db:health": "node scripts/db-health-check.mjs",
+    "db:keep-alive": "node scripts/db-keep-alive.mjs",
     "deploy:check": "node scripts/deploy-check.mjs",
     "deploy:env": "node scripts/push-vercel-env.mjs",
     "sync:zones": "node scripts/sync-delivery-zones.mjs",

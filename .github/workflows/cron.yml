@@ -47,3 +47,17 @@ jobs:
           echo "HTTP $code"
           cat /tmp/out.json
           test "$code" = "200"
+
+      # Ping silencieux : maintient la base Supabase active (pas de mise en
+      # pause après inactivité). Non bloquant — un blip transitoire ne doit
+      # pas faire virer tout le workflow au rouge, les étapes ci-dessus
+      # signalent déjà une base injoignable.
+      - name: Ping base (anti-pause)
+        if: always()
+        run: |
+          code=$(curl -sS -o /tmp/ka.json -w "%{http_code}" --max-time 30 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/keep-alive" || echo "000")
+          echo "HTTP $code"
+          cat /tmp/ka.json 2>/dev/null || true
+          test "$code" = "200" || echo "::warning::keep-alive HTTP $code"

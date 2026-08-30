@@ -46,6 +46,9 @@ export function CatalogueView({
     [menuProductsProp, fullCatalog],
   );
 
+  /** Aucun entremets commandable aujourd'hui : le menu du jour n'est pas publié. */
+  const noMenuToday = menuCatalog.length === 0;
+
   const [activeTab, setActiveTab] = useState<CatalogueTab>("menu");
 
   const [minPrice, maxPrice] = useMemo(
@@ -246,10 +249,20 @@ export function CatalogueView({
                   Le menu du jour
                 </h2>
                 <p className="mt-2 font-body text-sm text-muted-foreground">
-                  {todayLabel} — stock limité, renouvelé chaque jour.
+                  {noMenuToday
+                    ? `${todayLabel} — la sélection d'aujourd'hui n'est pas encore en ligne.`
+                    : `${todayLabel} — stock limité, renouvelé chaque jour.`}
                 </p>
               </div>
-              {renderProductGrid(filteredMenu, true)}
+              {noMenuToday ? (
+                <MenuUnavailableNotice
+                  onBrowseAll={() => setActiveTab("all")}
+                  onBrowseNounours={() => setActiveTab("nounours")}
+                  onBrowseCarte={() => setActiveTab("carte")}
+                />
+              ) : (
+                renderProductGrid(filteredMenu, true)
+              )}
             </section>
           )}
 
@@ -304,6 +317,60 @@ export function CatalogueView({
             </section>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Aucun menu du jour publié — message soigné plutôt qu'une grille vide.
+ * On garde la cliente dans le catalogue en la renvoyant vers les sections
+ * toujours disponibles (nounours, carte, cadeaux, grands entremets).
+ */
+function MenuUnavailableNotice({
+  onBrowseAll,
+  onBrowseNounours,
+  onBrowseCarte,
+}: {
+  onBrowseAll: () => void;
+  onBrowseNounours: () => void;
+  onBrowseCarte: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[28px] border border-secondary/50 bg-gradient-to-b from-secondary/12 to-card px-6 py-14 text-center sm:px-12 sm:py-16">
+      <p className="font-body text-[11px] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
+        Le fournil se prépare
+      </p>
+      <h3 className="mx-auto mt-4 max-w-xl text-balance font-display text-2xl font-semibold text-primary sm:text-3xl">
+        Le menu du jour arrive bientôt
+      </h3>
+      <p className="mx-auto mt-4 max-w-md font-body text-sm leading-relaxed text-muted-foreground">
+        Nos entremets glacés sont montés le matin même et mis en ligne dès leur
+        sortie du laboratoire. La sélection du lendemain ouvre chaque soir à
+        partir de 20&nbsp;h. En attendant, le reste de la maison vous attend.
+      </p>
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={onBrowseAll}
+          className="cursor-pointer rounded-full bg-primary px-6 py-2.5 font-body text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+        >
+          Voir toute la carte
+        </button>
+        <button
+          type="button"
+          onClick={onBrowseNounours}
+          className="cursor-pointer rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-primary transition-colors hover:border-primary/40"
+        >
+          Nounours
+        </button>
+        <button
+          type="button"
+          onClick={onBrowseCarte}
+          className="cursor-pointer rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-primary transition-colors hover:border-primary/40"
+        >
+          Carte &amp; cadeaux
+        </button>
       </div>
     </div>
   );

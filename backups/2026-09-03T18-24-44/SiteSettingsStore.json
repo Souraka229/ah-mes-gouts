@@ -1,0 +1,38 @@
+[
+  {
+    "id": "default",
+    "data": {
+      "logoUrl": "/brand/logo-amg.png",
+      "siteName": "Gift & ENTREMETS By Ah Mes Goûts",
+      "updatedAt": "2026-07-10T09:10:33.490Z",
+      "faviconUrl": "/icon.png",
+      "brandColors": {
+        "bg": "#FAF7F5",
+        "accent": "#C9A96E",
+        "primary": "#3B1F4D",
+        "secondary": "#F3C9CE"
+      },
+      "notificationTemplates": [
+        {
+          "id": "order-confirmed",
+          "key": "order_confirmed",
+          "body": "Bonjour {{prenom}}, votre commande {{numero_commande}} est confirmée. Merci !",
+          "label": "Commande confirmée"
+        },
+        {
+          "id": "order-ready",
+          "key": "order_ready",
+          "body": "Bonjour {{prenom}}, votre commande {{numero_commande}} est prête pour {{mode_livraison}}.",
+          "label": "Commande prête"
+        },
+        {
+          "id": "order-delivered",
+          "key": "order_delivered",
+          "body": "Bonjour {{prenom}}, bonne dégustation ! Votre commande {{numero_commande}} a été livrée.",
+          "label": "Commande livrée"
+        }
+      ]
+    },
+    "updatedAt": "2026-07-10T09:10:33.491Z"
+  }
+]

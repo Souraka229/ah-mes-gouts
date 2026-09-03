@@ -1,0 +1,191 @@
+[
+  {
+    "id": "cmrouhxyn0000jr04baknw753",
+    "deviceKey": "4820631a-5518-4c5e-a9e5-4757e143b9f9",
+    "customerId": null,
+    "lastSeenAt": "2026-07-26T17:07:13.623Z",
+    "createdAt": "2026-07-17T11:19:06.986Z"
+  },
+  {
+    "id": "cmsvz06410000jl04dcmxgzek",
+    "deviceKey": "9db570cb-4140-45c3-b40f-7c45601de844",
+    "customerId": null,
+    "lastSeenAt": "2026-08-16T15:39:21.458Z",
+    "createdAt": "2026-08-16T15:39:21.458Z"
+  },
+  {
+    "id": "cmrotqk630000jp04wtpu1rph",
+    "deviceKey": "8d1d29e8-4fbf-4a45-9324-26421db654e1",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "lastSeenAt": "2026-07-26T14:46:27.855Z",
+    "createdAt": "2026-07-17T10:57:49.398Z"
+  },
+  {
+    "id": "cms1xgaj20000l404jqyy32yp",
+    "deviceKey": "e6500530-d893-4c56-9e97-f50e625998d8",
+    "customerId": null,
+    "lastSeenAt": "2026-07-26T15:02:49.166Z",
+    "createdAt": "2026-07-26T15:02:49.166Z"
+  },
+  {
+    "id": "cmsnajzj10000l804je1p2mye",
+    "deviceKey": "850b9f89-80de-4577-a48d-f526e618c53a",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "lastSeenAt": "2026-08-10T14:56:21.697Z",
+    "createdAt": "2026-08-10T13:52:46.238Z"
+  },
+  {
+    "id": "cmsn6jztu0000l7047a71y058",
+    "deviceKey": "1c2c8745-df37-4e88-8dd3-61594bd1ed9e",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "lastSeenAt": "2026-08-10T12:03:08.931Z",
+    "createdAt": "2026-08-10T12:00:48.163Z"
+  },
+  {
+    "id": "cmrlzeceg0000l9041t147xtd",
+    "deviceKey": "43b321ae-64fc-4134-a1ca-1cc3dd9c10b5",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "lastSeenAt": "2026-07-28T05:23:30.689Z",
+    "createdAt": "2026-07-15T11:12:58.692Z"
+  },
+  {
+    "id": "cmsn80cm60006js04504joi1g",
+    "deviceKey": "9f4e8590-6e75-49ca-85ad-4f08309985d8",
+    "customerId": null,
+    "lastSeenAt": "2026-08-10T12:41:30.846Z",
+    "createdAt": "2026-08-10T12:41:30.846Z"
+  },
+  {
+    "id": "cms1ydezb0003l504pt0kymhk",
+    "deviceKey": "aeaf9bf4-db91-472b-aa66-5a324a6fb672",
+    "customerId": null,
+    "lastSeenAt": "2026-07-26T15:28:34.583Z",
+    "createdAt": "2026-07-26T15:28:34.583Z"
+  },
+  {
+    "id": "cmrp7zb5i0009i704kfnapf16",
+    "deviceKey": "381c4413-0edb-45aa-bbd9-4c354a69209f",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "lastSeenAt": "2026-07-17T18:05:29.561Z",
+    "createdAt": "2026-07-17T17:36:32.241Z"
+  },
+  {
+    "id": "cmrp7vpat0000i704vj5tfu7b",
+    "deviceKey": "2881b6a1-5202-4ccd-a33a-75e858769bc1",
+    "customerId": null,
+    "lastSeenAt": "2026-07-17T17:33:43.951Z",
+    "createdAt": "2026-07-17T17:33:43.951Z"
+  },
+  {
+    "id": "cmrp7y78y0006i704qyl5jvxh",
+    "deviceKey": "5f58257e-473b-4105-953f-8f5ec971d11e",
+    "customerId": null,
+    "lastSeenAt": "2026-07-17T17:35:40.526Z",
+    "createdAt": "2026-07-17T17:35:40.526Z"
+  },
+  {
+    "id": "cmrp7yhsw0006ky04jw5nltgl",
+    "deviceKey": "d5d0eab3-406f-458f-aacc-7054bd309f6b",
+    "customerId": null,
+    "lastSeenAt": "2026-07-17T17:35:54.273Z",
+    "createdAt": "2026-07-17T17:35:54.273Z"
+  },
+  {
+    "id": "cmsnktdom0003jo04yve5jg2i",
+    "deviceKey": "8be76f20-279b-4d9b-8a54-82fb28e99067",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "lastSeenAt": "2026-08-11T16:48:38.004Z",
+    "createdAt": "2026-08-10T18:40:00.646Z"
+  },
+  {
+    "id": "cmt7lrjmd0000jt042nmqkw0m",
+    "deviceKey": "81676b0d-fa17-4782-9971-77e021d1cbc3",
+    "customerId": null,
+    "lastSeenAt": "2026-08-24T23:39:36.264Z",
+    "createdAt": "2026-08-24T19:01:58.166Z"
+  },
+  {
+    "id": "cmsq3d9tk0000jp047z3u8rhb",
+    "deviceKey": "57471492-7ee4-4f92-bc39-d4e8362e3808",
+    "customerId": null,
+    "lastSeenAt": "2026-08-30T14:33:59.109Z",
+    "createdAt": "2026-08-12T12:54:54.200Z"
+  },
+  {
+    "id": "cms6h9s6h0000ky04ty6s0n4b",
+    "deviceKey": "2b56bd05-d09e-4024-9fd3-871b8b71663c",
+    "customerId": null,
+    "lastSeenAt": "2026-07-29T19:35:55.134Z",
+    "createdAt": "2026-07-29T19:28:42.402Z"
+  },
+  {
+    "id": "cmrp927130011jj04d8djdb2d",
+    "deviceKey": "90f9459c-4a94-4489-8a69-7c36083d0dfb",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "lastSeenAt": "2026-07-17T18:09:06.945Z",
+    "createdAt": "2026-07-17T18:06:46.475Z"
+  },
+  {
+    "id": "cmrt96m9n0000txcc5w7l8s9d",
+    "deviceKey": "7217c293-6583-456a-89bb-c00ebbe21290",
+    "customerId": null,
+    "lastSeenAt": "2026-07-20T13:27:17.575Z",
+    "createdAt": "2026-07-20T13:21:17.496Z"
+  },
+  {
+    "id": "cms1x677u0000jl04xc92idag",
+    "deviceKey": "bdd0d0f0-e87f-4856-903e-3915a2a29423",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "lastSeenAt": "2026-08-11T19:54:59.620Z",
+    "createdAt": "2026-07-26T14:54:58.315Z"
+  },
+  {
+    "id": "cmsq2exot0000txygf4xnuv5w",
+    "deviceKey": "99390949-b5e8-4bf3-ad3b-ee3436815997",
+    "customerId": null,
+    "lastSeenAt": "2026-08-12T12:32:21.382Z",
+    "createdAt": "2026-08-12T12:28:12.172Z"
+  },
+  {
+    "id": "cmsnk0jgh0000jn04ds3jmmsi",
+    "deviceKey": "654c60f5-5d88-4738-bb84-3256fef12098",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "lastSeenAt": "2026-08-10T18:18:26.857Z",
+    "createdAt": "2026-08-10T18:17:35.105Z"
+  },
+  {
+    "id": "cmtivkqod0000ld04wkvj5cqz",
+    "deviceKey": "3cb2c5d7-c92c-4b85-af51-86eff4a43f1a",
+    "customerId": null,
+    "lastSeenAt": "2026-09-01T16:23:21.033Z",
+    "createdAt": "2026-09-01T16:22:04.813Z"
+  },
+  {
+    "id": "cmshpgugv0000kw04wxl3tnha",
+    "deviceKey": "b9d66ef6-88bb-4cef-b031-6afdbc40ae12",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "lastSeenAt": "2026-08-06T16:06:18.744Z",
+    "createdAt": "2026-08-06T16:03:36.895Z"
+  },
+  {
+    "id": "cms47oh5u0006jl04r6rhrw45",
+    "deviceKey": "549bb673-13a6-41be-b637-3306411d7acf",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "lastSeenAt": "2026-08-10T14:41:51.040Z",
+    "createdAt": "2026-07-28T05:24:39.522Z"
+  },
+  {
+    "id": "cmsnchyqu0000ic04fqdsrnzm",
+    "deviceKey": "b8079b8a-4bf0-4ab3-9b5a-f2747f1d679f",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "lastSeenAt": "2026-08-10T18:35:52.051Z",
+    "createdAt": "2026-08-10T14:47:11.142Z"
+  },
+  {
+    "id": "cmshplqde000gkw04bmgoyb9z",
+    "deviceKey": "e56c3aed-2588-4449-9a68-bd1d978ef909",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "lastSeenAt": "2026-08-10T19:47:00.155Z",
+    "createdAt": "2026-08-06T16:07:24.867Z"
+  }
+]

@@ -1,0 +1,1376 @@
+[
+  {
+    "id": "f857537e-1cba-4441-b0d0-9c0479401f40",
+    "createdAt": "2026-07-02T13:37:57.346Z",
+    "adminName": "Fondateur",
+    "source": "ai_assistant",
+    "action": "create_product",
+    "summary": "Produit créé : Riz au glace",
+    "details": {
+      "payload": {
+        "name": "Riz au glace",
+        "price": 2000,
+        "currency": "FCFA"
+      }
+    }
+  },
+  {
+    "id": "f6e65048-29ce-4d64-9eb9-2d27040c6872",
+    "createdAt": "2026-07-02T13:39:39.857Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "reseed_demo_orders",
+    "summary": "6 commandes + 2 menus rechargés",
+    "details": null
+  },
+  {
+    "id": "abc3b6bf-69fe-4a96-9007-380a8345cb0f",
+    "createdAt": "2026-07-02T13:40:04.022Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "reseed_demo_orders",
+    "summary": "6 commandes + 2 menus rechargés",
+    "details": null
+  },
+  {
+    "id": "c6aa6ee5-3b48-4d14-afaa-0043a0b39775",
+    "createdAt": "2026-07-04T07:07:15.489Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (03/07/2026)",
+    "details": {
+      "menuId": "3657499c-1f6a-4444-83a9-f7d291cd12f2",
+      "productCount": 8
+    }
+  },
+  {
+    "id": "6364cfcb-f91d-45bd-82bc-d7ab7a9736d1",
+    "createdAt": "2026-07-10T09:10:33.917Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "update_site_settings",
+    "summary": "Mise à jour des paramètres globaux",
+    "details": null
+  },
+  {
+    "id": "21b9b6d6-4986-4b83-b70b-76194f0762db",
+    "createdAt": "2026-07-13T08:15:47.082Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (12/07/2026)",
+    "details": {
+      "menuId": "3f071a04-297f-4275-a6ba-7654451eac02",
+      "productCount": 3
+    }
+  },
+  {
+    "id": "3b506202-5552-4126-98de-274541529c50",
+    "createdAt": "2026-07-13T16:38:15.083Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (12/07/2026)",
+    "details": {
+      "menuId": "3f071a04-297f-4275-a6ba-7654451eac02",
+      "productCount": 3
+    }
+  },
+  {
+    "id": "fdeaf78a-2b5e-40cb-9f47-a66ecb080f0b",
+    "createdAt": "2026-07-15T11:19:33.882Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_import",
+    "summary": "Import gift : 18 créé(s), 4 ignoré(s)",
+    "details": null
+  },
+  {
+    "id": "c1b269e5-f33c-41fe-8ab4-a3ec53b8a67f",
+    "createdAt": "2026-07-15T11:23:04.247Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Vanilla Caramel → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "1"
+    }
+  },
+  {
+    "id": "557f8fcf-d74b-4f12-b2dd-0d3f3b8702e2",
+    "createdAt": "2026-07-15T11:23:08.594Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Vanilla Caramel → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "1"
+    }
+  },
+  {
+    "id": "78f3ea3b-40b4-462f-b310-297d81af94aa",
+    "createdAt": "2026-07-15T11:28:02.126Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit RESTAFY (5000 F)",
+    "details": {
+      "price": 5000,
+      "productId": "a2d09d2d-cbfa-486b-9def-e1633520a265"
+    }
+  },
+  {
+    "id": "1341ea2f-4db1-4494-ac34-8f5824e010c8",
+    "createdAt": "2026-07-17T11:14:46.381Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OPI552 → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-OPI552"
+    }
+  },
+  {
+    "id": "74c484f2-34d9-4433-9ddb-f21be7e29bb8",
+    "createdAt": "2026-07-17T11:14:47.528Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OPI552 → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-OPI552"
+    }
+  },
+  {
+    "id": "820975eb-b3a7-4d41-99b7-a00b10b36270",
+    "createdAt": "2026-07-17T11:14:59.198Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OPI552 → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-OPI552"
+    }
+  },
+  {
+    "id": "e435f2b2-b678-4779-9fca-3db24e023ca9",
+    "createdAt": "2026-07-17T11:15:00.259Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OPI552 → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-OPI552"
+    }
+  },
+  {
+    "id": "1ef27d9f-a7e3-44e6-9bbe-2ea579f0efc8",
+    "createdAt": "2026-07-17T11:22:04.711Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OUKMWG → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-OUKMWG"
+    }
+  },
+  {
+    "id": "c5cba41e-9161-4ee2-b0e8-6727dd70d6dd",
+    "createdAt": "2026-07-17T11:22:17.852Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OUKMWG → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-OUKMWG"
+    }
+  },
+  {
+    "id": "431ff243-59e4-4a14-9a19-6b287b24d328",
+    "createdAt": "2026-07-17T11:22:18.602Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OUKMWG → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-OUKMWG"
+    }
+  },
+  {
+    "id": "8addbdf1-d1b3-4942-9174-0204ca34cb9c",
+    "createdAt": "2026-07-17T11:22:37.096Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OUKMWG → en_livraison",
+    "details": {
+      "status": "en_livraison",
+      "orderId": "AMG-OUKMWG"
+    }
+  },
+  {
+    "id": "240f2371-d889-4d29-85f9-6c7ab103fbbb",
+    "createdAt": "2026-07-17T12:08:21.706Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-OUKMWG → livree",
+    "details": {
+      "status": "livree",
+      "orderId": "AMG-OUKMWG"
+    }
+  },
+  {
+    "id": "757854d4-e994-4f00-a0b2-3d0fc07c58a2",
+    "createdAt": "2026-07-17T18:08:48.398Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P94CQM → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-P94CQM"
+    }
+  },
+  {
+    "id": "ae191bfe-e336-46ee-b9d0-fb9e2578e592",
+    "createdAt": "2026-07-17T18:09:23.072Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P94CQM → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-P94CQM"
+    }
+  },
+  {
+    "id": "102e9d54-460c-42eb-858f-12163c9a94f3",
+    "createdAt": "2026-07-17T18:10:10.455Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P94CQM → en_livraison",
+    "details": {
+      "status": "en_livraison",
+      "orderId": "AMG-P94CQM"
+    }
+  },
+  {
+    "id": "4641f0c7-dd1c-447c-8a6d-c79603f0659a",
+    "createdAt": "2026-07-18T07:08:40.879Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P4KLG7 → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-P4KLG7"
+    }
+  },
+  {
+    "id": "07f86452-4411-4a6e-be60-4bbaf9c270a2",
+    "createdAt": "2026-07-18T07:14:05.396Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P4KLG7 → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-P4KLG7"
+    }
+  },
+  {
+    "id": "512f87a6-d9e4-44ea-8a68-26407ddc4080",
+    "createdAt": "2026-07-26T15:30:52.301Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-1YF125 → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-1YF125"
+    }
+  },
+  {
+    "id": "e5e1e74f-a0bc-4a5f-947c-7f40f91ebe0b",
+    "createdAt": "2026-07-26T15:31:06.662Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-1YF125 → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-1YF125"
+    }
+  },
+  {
+    "id": "d6753e4f-8982-408d-b5c3-27aa36995e8a",
+    "createdAt": "2026-07-26T15:31:14.067Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-1YF125 → livree",
+    "details": {
+      "status": "livree",
+      "orderId": "AMG-1YF125"
+    }
+  },
+  {
+    "id": "736ef6e4-7973-4c51-bb49-82b5aed2fe21",
+    "createdAt": "2026-07-26T15:34:49.716Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-1YKH3A → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-1YKH3A"
+    }
+  },
+  {
+    "id": "6494ce71-9ad7-4c69-bbe5-99159fe52a51",
+    "createdAt": "2026-07-26T15:34:58.305Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-1YKH3A → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-1YKH3A"
+    }
+  },
+  {
+    "id": "a8d1b33b-7a91-4a70-a4b7-3bd4af5bba1f",
+    "createdAt": "2026-07-26T17:01:26.641Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "started",
+    "summary": "TEST démarre la commande AMG-1YKH3A",
+    "details": {
+      "orderId": "AMG-1YKH3A",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "616804d6-3e1f-46f7-854f-5d518029540e",
+    "createdAt": "2026-07-26T17:01:34.019Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "delivered",
+    "summary": "TEST a livré la commande AMG-1YKH3A",
+    "details": {
+      "orderId": "AMG-1YKH3A",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "37e46389-fdc6-47da-b7ac-9e94cb0dced7",
+    "createdAt": "2026-07-26T17:08:16.113Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-21WP6Y → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-21WP6Y"
+    }
+  },
+  {
+    "id": "e050ebd5-ec67-436f-8948-7ecdb73107bd",
+    "createdAt": "2026-07-26T17:08:19.412Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-20GTXX → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-20GTXX"
+    }
+  },
+  {
+    "id": "46bb51a8-dcbd-4586-be56-d54bf7b7eb9d",
+    "createdAt": "2026-07-26T17:08:47.888Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-20GTXX → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-20GTXX"
+    }
+  },
+  {
+    "id": "11f04a88-9356-4326-83f0-6778cb48a530",
+    "createdAt": "2026-07-26T17:08:52.486Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-21WP6Y → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-21WP6Y"
+    }
+  },
+  {
+    "id": "efd4a26e-749d-40fa-b3e2-919e0e5972da",
+    "createdAt": "2026-07-26T17:09:06.413Z",
+    "adminName": "Fondateur",
+    "source": "driver",
+    "action": "assigned",
+    "summary": "Kossi Mensah affecté à la commande AMG-21WP6Y",
+    "details": {
+      "orderId": "AMG-21WP6Y",
+      "driverId": "cd1ba0f2-f3c6-4969-898b-ddc17be852f1"
+    }
+  },
+  {
+    "id": "d9276932-8a9d-4e8d-98bb-2223306f9443",
+    "createdAt": "2026-07-26T17:09:14.114Z",
+    "adminName": "Fondateur",
+    "source": "driver",
+    "action": "assigned",
+    "summary": "Afi Dossou affecté à la commande AMG-20GTXX",
+    "details": {
+      "orderId": "AMG-20GTXX",
+      "driverId": "ddc1339d-a7f4-4c42-8bdc-56aab8f17a64"
+    }
+  },
+  {
+    "id": "d57f2801-c4e5-46c4-bfa2-a631bc6f83db",
+    "createdAt": "2026-07-26T17:09:15.894Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-20GTXX → en_livraison",
+    "details": {
+      "status": "en_livraison",
+      "orderId": "AMG-20GTXX"
+    }
+  },
+  {
+    "id": "3de4aff3-82a4-4beb-a64b-aa6e225003dd",
+    "createdAt": "2026-07-27T20:09:28.508Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (26/07/2026)",
+    "details": {
+      "menuId": "24080f18-5ea5-4b19-815a-6ad2e134f593",
+      "productCount": 8
+    }
+  },
+  {
+    "id": "5c759b81-0345-4360-8a76-3af6e5404f72",
+    "createdAt": "2026-07-28T05:26:37.924Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-47QBYE → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-47QBYE"
+    }
+  },
+  {
+    "id": "ffc02220-38e0-4b83-99ba-012cf096fe29",
+    "createdAt": "2026-07-28T05:26:45.653Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-47QBYE → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-47QBYE"
+    }
+  },
+  {
+    "id": "75ab7d84-57a9-47ec-8275-5c4fe80d7f5e",
+    "createdAt": "2026-07-28T05:27:38.781Z",
+    "adminName": "Fondateur",
+    "source": "driver",
+    "action": "assigned",
+    "summary": "TEST affecté à la commande AMG-47QBYE",
+    "details": {
+      "orderId": "AMG-47QBYE",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "9abf7d37-1d2a-4842-8d3f-4b59d8be88d0",
+    "createdAt": "2026-07-28T05:27:56.737Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "started",
+    "summary": "TEST démarre la commande AMG-47QBYE",
+    "details": {
+      "orderId": "AMG-47QBYE",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "1bc1d4e1-56b6-4ee6-bf48-82233d7a538f",
+    "createdAt": "2026-07-28T05:28:03.565Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "unreachable",
+    "summary": "TEST signale le client injoignable pour AMG-47QBYE",
+    "details": {
+      "orderId": "AMG-47QBYE",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "a4b0d368-34d7-4229-bf79-83ea98eb00c5",
+    "createdAt": "2026-07-28T05:28:55.911Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "delivered",
+    "summary": "TEST a livré la commande AMG-47QBYE",
+    "details": {
+      "orderId": "AMG-47QBYE",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "cceda18d-d0aa-4372-90a4-c73e49775977",
+    "createdAt": "2026-07-28T20:06:11.594Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (28/07/2026)",
+    "details": {
+      "menuId": "240f71e8-fb04-4ce5-a308-cdf91dfc2dcc",
+      "productCount": 5
+    }
+  },
+  {
+    "id": "aa7d193d-6727-429e-84b5-89670e1997e1",
+    "createdAt": "2026-07-30T11:15:11.712Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-7F2B4M → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-7F2B4M"
+    }
+  },
+  {
+    "id": "8c811721-0908-4e62-a29d-fff2ed337d36",
+    "createdAt": "2026-08-06T16:06:53.386Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-HPJSXA → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-HPJSXA"
+    }
+  },
+  {
+    "id": "ea00f504-e1ab-4aef-aee8-a181021a1418",
+    "createdAt": "2026-08-06T16:11:48.519Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-HPQI7N → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-HPQI7N"
+    }
+  },
+  {
+    "id": "f45ead8c-e71d-4695-9aa7-5e4058c6fc0a",
+    "createdAt": "2026-08-06T16:14:40.089Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-HPJSXA → prete",
+    "details": {
+      "status": "prete",
+      "orderId": "AMG-HPJSXA"
+    }
+  },
+  {
+    "id": "7f417f7e-ec9f-4c7d-b34d-f2c8f9dafee9",
+    "createdAt": "2026-08-06T16:14:57.409Z",
+    "adminName": "Fondateur",
+    "source": "driver",
+    "action": "assigned",
+    "summary": "TEST affecté à la commande AMG-HPJSXA",
+    "details": {
+      "orderId": "AMG-HPJSXA",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "9d262bd3-67ae-4221-8d2b-21a2334f5138",
+    "createdAt": "2026-08-06T16:15:57.743Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "started",
+    "summary": "TEST démarre la commande AMG-HPJSXA",
+    "details": {
+      "orderId": "AMG-HPJSXA",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "2e6f630f-e9bd-48e9-8ae3-9575778103be",
+    "createdAt": "2026-08-06T16:16:17.984Z",
+    "adminName": "TEST",
+    "source": "driver",
+    "action": "delivered",
+    "summary": "TEST a livré la commande AMG-HPJSXA",
+    "details": {
+      "orderId": "AMG-HPJSXA",
+      "driverId": "402d0ca9-c893-4bba-a39e-f8b2f274e86f"
+    }
+  },
+  {
+    "id": "6a2e7d85-df87-45d5-b394-b840bdb91e35",
+    "createdAt": "2026-08-10T12:06:03.197Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-N6N20D → annulee",
+    "details": {
+      "status": "annulee",
+      "orderId": "AMG-N6N20D"
+    }
+  },
+  {
+    "id": "a65dfa4e-5c2d-418a-91c3-776fcd58ea31",
+    "createdAt": "2026-08-10T13:08:31.893Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (10/08/2026)",
+    "details": {
+      "menuId": "4098b3e6-dd32-4d51-8465-c9a5f27d156a",
+      "productCount": 5
+    }
+  },
+  {
+    "id": "8982d933-1f0e-4a32-b030-25f0685024ba",
+    "createdAt": "2026-08-10T13:08:32.175Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (10/08/2026)",
+    "details": {
+      "menuId": "4098b3e6-dd32-4d51-8465-c9a5f27d156a",
+      "productCount": 5
+    }
+  },
+  {
+    "id": "3958b95d-d657-4673-aacc-13333dd7d060",
+    "createdAt": "2026-08-10T14:15:21.551Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "price_update",
+    "summary": "Modification produit Caramel Cappuccino",
+    "details": {
+      "patch": {
+        "price": 5000
+      },
+      "productId": "4"
+    }
+  },
+  {
+    "id": "c044a56e-f6bb-4189-989d-35bd06fedeb7",
+    "createdAt": "2026-08-10T14:15:23.532Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel Cappuccino → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "4"
+    }
+  },
+  {
+    "id": "27e7aff0-6328-4324-9b8e-6d18732b6d71",
+    "createdAt": "2026-08-10T14:15:27.019Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel Cappuccino → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "4"
+    }
+  },
+  {
+    "id": "11911deb-1bb9-4869-9ea9-1a9042f9c766",
+    "createdAt": "2026-08-10T15:07:03.487Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit test (5000 F)",
+    "details": {
+      "price": 5000,
+      "productId": "ef140f41-d709-4d21-ae63-8bb9fc33b8a8"
+    }
+  },
+  {
+    "id": "f4f63b08-ec8d-4d8a-9b94-fba88e6eea0b",
+    "createdAt": "2026-08-10T15:08:32.962Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit Kinder Buenos baileys (3000 F)",
+    "details": {
+      "price": 3000,
+      "productId": "e04aadec-c8e8-4b2d-9e88-64ef7f150220"
+    }
+  },
+  {
+    "id": "da69aa21-f982-4fc5-8171-21d00a3b1ee2",
+    "createdAt": "2026-08-10T15:10:03.313Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit Chocolat  vanille (3000 F)",
+    "details": {
+      "price": 3000,
+      "productId": "629fa721-9016-4a76-8a35-e4f23852d194"
+    }
+  },
+  {
+    "id": "f336eac1-dbb2-41e3-aa1f-e246fa42228c",
+    "createdAt": "2026-08-10T15:10:08.883Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "data_export",
+    "summary": "Export données admin (/api/admin/data)",
+    "details": {
+      "ordersCount": 17,
+      "catalogCount": 36
+    }
+  },
+  {
+    "id": "79f89976-8691-40e1-9828-fb22a891f131",
+    "createdAt": "2026-08-10T15:10:58.735Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "price_update",
+    "summary": "Modification produit Caramel Cappuccino",
+    "details": {
+      "patch": {
+        "price": 5000
+      },
+      "productId": "4"
+    }
+  },
+  {
+    "id": "c4243dbb-b1f0-4d5c-a77c-3ad0085a4588",
+    "createdAt": "2026-08-10T15:11:02.472Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel Cappuccino → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "4"
+    }
+  },
+  {
+    "id": "0bec23b8-7d41-4344-818b-ea57c614ff1f",
+    "createdAt": "2026-08-10T15:13:01.975Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit Caramel cappucino baileys (3000 F)",
+    "details": {
+      "price": 3000,
+      "productId": "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f"
+    }
+  },
+  {
+    "id": "e4ee85df-3ad7-47b6-be35-734db56691a3",
+    "createdAt": "2026-08-10T15:13:04.345Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Oreos Caramel Baileys → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "8"
+    }
+  },
+  {
+    "id": "3a85b125-b559-4a01-b0ce-98fe68e24f70",
+    "createdAt": "2026-08-10T15:11:18.829Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel Cappuccino → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "4"
+    }
+  },
+  {
+    "id": "ec918920-f84d-442c-b5b7-6712e4bd7c56",
+    "createdAt": "2026-08-10T15:13:06.700Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité test → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "ef140f41-d709-4d21-ae63-8bb9fc33b8a8"
+    }
+  },
+  {
+    "id": "2c89d85a-1c3b-4758-bdca-4ba31f40a7f3",
+    "createdAt": "2026-08-10T15:16:16.927Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Chocolat  vanille → 35",
+    "details": {
+      "stock": 35,
+      "productId": "629fa721-9016-4a76-8a35-e4f23852d194"
+    }
+  },
+  {
+    "id": "98c619b9-6dae-4c0e-9368-48be3ccb871f",
+    "createdAt": "2026-08-10T15:16:19.174Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Kinder Buenos baileys → 35",
+    "details": {
+      "stock": 35,
+      "productId": "e04aadec-c8e8-4b2d-9e88-64ef7f150220"
+    }
+  },
+  {
+    "id": "60e57962-2098-4f2e-a3f5-48dda2111a11",
+    "createdAt": "2026-08-10T15:16:20.349Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Chocolat Cappuccino → 35",
+    "details": {
+      "stock": 35,
+      "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79"
+    }
+  },
+  {
+    "id": "644ff5b6-c815-4c26-b8dd-ed1f0069c679",
+    "createdAt": "2026-08-10T15:16:21.527Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Caramel cappucino baileys → 35",
+    "details": {
+      "stock": 35,
+      "productId": "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f"
+    }
+  },
+  {
+    "id": "11b480a2-ef50-4f65-897d-598b4b87687b",
+    "createdAt": "2026-08-10T18:38:32.119Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Chocolat Cappuccino → 35",
+    "details": {
+      "stock": 35,
+      "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79"
+    }
+  },
+  {
+    "id": "0e287db4-041c-4551-8b39-566bdf5cb5ca",
+    "createdAt": "2026-08-10T18:39:51.122Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Chocolat Cappuccino → 35",
+    "details": {
+      "stock": 35,
+      "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79"
+    }
+  },
+  {
+    "id": "c04b9b4a-d6fb-439c-a5a7-524ab9a4b24c",
+    "createdAt": "2026-08-10T18:40:36.218Z",
+    "adminName": "Fondateur",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit TEST (100 F)",
+    "details": {
+      "price": 100,
+      "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe"
+    }
+  },
+  {
+    "id": "e1e0d0fd-3b76-4f4b-aafd-318d2ac87c15",
+    "createdAt": "2026-08-10T19:44:22.308Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (10/08/2026)",
+    "details": {
+      "menuId": "573db739-2d25-4ced-9986-4b7261611e5a",
+      "productCount": 4
+    }
+  },
+  {
+    "id": "6730e679-0476-465a-a84b-8e6a911ba6ef",
+    "createdAt": "2026-08-12T19:45:48.928Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "order_create",
+    "summary": "Commande manuelle créée AMG-3A42E4AB",
+    "details": {
+      "orderId": "AMG-3A42E4AB"
+    }
+  },
+  {
+    "id": "bf280569-00bb-414d-901f-f86fe7bfe63e",
+    "createdAt": "2026-08-12T21:01:15.617Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P2OFOT → preparation",
+    "details": {
+      "status": "preparation",
+      "orderId": "AMG-P2OFOT"
+    }
+  },
+  {
+    "id": "5b207fb4-d3fb-4bff-8f1e-903e36301274",
+    "createdAt": "2026-08-12T21:01:25.284Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "order_status",
+    "summary": "Statut AMG-P2OFOT → annulee",
+    "details": {
+      "status": "annulee",
+      "orderId": "AMG-P2OFOT"
+    }
+  },
+  {
+    "id": "c9da30d6-f6cf-46c6-baa1-bc9891e6974a",
+    "createdAt": "2026-08-12T21:02:39.479Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Oreos Caramel Baileys → 4",
+    "details": {
+      "stock": 4,
+      "productId": "8"
+    }
+  },
+  {
+    "id": "d0d06c6d-7cdf-4e17-abc2-e1d1b09501be",
+    "createdAt": "2026-08-12T21:06:07.150Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (10/08/2026)",
+    "details": {
+      "menuId": "1b2f9b7c-698a-4885-8778-5316b603bdde",
+      "productCount": 6
+    }
+  },
+  {
+    "id": "8716c55e-503c-4184-ac7a-b87410e4219c",
+    "createdAt": "2026-08-12T21:06:11.317Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (11/08/2026)",
+    "details": {
+      "menuId": "019c2ae2-6253-4fcc-8495-99ff525a4877",
+      "productCount": 2
+    }
+  },
+  {
+    "id": "c36847e9-6c1b-4e8b-9952-4442535dd12e",
+    "createdAt": "2026-08-12T21:06:11.627Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (10/08/2026)",
+    "details": {
+      "menuId": "1b2f9b7c-698a-4885-8778-5316b603bdde",
+      "productCount": 6
+    }
+  },
+  {
+    "id": "bf5274fb-534e-473f-a2d1-8c3daa2b946d",
+    "createdAt": "2026-08-12T21:06:13.788Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (11/08/2026)",
+    "details": {
+      "menuId": "019c2ae2-6253-4fcc-8495-99ff525a4877",
+      "productCount": 2
+    }
+  },
+  {
+    "id": "288eaffb-4c17-4ab1-a424-34ee4528df1a",
+    "createdAt": "2026-08-13T04:07:10.036Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (12/08/2026)",
+    "details": {
+      "menuId": "63ca0c7e-6672-41ae-9945-6bc88c577577",
+      "productCount": 2
+    }
+  },
+  {
+    "id": "7aae1b36-5094-4916-83d8-b90f8c6102a0",
+    "createdAt": "2026-08-24T18:55:24.597Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit Chocolat Cappucino (3000 F)",
+    "details": {
+      "price": 3000,
+      "productId": "a9fd29a6-5240-4169-9020-0d0a11260fef"
+    }
+  },
+  {
+    "id": "0c020123-bbb5-4c29-91a6-df49138fcf67",
+    "createdAt": "2026-08-24T18:57:19.221Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_create",
+    "summary": "Création produit Caramel cappucino Baileys (3000 F)",
+    "details": {
+      "price": 3000,
+      "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733"
+    }
+  },
+  {
+    "id": "e17e65a3-8dd6-44c5-adca-b673053edc91",
+    "createdAt": "2026-08-24T18:59:21.837Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Caramel cappucino Baileys → 35",
+    "details": {
+      "stock": 35,
+      "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733"
+    }
+  },
+  {
+    "id": "db6db6ec-c330-4177-84a8-6011229306c3",
+    "createdAt": "2026-08-24T18:59:24.083Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Chocolat Cappucino → 35",
+    "details": {
+      "stock": 35,
+      "productId": "a9fd29a6-5240-4169-9020-0d0a11260fef"
+    }
+  },
+  {
+    "id": "a3afde50-d05c-4152-875a-1f4a2cb97f03",
+    "createdAt": "2026-08-24T18:59:25.900Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Mangue framboise → 35",
+    "details": {
+      "stock": 35,
+      "productId": "223b50d4-169b-4567-be62-04445ccc9306"
+    }
+  },
+  {
+    "id": "ae878ae6-1e0a-4e27-9d59-0d8209f98c1f",
+    "createdAt": "2026-08-24T18:59:27.803Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Menthe framboise → 35",
+    "details": {
+      "stock": 35,
+      "productId": "4ef7225c-1334-49f5-b239-429de9aaaa8a"
+    }
+  },
+  {
+    "id": "78a9dc35-d097-4de0-9366-df3ce59998b4",
+    "createdAt": "2026-08-24T18:59:29.673Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "stock_update",
+    "summary": "Réassort Menthe baileys → 20",
+    "details": {
+      "stock": 20,
+      "productId": "2341c17b-84c7-4b3e-bc82-8ade0a296282"
+    }
+  },
+  {
+    "id": "654918e3-6fc4-4d44-8fe5-b7dc41614d26",
+    "createdAt": "2026-08-24T19:01:17.708Z",
+    "adminName": "Système",
+    "source": "manual",
+    "action": "menu_activated",
+    "summary": "Menu activé automatiquement (23/08/2026)",
+    "details": {
+      "menuId": "99e4defb-677f-4556-902b-8ed2a6363f41",
+      "productCount": 7
+    }
+  },
+  {
+    "id": "cf9bc7fc-451e-4189-b07a-15fa77cd8632",
+    "createdAt": "2026-09-02T10:15:50.733Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel Cappuccino → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "4"
+    }
+  },
+  {
+    "id": "1e5ec9f9-53db-407e-8a57-5b7007074e96",
+    "createdAt": "2026-09-02T10:15:55.271Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Caramel cappucino Baileys → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733"
+    }
+  },
+  {
+    "id": "560dd8d7-d4e1-4cb3-bcd0-eaf15ff1f82b",
+    "createdAt": "2026-09-02T10:15:58.065Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Chocolat Cappucino → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "a9fd29a6-5240-4169-9020-0d0a11260fef"
+    }
+  },
+  {
+    "id": "2be0b081-d4d0-42f8-aaf6-b7eb906d54ae",
+    "createdAt": "2026-09-02T10:15:59.783Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Forêt Blanche → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "6"
+    }
+  },
+  {
+    "id": "7c6a2ac5-a635-43e5-82d7-95f324ce5748",
+    "createdAt": "2026-09-02T10:16:00.327Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Forêt Noire → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "10"
+    }
+  },
+  {
+    "id": "6908409c-c607-45dd-8a36-795299fa8939",
+    "createdAt": "2026-09-02T10:16:01.834Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Goyave Vanille → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "3"
+    }
+  },
+  {
+    "id": "33486cd7-2846-4e12-82f1-871201a70276",
+    "createdAt": "2026-09-02T10:16:02.867Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Forêt Noire → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "10"
+    }
+  },
+  {
+    "id": "167e600e-af8b-4409-8596-07dd2be68e61",
+    "createdAt": "2026-09-02T10:16:03.823Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Mango Passion → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "2"
+    }
+  },
+  {
+    "id": "d4e4ff69-7f19-43c7-bbce-a60600b3fc61",
+    "createdAt": "2026-09-02T10:16:05.625Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Mango Passion → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "2"
+    }
+  },
+  {
+    "id": "70771662-7d74-4fec-9084-baf49b30c381",
+    "createdAt": "2026-09-02T10:16:06.552Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Mangue framboise → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "223b50d4-169b-4567-be62-04445ccc9306"
+    }
+  },
+  {
+    "id": "b6cce370-72d7-419f-a107-bc528bec7c41",
+    "createdAt": "2026-09-02T10:16:07.802Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Menthe baileys → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "2341c17b-84c7-4b3e-bc82-8ade0a296282"
+    }
+  },
+  {
+    "id": "2f4c6680-07aa-458e-9220-4270aa55ad54",
+    "createdAt": "2026-09-02T10:16:08.534Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Menthe framboise → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "4ef7225c-1334-49f5-b239-429de9aaaa8a"
+    }
+  },
+  {
+    "id": "2c92dcdd-90f8-4116-8e0c-fda30e543a20",
+    "createdAt": "2026-09-02T10:16:09.772Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Mango Passion → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "2"
+    }
+  },
+  {
+    "id": "f5b08ac0-3919-4ac3-ad14-f37802eebdc4",
+    "createdAt": "2026-09-02T10:16:10.710Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Forêt Noire → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "10"
+    }
+  },
+  {
+    "id": "244233ac-1ba7-4fce-9457-a1c19c625a6c",
+    "createdAt": "2026-09-02T10:16:16.062Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Nutella  speculos → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "829e45f3-24da-489b-a9de-b2221eb5327b"
+    }
+  },
+  {
+    "id": "14dbfcbd-7a23-4000-8a0c-d3bd1faeb543",
+    "createdAt": "2026-09-02T10:16:16.913Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Nutella Baileys Speculos → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "7"
+    }
+  },
+  {
+    "id": "f2411445-38df-40eb-856f-1add27090103",
+    "createdAt": "2026-09-02T10:16:17.777Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Oreos Caramel Baileys → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "8"
+    }
+  },
+  {
+    "id": "c1df1b1b-03a6-43f7-842c-53f4eb6f578c",
+    "createdAt": "2026-09-02T10:16:19.247Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Speculoos → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "9"
+    }
+  },
+  {
+    "id": "d5ea807e-34b8-4f5d-aa10-3638057f0248",
+    "createdAt": "2026-09-02T10:16:20.214Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Oreos Caramel Baileys → stock 10",
+    "details": {
+      "stock": 10,
+      "productId": "8"
+    }
+  },
+  {
+    "id": "55d41f33-0bd3-4145-b41a-7d560f61e469",
+    "createdAt": "2026-09-02T10:16:25.331Z",
+    "adminName": "Équipe Cotonou",
+    "source": "manual",
+    "action": "product_toggle",
+    "summary": "Disponibilité Oreos Caramel Baileys → stock 0",
+    "details": {
+      "stock": 0,
+      "productId": "8"
+    }
+  }
+]

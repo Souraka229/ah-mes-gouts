@@ -1,0 +1,194 @@
+[
+  {
+    "id": "88c36e2d-6cf3-47c4-aaff-d3e3809ad8c2",
+    "day": "2026-07-15",
+    "visitorHash": "addd2f0e482c42c17191c9bf75b201c3",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:15:04.034Z",
+    "lastSeenAt": "2026-07-15T11:15:04.034Z"
+  },
+  {
+    "id": "bf332e60-b7aa-4491-ac47-dd8e5f4d6e32",
+    "day": "2026-07-15",
+    "visitorHash": "1ab7fbafe7d34e80aaadff963dddb0a2",
+    "pageViews": 2,
+    "firstSeenAt": "2026-07-15T11:15:00.544Z",
+    "lastSeenAt": "2026-07-15T11:16:16.720Z"
+  },
+  {
+    "id": "fb152c05-fd0d-468d-b10f-693d223a8ee3",
+    "day": "2026-07-15",
+    "visitorHash": "9a2f694f583e2054c66e833bede25910",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:16:21.453Z",
+    "lastSeenAt": "2026-07-15T11:16:21.453Z"
+  },
+  {
+    "id": "3a07fa35-997c-498a-a01b-14277f8048e3",
+    "day": "2026-07-15",
+    "visitorHash": "45beb093be590dfae421635b33fc3c82",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:16:21.827Z",
+    "lastSeenAt": "2026-07-15T11:16:21.827Z"
+  },
+  {
+    "id": "6a31397d-8573-4d74-b635-e1f66f1067c6",
+    "day": "2026-07-15",
+    "visitorHash": "f3bcdb4b16fbae0fac6e5a8ff0f18461",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:16:53.799Z",
+    "lastSeenAt": "2026-07-15T11:16:53.799Z"
+  },
+  {
+    "id": "53503c58-0621-47ad-bc9a-dbfa619d7a84",
+    "day": "2026-07-15",
+    "visitorHash": "bb41bea2538d85fad822fa3d89e4747a",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:17:45.436Z",
+    "lastSeenAt": "2026-07-15T11:17:45.436Z"
+  },
+  {
+    "id": "86062464-1104-4358-888b-129a439f955f",
+    "day": "2026-07-15",
+    "visitorHash": "ad39e7e831d10323c5158fa0c1aecbdf",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-15T11:28:15.465Z",
+    "lastSeenAt": "2026-07-15T11:28:15.465Z"
+  },
+  {
+    "id": "0834b130-0b12-4824-9772-d93cbfdbb926",
+    "day": "2026-07-17",
+    "visitorHash": "b72501cd5cdf98d9e636ebb0566907b7",
+    "pageViews": 8,
+    "firstSeenAt": "2026-07-17T11:17:52.898Z",
+    "lastSeenAt": "2026-07-17T18:08:31.469Z"
+  },
+  {
+    "id": "165eb5ee-5228-4406-985c-96c9de1f47d2",
+    "day": "2026-07-17",
+    "visitorHash": "5dc13fa19e89dee4bf15cb758d49e73c",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-17T18:08:36.979Z",
+    "lastSeenAt": "2026-07-17T18:08:36.979Z"
+  },
+  {
+    "id": "cdf23ad5-d02b-41e0-abd3-4895b0eb7d14",
+    "day": "2026-07-17",
+    "visitorHash": "bb41bea2538d85fad822fa3d89e4747a",
+    "pageViews": 6,
+    "firstSeenAt": "2026-07-17T10:57:37.115Z",
+    "lastSeenAt": "2026-07-17T10:59:38.953Z"
+  },
+  {
+    "id": "8273b125-6c01-46a7-ae16-1cf1e41b8cfa",
+    "day": "2026-07-17",
+    "visitorHash": "f7865671f84c9e0215ef7cff211f8e99",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-17T11:01:08.384Z",
+    "lastSeenAt": "2026-07-17T11:01:08.384Z"
+  },
+  {
+    "id": "b417366e-bca4-4a42-aac9-f106cd78dbde",
+    "day": "2026-07-17",
+    "visitorHash": "9b6f389c9c1b5e2f800c9200fd2f01b4",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-17T18:10:05.164Z",
+    "lastSeenAt": "2026-07-17T18:10:05.164Z"
+  },
+  {
+    "id": "79d8ebc7-0406-4340-a518-db917a1e39fb",
+    "day": "2026-07-17",
+    "visitorHash": "920244556a0361fd94cc5d516212fdf1",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-17T18:17:59.696Z",
+    "lastSeenAt": "2026-07-17T18:17:59.696Z"
+  },
+  {
+    "id": "14cf87b5-d6c0-416b-a74b-008ac21ef0d6",
+    "day": "2026-07-17",
+    "visitorHash": "1ab7fbafe7d34e80aaadff963dddb0a2",
+    "pageViews": 7,
+    "firstSeenAt": "2026-07-17T10:56:52.303Z",
+    "lastSeenAt": "2026-07-17T18:34:50.658Z"
+  },
+  {
+    "id": "faff4796-1575-4e30-a49a-6f855dd4c52d",
+    "day": "2026-07-18",
+    "visitorHash": "1ab7fbafe7d34e80aaadff963dddb0a2",
+    "pageViews": 3,
+    "firstSeenAt": "2026-07-18T21:51:05.580Z",
+    "lastSeenAt": "2026-07-18T21:51:28.346Z"
+  },
+  {
+    "id": "0cc12175-7c71-490a-b72f-55f94b795c65",
+    "day": "2026-07-17",
+    "visitorHash": "3be0cdf49706beb182900faeff719126",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-17T17:35:40.522Z",
+    "lastSeenAt": "2026-07-17T17:35:40.522Z"
+  },
+  {
+    "id": "bee4a501-0fe3-4094-abc4-1d1f2c588b94",
+    "day": "2026-07-20",
+    "visitorHash": "52f94a7a1b1cbc50c07cfb408090a6eb",
+    "pageViews": 9,
+    "firstSeenAt": "2026-07-20T13:20:10.280Z",
+    "lastSeenAt": "2026-07-20T13:27:32.914Z"
+  },
+  {
+    "id": "0c7e8e95-8464-416b-a323-fcc07b73e884",
+    "day": "2026-07-17",
+    "visitorHash": "47b4384fd5eab41e5842e305c5b41f8b",
+    "pageViews": 11,
+    "firstSeenAt": "2026-07-17T17:32:07.334Z",
+    "lastSeenAt": "2026-07-17T17:38:09.553Z"
+  },
+  {
+    "id": "8ee75543-f259-4714-ad84-60fece23d0f1",
+    "day": "2026-07-21",
+    "visitorHash": "e817a061e4ee63a0e0aeaebe78ec3878",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-21T10:02:59.754Z",
+    "lastSeenAt": "2026-07-21T10:02:59.754Z"
+  },
+  {
+    "id": "5deb852c-4d1b-4740-bb3a-0f91dbcf941d",
+    "day": "2026-07-21",
+    "visitorHash": "53f2d3d20a0cb470afd2af7624fe9c2b",
+    "pageViews": 1,
+    "firstSeenAt": "2026-07-21T10:09:29.001Z",
+    "lastSeenAt": "2026-07-21T10:09:29.001Z"
+  },
+  {
+    "id": "0923feee-b43c-4390-b756-41ccb4f5a6dc",
+    "day": "2026-07-21",
+    "visitorHash": "1ab7fbafe7d34e80aaadff963dddb0a2",
+    "pageViews": 4,
+    "firstSeenAt": "2026-07-21T10:09:02.245Z",
+    "lastSeenAt": "2026-07-21T10:08:12.274Z"
+  },
+  {
+    "id": "d70ffa18-dfdd-48de-b203-113188b8784e",
+    "day": "2026-07-17",
+    "visitorHash": "040146ada77beaf93194ab22c968e605",
+    "pageViews": 13,
+    "firstSeenAt": "2026-07-17T17:36:27.473Z",
+    "lastSeenAt": "2026-07-17T18:05:01.965Z"
+  },
+  {
+    "id": "3999a996-cfee-440f-908c-5696516520ea",
+    "day": "2026-07-17",
+    "visitorHash": "731a4e36953cf23f09bbc2885a1c0b13",
+    "pageViews": 4,
+    "firstSeenAt": "2026-07-17T18:06:39.769Z",
+    "lastSeenAt": "2026-07-17T18:06:44.634Z"
+  },
+  {
+    "id": "f1428eab-f296-48e6-8e9c-7f79aed65cca",
+    "day": "2026-07-17",
+    "visitorHash": "ed63afcd61552d1a578734d5423fe0a0",
+    "pageViews": 2,
+    "firstSeenAt": "2026-07-17T17:33:43.990Z",
+    "lastSeenAt": "2026-07-17T18:07:21.933Z"
+  }
+]

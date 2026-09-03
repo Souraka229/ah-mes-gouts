@@ -1,5 +1,6 @@
 export type BoutiqueSettings = {
   siteName: string;
+  parentCompany?: string;
   phone: string;
   address: string;
   hours: string;
@@ -9,6 +10,7 @@ export type BoutiqueSettings = {
 
 export const DEFAULT_BOUTIQUE_SETTINGS: BoutiqueSettings = {
   siteName: "Ah Mes Goûts",
+  parentCompany: "Gift & Entremets",
   phone: "+229 01 97 31 07 42",
   address: "Fidjrosse, Cotonou, Bénin",
   hours: "Mar – Dim · 10h00 – 20h00",

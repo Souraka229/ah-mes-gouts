@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devis AMG-2026-001 — Ah Mes Goûts</title>
+  <style>
+    :root {
+      --bg: #FAF7F5;
+      --primary: #3B1F4D;
+      --secondary: #F3C9CE;
+      --accent: #C9A96E;
+      --text: #241726;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #e8e2df;
+      color: var(--text);
+      line-height: 1.45;
+      padding: 24px 12px 48px;
+    }
+    .sheet {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(36, 23, 38, 0.12);
+    }
+    .banner {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+    }
+    .banner-left {
+      background: var(--primary);
+      color: #fff;
+      padding: 28px 32px;
+    }
+    .banner-left h1 { font-size: 1.7rem; letter-spacing: 0.02em; }
+    .banner-left p { color: var(--secondary); margin-top: 6px; font-size: 0.95rem; }
+    .banner-right {
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1.15rem;
+      line-height: 1.35;
+      padding: 20px;
+    }
+    .content { padding: 28px 32px 36px; }
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+    .meta div {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #eadfdc;
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .meta strong { color: var(--primary); }
+    h2 {
+      color: var(--primary);
+      font-size: 1.15rem;
+      margin: 22px 0 10px;
+      border-bottom: 2px solid var(--secondary);
+      padding-bottom: 6px;
+    }
+    p.lead { font-size: 0.95rem; margin-bottom: 8px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      margin: 12px 0 8px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th {
+      background: var(--primary);
+      color: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #efe7e4;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #fffbfa; }
+    td.num { width: 42px; color: var(--primary); font-weight: 700; text-align: center; }
+    td.amt { white-space: nowrap; font-weight: 700; text-align: right; }
+    .totals {
+      margin-left: auto;
+      width: min(400px, 100%);
+      margin-top: 8px;
+    }
+    .totals .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 14px;
+      background: #fff;
+      border: 1px solid #eadfdc;
+      font-size: 0.92rem;
+    }
+    .totals .row.maint {
+      background: var(--secondary);
+      border-color: var(--secondary);
+      font-weight: 700;
+    }
+    .totals .row.total {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.05rem;
+      border: none;
+      border-radius: 0 0 8px 8px;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    ul { margin: 8px 0 0 18px; font-size: 0.92rem; }
+    li { margin: 4px 0; }
+    .note {
+      margin-top: 18px;
+      font-size: 0.85rem;
+      font-style: italic;
+      color: #685f68;
+      background: #fff;
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+    }
+    .signs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 28px;
+    }
+    .sign {
+      border: 1px dashed #c9b8c4;
+      border-radius: 8px;
+      min-height: 120px;
+      padding: 14px;
+      text-align: center;
+      background: #fff;
+    }
+    .sign strong { color: var(--primary); display: block; margin-bottom: 28px; }
+    .actions {
+      max-width: 900px;
+      margin: 0 auto 14px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .actions button {
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .actions button.secondary { background: var(--accent); }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .actions { display: none; }
+      .sheet { box-shadow: none; border-radius: 0; }
+    }
+    @media (max-width: 700px) {
+      .banner, .meta, .signs { grid-template-columns: 1fr; }
+      .content { padding: 20px 16px 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button class="secondary" onclick="window.print()">Imprimer / PDF</button>
+    <button onclick="window.close()">Fermer</button>
+  </div>
+
+  <article class="sheet">
+    <div class="banner">
+      <div class="banner-left">
+        <h1>AH MES GOÛTS</h1>
+        <p>Plateforme e-commerce premium — Prestataire développeur</p>
+      </div>
+      <div class="banner-right">DEVIS<br />N° AMG-2026-001</div>
+    </div>
+
+    <div class="content">
+      <div class="meta">
+        <div><strong>Date</strong><span>26 juillet 2026</span></div>
+        <div><strong>Validité</strong><span>30 jours</span></div>
+        <div><strong>Client</strong><span>Ah Mes Goûts / Gift &amp; Entremets</span></div>
+        <div><strong>Devise</strong><span>Franc CFA (XOF)</span></div>
+        <div><strong>Prestataire</strong><span>Développeur / lieu de développement</span></div>
+        <div><strong>Délai</strong><span>6 à 8 semaines</span></div>
+        <div><strong>Objet</strong><span>Réalisation + maintenance à vie</span></div>
+        <div><strong>Lieu</strong><span>Cotonou, Bénin</span></div>
+      </div>
+
+      <h2>Objet du devis</h2>
+      <p class="lead">
+        Conception, développement, intégration et mise en production d’une plateforme e-commerce premium
+        de commande de glaces et d’entremets, réalisée par le prestataire développeur :
+        boutique publique, parcours de commande, paiement Mobile Money/carte, administration et portail livreur.
+        <strong>Une maintenance mensuelle à vie</strong> est incluse dans le modèle commercial.
+      </p>
+
+      <h2>1. Développement — forfait unique</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>N°</th>
+            <th>Lot</th>
+            <th>Contenu</th>
+            <th>Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">01</td>
+            <td><strong>Cadrage, architecture et UX/UI</strong></td>
+            <td>Architecture technique, parcours utilisateur, design premium responsive, composants et règles d’accessibilité.</td>
+            <td class="amt">180 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">02</td>
+            <td><strong>Boutique publique</strong></td>
+            <td>Accueil premium, catalogue, fiches produits, recherche, filtres, promotions, états de stock et optimisation des images.</td>
+            <td class="amt">350 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">03</td>
+            <td><strong>Panier et checkout</strong></td>
+            <td>Panier persistant, tunnel multi-étapes, livraison/retrait/sur place, coordonnées, cadeau, upsell, emballage et récapitulatif.</td>
+            <td class="amt">400 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">04</td>
+            <td><strong>Commandes, stock et créneaux</strong></td>
+            <td>API serveur, recalcul des prix, frais de livraison, réservation des créneaux, idempotence et stock après paiement.</td>
+            <td class="amt">340 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">05</td>
+            <td><strong>Paiements FeexPay</strong></td>
+            <td>MTN MoMo, Moov Money, Celtiis Cash et carte, initiation, suivi, webhook, mode test et confirmation centralisée.</td>
+            <td class="amt">250 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">06</td>
+            <td><strong>Administration et KDS</strong></td>
+            <td>Gestion des commandes, alertes, produits, menus journaliers, paramètres boutique, rôles, reçus et notifications Telegram.</td>
+            <td class="amt">290 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">07</td>
+            <td><strong>Livraison et portail livreur</strong></td>
+            <td>Affectation, vagues de livraison, suivi, validation de livraison et signalement client injoignable.</td>
+            <td class="amt">160 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">08</td>
+            <td><strong>Base de données et scalabilité</strong></td>
+            <td>Prisma/PostgreSQL, migrations, transactions, index, cache, rate limiting et préparation à la charge.</td>
+            <td class="amt">220 000 FCFA</td>
+          </tr>
+          <tr>
+            <td class="num">09</td>
+            <td><strong>Recette, déploiement et transfert</strong></td>
+            <td>Tests fonctionnels, corrections, configuration Vercel/Supabase, documentation et prise en main administrateur.</td>
+            <td class="amt">210 000 FCFA</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="row"><span>Sous-total développement</span><strong>2 400 000 FCFA</strong></div>
+        <div class="row"><span>Taxes (développement)</span><span>À préciser selon statut fiscal</span></div>
+        <div class="row total"><span>TOTAL DÉVELOPPEMENT</span><span>2 400 000 FCFA</span></div>
+      </div>
+
+      <h2>2. Maintenance mensuelle à vie <span class="badge">OBLIGATOIRE</span></h2>
+      <p class="lead">
+        Le prestataire développeur assure la maintenance de la plateforme <strong>à vie</strong>,
+        facturée <strong>chaque mois</strong> à compter de la mise en production
+        (après la garantie corrective de 30 jours).
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Poste</th>
+            <th>Contenu inclus</th>
+            <th>Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Maintenance &amp; support</strong></td>
+            <td>
+              Surveillance, corrections de bugs, mises à jour de sécurité, petites évolutions,
+              assistance admin, supervision technique, continuité de service.
+            </td>
+            <td class="amt">75 000 FCFA / mois</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="row maint"><span>Maintenance à vie</span><strong>75 000 FCFA / mois</strong></div>
+        <div class="row"><span>Soit sur 12 mois</span><strong>900 000 FCFA / an</strong></div>
+      </div>
+
+      <h2>Récapitulatif commercial</h2>
+      <div class="totals" style="width:100%; margin-left:0;">
+        <div class="row"><span>Création / développement (une fois)</span><strong>2 400 000 FCFA</strong></div>
+        <div class="row maint"><span>Maintenance à vie (mensuelle)</span><strong>75 000 FCFA / mois</strong></div>
+        <div class="row total"><span>À régler à la commande (acompte 40 %)</span><span>960 000 FCFA</span></div>
+      </div>
+
+      <h2>Conditions commerciales</h2>
+      <ul>
+        <li>Acompte développement : <strong>40 % — 960 000 FCFA</strong></li>
+        <li>Validation intermédiaire : <strong>40 % — 960 000 FCFA</strong></li>
+        <li>Solde à la mise en production : <strong>20 % — 480 000 FCFA</strong></li>
+        <li>Maintenance : <strong>75 000 FCFA / mois à vie</strong>, payable chaque mois, sans date de fin</li>
+        <li>Première facture maintenance : au 1er du mois suivant la fin de la garantie 30 jours</li>
+        <li>Retard de paiement maintenance &gt; 15 jours : suspension possible du support / hébergement géré</li>
+        <li>Validité du devis : 30 jours à compter du 26 juillet 2026</li>
+      </ul>
+
+      <h2>Inclus dans la maintenance mensuelle</h2>
+      <ul>
+        <li>Corrections de bugs et incidents de production</li>
+        <li>Mises à jour de sécurité et maintenance technique</li>
+        <li>Assistance administrateur (WhatsApp / e-mail, heures ouvrables)</li>
+        <li>Petites évolutions (jusqu’à ~4 h / mois cumulées)</li>
+        <li>Supervision technique et continuité de la plateforme</li>
+      </ul>
+
+      <h2>Non inclus</h2>
+      <ul>
+        <li>Commissions FeexPay / Mobile Money / carte</li>
+        <li>Abonnements Vercel, Supabase, Cloudinary, domaine, e-mail ou SMS (facturés au réel ou refacturés)</li>
+        <li>Production photos, vidéos et textes marketing</li>
+        <li>Nouvelles fonctionnalités majeures (devis séparé)</li>
+        <li>Heures au-delà du forfait mensuel (tarif horaire à convenir)</li>
+      </ul>
+
+      <p class="note">
+        Important : le développement est un forfait unique. La maintenance est un abonnement mensuel
+        à vie, obligatoire tant que la plateforme reste en exploitation chez le prestataire développeur.
+        Coordonnées légales et régime fiscal à compléter avant signature.
+      </p>
+
+      <div class="signs">
+        <div class="sign">
+          <strong>LE PRESTATAIRE DÉVELOPPEUR</strong>
+          Nom, date, signature et cachet
+        </div>
+        <div class="sign">
+          <strong>LE CLIENT — BON POUR ACCORD</strong>
+          Nom, date, signature et cachet
+        </div>
+      </div>
+    </div>
+  </article>
+</body>
+</html>

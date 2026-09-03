@@ -1,0 +1,42 @@
+[
+  {
+    "id": "zone-e",
+    "name": "Fidjrossè centre, Calvaire, Akogbato, Fidjrossè JNP, Sème City, Erevan Aéroport, Direction générale MTN",
+    "cost": 500,
+    "isActive": true,
+    "createdAt": "2026-07-15T11:42:32.536Z",
+    "updatedAt": "2026-07-26T16:39:03.932Z"
+  },
+  {
+    "id": "zone-d",
+    "name": "Agla, Aïbatin, Barrière, Cadjèhoun, Fidjrossè Cabane des Pêcheurs, Gbégamey, Haie Vive, Houeyiho, St Jean, Vodjè",
+    "cost": 700,
+    "isActive": true,
+    "createdAt": "2026-07-15T11:42:32.536Z",
+    "updatedAt": "2026-07-26T16:39:03.932Z"
+  },
+  {
+    "id": "zone-c",
+    "name": "Ganhi, Tokpa, St Michel, Aïdjèdo, Ste Cécile, Vedokô, Toyota, St Rita, Sikèkodji, Menontin…",
+    "cost": 800,
+    "isActive": true,
+    "createdAt": "2026-07-15T11:42:32.536Z",
+    "updatedAt": "2026-07-26T16:39:03.932Z"
+  },
+  {
+    "id": "zone-b",
+    "name": "Segbèya, Lomnava, Sènadé, Sobebra, Habitat, Quartier Jack, Yenawa, Sacré Cœur…",
+    "cost": 1000,
+    "isActive": true,
+    "createdAt": "2026-07-15T11:42:32.536Z",
+    "updatedAt": "2026-07-26T16:39:03.932Z"
+  },
+  {
+    "id": "zone-a",
+    "name": "Sourou Léré, Tanti, Yagbé, Avotrou, Finagon, Cocotomey, Zone des Ambassades, Cococodji…",
+    "cost": 1500,
+    "isActive": true,
+    "createdAt": "2026-07-15T11:42:32.536Z",
+    "updatedAt": "2026-07-26T16:39:03.932Z"
+  }
+]

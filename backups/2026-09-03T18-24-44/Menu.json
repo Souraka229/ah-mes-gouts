@@ -1,0 +1,304 @@
+[
+  {
+    "id": "63ca0c7e-6672-41ae-9945-6bc88c577577",
+    "date": "2026-08-12T23:00:00.000Z",
+    "activateAt": "2026-08-12T04:06:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6"
+    ],
+    "displayOrder": [
+      0,
+      1
+    ],
+    "dailyStock": [
+      0,
+      0
+    ],
+    "createdAt": "2026-08-13T04:05:22.053Z"
+  },
+  {
+    "id": "019c2ae2-6253-4fcc-8495-99ff525a4877",
+    "date": "2026-08-10T23:00:00.000Z",
+    "activateAt": "2026-08-10T19:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6"
+    ],
+    "displayOrder": [
+      0,
+      1
+    ],
+    "dailyStock": [
+      35,
+      10
+    ],
+    "createdAt": "2026-08-12T21:03:32.325Z"
+  },
+  {
+    "id": "99e4defb-677f-4556-902b-8ed2a6363f41",
+    "date": "2026-08-23T23:00:00.000Z",
+    "activateAt": "2026-08-23T19:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "b257e930-55cd-49f2-bd1e-261ce5e43733",
+      "a9fd29a6-5240-4169-9020-0d0a11260fef",
+      "223b50d4-169b-4567-be62-04445ccc9306",
+      "4ef7225c-1334-49f5-b239-429de9aaaa8a",
+      "829e45f3-24da-489b-a9de-b2221eb5327b",
+      "2341c17b-84c7-4b3e-bc82-8ade0a296282"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "dailyStock": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "createdAt": "2026-08-24T18:59:30.535Z"
+  },
+  {
+    "id": "240f71e8-fb04-4ce5-a308-cdf91dfc2dcc",
+    "date": "2026-07-28T11:00:00.000Z",
+    "activateAt": "2026-07-28T19:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "eda87635-05e2-4681-b066-dbc7395a9000",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6410d326-99a3-4170-a5f1-cb369beaf78e",
+      "6",
+      "10"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "dailyStock": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "createdAt": "2026-07-28T05:47:28.695Z"
+  },
+  {
+    "id": "24080f18-5ea5-4b19-815a-6ad2e134f593",
+    "date": "2026-07-26T22:00:00.000Z",
+    "activateAt": "2026-07-27T18:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "13",
+      "4",
+      "fbecc7a0-f8f8-4cf3-b86a-a42e6591d55a",
+      "026eeee0-62b2-4d5b-a76c-bee9d55be2fa",
+      "eda87635-05e2-4681-b066-dbc7395a9000",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6410d326-99a3-4170-a5f1-cb369beaf78e",
+      "6"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "dailyStock": [
+      11,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "createdAt": "2026-07-26T13:52:33.407Z"
+  },
+  {
+    "id": "0412961b-9a8e-4bbd-8165-34922660891a",
+    "date": "2026-07-26T00:00:00.000Z",
+    "activateAt": "2026-07-26T08:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "2",
+      "3",
+      "5",
+      "e9fd5089-833d-4f6e-baa2-26008b8fcf71"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dailyStock": [
+      12,
+      10,
+      8,
+      9
+    ],
+    "createdAt": "2026-07-26T14:32:09.454Z"
+  },
+  {
+    "id": "90893628-6254-4766-9404-94d9e75c7f90",
+    "date": "2026-07-25T22:00:00.000Z",
+    "activateAt": "2026-07-26T06:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "4",
+      "fbecc7a0-f8f8-4cf3-b86a-a42e6591d55a",
+      "026eeee0-62b2-4d5b-a76c-bee9d55be2fa",
+      "eda87635-05e2-4681-b066-dbc7395a9000",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6410d326-99a3-4170-a5f1-cb369beaf78e",
+      "6",
+      "10"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "dailyStock": [],
+    "createdAt": "2026-07-26T14:30:33.602Z"
+  },
+  {
+    "id": "e28b4834-264d-468e-9114-df1b9fd46a83",
+    "date": "2026-07-25T22:00:00.000Z",
+    "activateAt": "2026-07-26T06:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "13",
+      "4",
+      "fbecc7a0-f8f8-4cf3-b86a-a42e6591d55a",
+      "026eeee0-62b2-4d5b-a76c-bee9d55be2fa",
+      "eda87635-05e2-4681-b066-dbc7395a9000",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6410d326-99a3-4170-a5f1-cb369beaf78e",
+      "6"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "dailyStock": [
+      11,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10
+    ],
+    "createdAt": "2026-07-26T13:52:33.406Z"
+  },
+  {
+    "id": "4098b3e6-dd32-4d51-8465-c9a5f27d156a",
+    "date": "2026-08-10T11:00:00.000Z",
+    "activateAt": "2026-08-10T13:05:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "6"
+    ],
+    "displayOrder": [
+      0,
+      1
+    ],
+    "dailyStock": [
+      35,
+      10
+    ],
+    "createdAt": "2026-08-10T13:02:15.802Z"
+  },
+  {
+    "id": "573db739-2d25-4ced-9986-4b7261611e5a",
+    "date": "2026-08-10T11:00:00.000Z",
+    "activateAt": "2026-08-10T19:00:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "629fa721-9016-4a76-8a35-e4f23852d194",
+      "e04aadec-c8e8-4b2d-9e88-64ef7f150220",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dailyStock": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "createdAt": "2026-08-10T15:16:21.910Z"
+  },
+  {
+    "id": "1b2f9b7c-698a-4885-8778-5316b603bdde",
+    "date": "2026-08-09T23:00:00.000Z",
+    "activateAt": "2026-08-09T21:05:00.000Z",
+    "status": "EXPIRED",
+    "productIds": [
+      "629fa721-9016-4a76-8a35-e4f23852d194",
+      "e04aadec-c8e8-4b2d-9e88-64ef7f150220",
+      "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+      "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f",
+      "10",
+      "8"
+    ],
+    "displayOrder": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "dailyStock": [
+      0,
+      0,
+      0,
+      0,
+      20,
+      4
+    ],
+    "createdAt": "2026-08-12T21:02:40.135Z"
+  }
+]

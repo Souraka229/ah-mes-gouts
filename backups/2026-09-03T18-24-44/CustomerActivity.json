@@ -1,0 +1,2819 @@
+[
+  {
+    "id": "cmrlzecpb0002l904af23lwpe",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-15T11:12:59.088Z"
+  },
+  {
+    "id": "cmrlzehd10005l904ppgq7ykj",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-15T11:13:05.125Z"
+  },
+  {
+    "id": "cmrlzfn9v0009l904o4aujgtq",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-15T11:13:59.444Z"
+  },
+  {
+    "id": "cmrlzfp8v000dl9041m8dy52j",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-15T11:14:02.000Z"
+  },
+  {
+    "id": "cmrlzfycs000gl904qjtfzb6c",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-15T11:14:13.804Z"
+  },
+  {
+    "id": "cmrlzg0df000jl90448wi2tev",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-15T11:14:16.420Z"
+  },
+  {
+    "id": "cmrlzgi8a0002jv046c7860fi",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-15T11:14:39.562Z"
+  },
+  {
+    "id": "cmrlzgjvr000nl904nzqem48v",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-15T11:14:41.703Z"
+  },
+  {
+    "id": "cmrotpcu40002l504vz3t8jp1",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T10:56:53.308Z"
+  },
+  {
+    "id": "cmrotpfm00005l504jknghqpf",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T10:56:56.905Z"
+  },
+  {
+    "id": "cmrotqkft0002jp0482bc471q",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T10:57:49.818Z"
+  },
+  {
+    "id": "cmrotqr910005jp04e30c72d8",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T10:57:58.645Z"
+  },
+  {
+    "id": "cmrots9zm0008l504iwysw4vo",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T10:59:09.587Z"
+  },
+  {
+    "id": "cmrotscdj0009jp045tjwxdzj",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T10:59:12.680Z"
+  },
+  {
+    "id": "cmrotsdyr000cjp040o9wksim",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T10:59:14.740Z"
+  },
+  {
+    "id": "cmrotsmhv000jjp04c5tzzp02",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 15500,
+      "orderId": "AMG-OPI552"
+    },
+    "createdAt": "2026-07-17T10:59:25.796Z"
+  },
+  {
+    "id": "cmrouhy8l0002jr04j8xzasoy",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T11:19:07.413Z"
+  },
+  {
+    "id": "cmroui2hz0005jr04t0nsu7xz",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T11:19:12.935Z"
+  },
+  {
+    "id": "cmroukf380002l304m75zexj0",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T11:21:02.564Z"
+  },
+  {
+    "id": "cmrp7vpkr0002i7047vdc0w7t",
+    "deviceId": "cmrp7vpat0000i704vj5tfu7b",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "10",
+    "productSlug": "mousse-chocolat",
+    "productName": "Forêt Noire",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:33:44.380Z"
+  },
+  {
+    "id": "cmrp7x3oe0005i704emzpcofi",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:34:49.311Z"
+  },
+  {
+    "id": "cmrp7y4680002ky04hah751io",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:35:36.608Z"
+  },
+  {
+    "id": "cmrp7y7iq0008i704s3jy2i6k",
+    "deviceId": "cmrp7y78y0006i704qyl5jvxh",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:35:40.946Z"
+  },
+  {
+    "id": "cmrp7y8g80005ky04wu2x7ajx",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:35:42.152Z"
+  },
+  {
+    "id": "cmrp7yi2n0008ky04pb82eqrg",
+    "deviceId": "cmrp7yhsw0006ky04jw5nltgl",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:35:54.623Z"
+  },
+  {
+    "id": "cmrp7yj95000bky04a2vkufvz",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:35:56.154Z"
+  },
+  {
+    "id": "cmrp7yq8g000eky04hwnd7dar",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:36:05.200Z"
+  },
+  {
+    "id": "cmrp7zbfa000bi704k5ee27tc",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:36:32.663Z"
+  },
+  {
+    "id": "cmrp7zdd0000ei704oxbkomyt",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:36:35.172Z"
+  },
+  {
+    "id": "cmrp80o45000hi704rfzz5oj1",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T17:37:35.765Z"
+  },
+  {
+    "id": "cmrp83c800002l604u59woeym",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T17:39:40.321Z"
+  },
+  {
+    "id": "cmrp83por000jky04uhxoth3l",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:39:57.771Z"
+  },
+  {
+    "id": "cmrp83qrl000mky040enrf4lp",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:39:59.169Z"
+  },
+  {
+    "id": "cmrp83rnj000pky04alquka2t",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T17:40:00.320Z"
+  },
+  {
+    "id": "cmrp8l6zd0002jj04ynpy9887",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T17:53:33.338Z"
+  },
+  {
+    "id": "cmrp8lqs30003ju048ladzdyh",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T17:53:58.995Z"
+  },
+  {
+    "id": "cmrp8mbbq0006ju04myl75ufy",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T17:54:25.622Z"
+  },
+  {
+    "id": "cmrp8ml2d000cjj04p4p1vzj6",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 23200,
+      "orderId": "AMG-P4C3WI"
+    },
+    "createdAt": "2026-07-17T17:54:38.246Z"
+  },
+  {
+    "id": "cmrp8tu1a000fjj0401cm9x92",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:00:16.463Z"
+  },
+  {
+    "id": "cmrp8tw8c000ijj04ouer6g8a",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:00:19.308Z"
+  },
+  {
+    "id": "cmrp8uak6000ljj04thm8s95d",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:00:37.879Z"
+  },
+  {
+    "id": "cmrp8uby2000aju04s6755wyh",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:00:39.674Z"
+  },
+  {
+    "id": "cmrp8uu00000ojj04b1ksv77g",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:01:03.072Z"
+  },
+  {
+    "id": "cmrp8v27w000hju04x7l4yrjd",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 5200,
+      "orderId": "AMG-P4KLG7"
+    },
+    "createdAt": "2026-07-17T18:01:13.725Z"
+  },
+  {
+    "id": "cmrp8za1k000kju04jwuhf5j8",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:04:30.488Z"
+  },
+  {
+    "id": "cmrp8zca1000nju04jmr1nh5i",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:04:33.385Z"
+  },
+  {
+    "id": "cmrp8zm4d000rjj04boxosixu",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:04:46.141Z"
+  },
+  {
+    "id": "cmrp904v9000ujj04sv8w7s1u",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:05:10.438Z"
+  },
+  {
+    "id": "cmrp906pa000xjj04csz4xwks",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:05:12.814Z"
+  },
+  {
+    "id": "cmrp90isp0010jj04eak9lw64",
+    "deviceId": "cmrp7zb5i0009i704kfnapf16",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:05:28.489Z"
+  },
+  {
+    "id": "cmrp927ax0013jj04wetr9fco",
+    "deviceId": "cmrp927130011jj04d8djdb2d",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:06:46.906Z"
+  },
+  {
+    "id": "cmrp929qu0016jj04i4wnjxj5",
+    "deviceId": "cmrp927130011jj04d8djdb2d",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:06:50.070Z"
+  },
+  {
+    "id": "cmrp92swa0019jj043hqickyt",
+    "deviceId": "cmrp927130011jj04d8djdb2d",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:07:14.890Z"
+  },
+  {
+    "id": "cmrp9499u0003jp043pkwlcvo",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:08:22.771Z"
+  },
+  {
+    "id": "cmrp956re0007jp047ilsvov6",
+    "deviceId": "cmrp927130011jj04d8djdb2d",
+    "customerId": "cmrp83crl000gky04tbibyd4r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-17T18:09:06.170Z"
+  },
+  {
+    "id": "cmrp93gly001cjj040sl1wjxh",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:07:45.622Z"
+  },
+  {
+    "id": "cmrp93jqm001fjj04m0rtgi6a",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-17T18:07:49.679Z"
+  },
+  {
+    "id": "cmrpa2b4l0002jm0437l00dlm",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-17T18:34:51.477Z"
+  },
+  {
+    "id": "cmrqwiuur0002l704njt75utg",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "10",
+    "productSlug": "mousse-chocolat",
+    "productName": "Forêt Noire",
+    "metadata": null,
+    "createdAt": "2026-07-18T21:51:21.268Z"
+  },
+  {
+    "id": "cmrqwiwje0005l704dycs943e",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "10",
+    "productSlug": "mousse-chocolat",
+    "productName": "Forêt Noire",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-18T21:51:23.450Z"
+  },
+  {
+    "id": "cmrqwjbxk0008l7042qzyy0y7",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "10",
+    "productSlug": "mousse-chocolat",
+    "productName": "Forêt Noire",
+    "metadata": null,
+    "createdAt": "2026-07-18T21:51:43.400Z"
+  },
+  {
+    "id": "cmrt96mt50002txccke3hahrx",
+    "deviceId": "cmrt96m9n0000txcc5w7l8s9d",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-20T13:21:18.327Z"
+  },
+  {
+    "id": "cmrt9eb9m0005txcckvfup12u",
+    "deviceId": "cmrt96m9n0000txcc5w7l8s9d",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": null,
+    "createdAt": "2026-07-20T13:27:16.616Z"
+  },
+  {
+    "id": "cmrt9ecjb0008txccw47tozq4",
+    "deviceId": "cmrt96m9n0000txcc5w7l8s9d",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-20T13:27:18.264Z"
+  },
+  {
+    "id": "cmruhr0d90002la04rf13gf2z",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "d7191773-909d-4079-9fbf-878cd9a40b81",
+    "productSlug": "la-mangue",
+    "productName": "La Mangue",
+    "metadata": null,
+    "createdAt": "2026-07-21T10:08:52.125Z"
+  },
+  {
+    "id": "cmruhr66j0005la040zsdk7bn",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "d7191773-909d-4079-9fbf-878cd9a40b81",
+    "productSlug": "la-mangue",
+    "productName": "La Mangue",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-21T10:08:59.660Z"
+  },
+  {
+    "id": "cmruhrwjj0008la04r94m6mnn",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-07-21T10:09:33.824Z"
+  },
+  {
+    "id": "cmruhryv7000bla04c0bwc4qv",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-21T10:09:36.835Z"
+  },
+  {
+    "id": "cmruhstv60002l404i5h1iefr",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-21T10:10:17.010Z"
+  },
+  {
+    "id": "cmruht0yp000fla04v4wzienw",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-21T10:10:26.210Z"
+  },
+  {
+    "id": "cmruhtjg0000ila04k4b84nn1",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-21T10:10:50.161Z"
+  },
+  {
+    "id": "cms1wunhg0002l704yuk363o7",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-07-26T14:45:59.524Z"
+  },
+  {
+    "id": "cms1wure90005l704m643whbr",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-07-26T14:46:04.593Z"
+  },
+  {
+    "id": "cms1wuwwa0008l704kcdb0xqq",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T14:46:11.723Z"
+  },
+  {
+    "id": "cms1wv5ur000bl704e9opio6v",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T14:46:23.331Z"
+  },
+  {
+    "id": "cms1wv7gf000el70444pj5xtw",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T14:46:25.407Z"
+  },
+  {
+    "id": "cms1wv9m6000hl704hf680c63",
+    "deviceId": "cmrotqk630000jp04wtpu1rph",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T14:46:28.207Z"
+  },
+  {
+    "id": "cms1xgasv0002l404cyeipez4",
+    "deviceId": "cms1xgaj20000l404jqyy32yp",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "2",
+    "productSlug": "mango-passion",
+    "productName": "Mango Passion",
+    "metadata": null,
+    "createdAt": "2026-07-26T15:02:49.520Z"
+  },
+  {
+    "id": "cms1x67hu0002jl04yjxkatli",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-07-26T14:54:58.675Z"
+  },
+  {
+    "id": "cms1x68it0005jl04h3493tp4",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T14:55:00.005Z"
+  },
+  {
+    "id": "cms1xx72h0002l7040pcyxl01",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T15:15:57.834Z"
+  },
+  {
+    "id": "cms1xx8190006l70438ixeplg",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T15:15:59.085Z"
+  },
+  {
+    "id": "cms1xzct30002ic04z6dos0mg",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T15:17:38.584Z"
+  },
+  {
+    "id": "cms1yddbj0002l504ael81pfp",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-07-26T15:28:32.431Z"
+  },
+  {
+    "id": "cms1ydf9c0005l504o336xazu",
+    "deviceId": "cms1ydezb0003l504pt0kymhk",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "4",
+    "productSlug": "caramel-cappuccino",
+    "productName": "Caramel Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-07-26T15:28:34.944Z"
+  },
+  {
+    "id": "cms1ydwpa0008l504qpxhjwzz",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-26T15:28:57.551Z"
+  },
+  {
+    "id": "cms1ydz6r000bl504vjh7m97o",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T15:29:00.772Z"
+  },
+  {
+    "id": "cms1yf07f0002ky04g6fxqrbr",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T15:29:48.748Z"
+  },
+  {
+    "id": "cms1yi3400005ky04116z0781",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-26T15:32:12.481Z"
+  },
+  {
+    "id": "cms1yi6tm0008ky042w234isa",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T15:32:17.291Z"
+  },
+  {
+    "id": "cms1yjqe6000hl504wocwk35n",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 3500,
+      "orderId": "AMG-1YF125"
+    },
+    "createdAt": "2026-07-26T15:33:29.310Z"
+  },
+  {
+    "id": "cms1ykf9t000bky04qiz4uzyz",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T15:34:01.554Z"
+  },
+  {
+    "id": "cms1ymm3g000nl504qosk49r9",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 8800,
+      "orderId": "AMG-1YKH3A"
+    },
+    "createdAt": "2026-07-26T15:35:43.709Z"
+  },
+  {
+    "id": "cms20f3r40002l404rc1t0cn1",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-26T16:25:52.577Z"
+  },
+  {
+    "id": "cms20f5dv0005l404kak2yotu",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T16:25:54.692Z"
+  },
+  {
+    "id": "cms20gs640002kw044jj2onrw",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T16:27:10.877Z"
+  },
+  {
+    "id": "cms20hbeu000bl404egthzfw7",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 9500,
+      "orderId": "AMG-20GTXX"
+    },
+    "createdAt": "2026-07-26T16:27:35.744Z"
+  },
+  {
+    "id": "cms21t5vd0002js04p8a1st5z",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "e9fd5089-833d-4f6e-baa2-26008b8fcf71",
+    "productSlug": "fraisier",
+    "productName": "Fraisier",
+    "metadata": null,
+    "createdAt": "2026-07-26T17:04:48.122Z"
+  },
+  {
+    "id": "cms21t9cq0005js04wsw9cfp2",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "e9fd5089-833d-4f6e-baa2-26008b8fcf71",
+    "productSlug": "fraisier",
+    "productName": "Fraisier",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-26T17:04:52.634Z"
+  },
+  {
+    "id": "cms21waep0008js04c6wn53kb",
+    "deviceId": "cmrouhxyn0000jr04baknw753",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-26T17:07:13.969Z"
+  },
+  {
+    "id": "cms2qqtd20002la04xc7jvwi5",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-27T04:42:48.998Z"
+  },
+  {
+    "id": "cms2qqvjt0005la045s2et6dc",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-27T04:42:51.833Z"
+  },
+  {
+    "id": "cms2qrg0u0002ky04y9tgu0y0",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-27T04:43:18.367Z"
+  },
+  {
+    "id": "cms2qrwlc0007ky04sjn24wno",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 8000,
+      "orderId": "AMG-2QRFXS"
+    },
+    "createdAt": "2026-07-27T04:43:39.840Z"
+  },
+  {
+    "id": "cms47mxpq0002jl04fvy3j7j6",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-28T05:23:27.662Z"
+  },
+  {
+    "id": "cms47n0bq0005jl04o6bg4p07",
+    "deviceId": "cmrlzeceg0000l9041t147xtd",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-28T05:23:31.047Z"
+  },
+  {
+    "id": "cms47ohfq0008jl04zmzqfmyt",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-28T05:24:39.879Z"
+  },
+  {
+    "id": "cms47ojgn000bjl04jh46h4qn",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-28T05:24:42.503Z"
+  },
+  {
+    "id": "cms47q9el000fjl044opdwa97",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-28T05:26:02.782Z"
+  },
+  {
+    "id": "cms47qo5h000kjl04vhylvot3",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 8700,
+      "orderId": "AMG-47QBYE"
+    },
+    "createdAt": "2026-07-28T05:26:21.894Z"
+  },
+  {
+    "id": "cms6h9sgo0002ky04co6xxmzm",
+    "deviceId": "cms6h9s6h0000ky04ty6s0n4b",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-29T19:28:42.841Z"
+  },
+  {
+    "id": "cms6h9ugg0005ky04jsroi32s",
+    "deviceId": "cms6h9s6h0000ky04ty6s0n4b",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-29T19:28:45.425Z"
+  },
+  {
+    "id": "cms6hggmm0008ky048w1jw77v",
+    "deviceId": "cms6h9s6h0000ky04ty6s0n4b",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-07-29T19:33:54.095Z"
+  },
+  {
+    "id": "cms6hj0bp000bky041x6r0rhy",
+    "deviceId": "cms6h9s6h0000ky04ty6s0n4b",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-29T19:35:52.934Z"
+  },
+  {
+    "id": "cms6hj2as000eky04xlzsor3b",
+    "deviceId": "cms6h9s6h0000ky04ty6s0n4b",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-29T19:35:55.492Z"
+  },
+  {
+    "id": "cms7f19z50002lb04dx2erze4",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-07-30T11:13:52.576Z"
+  },
+  {
+    "id": "cms7f1byz0005lb04op2i9fvj",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-07-30T11:13:55.163Z"
+  },
+  {
+    "id": "cms7f243z0002lb04nlndaps8",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-07-30T11:14:31.632Z"
+  },
+  {
+    "id": "cms7f2v35000blb04cf3c6vmc",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 8500,
+      "orderId": "AMG-7F2B4M"
+    },
+    "createdAt": "2026-07-30T11:15:06.593Z"
+  },
+  {
+    "id": "cmshpguqv0002kw04pett0w3g",
+    "deviceId": "cmshpgugv0000kw04wxl3tnha",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-06T16:03:37.256Z"
+  },
+  {
+    "id": "cmshph5ty0005kw04rxu3fqyy",
+    "deviceId": "cmshpgugv0000kw04wxl3tnha",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-06T16:03:51.622Z"
+  },
+  {
+    "id": "cmshpj25q0002l504o4w95ytn",
+    "deviceId": "cmshpgugv0000kw04wxl3tnha",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-06T16:05:20.174Z"
+  },
+  {
+    "id": "cmshpjoqk0009kw04fmv3uhx2",
+    "deviceId": "cmshpgugv0000kw04wxl3tnha",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-06T16:05:49.436Z"
+  },
+  {
+    "id": "cmshpkbmj000fkw04kdsukj26",
+    "deviceId": "cmshpgugv0000kw04wxl3tnha",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 5500,
+      "orderId": "AMG-HPJSXA"
+    },
+    "createdAt": "2026-08-06T16:06:19.100Z"
+  },
+  {
+    "id": "cmshplqn8000ikw04tgayvt15",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "PRODUCT_VIEW",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": null,
+    "createdAt": "2026-08-06T16:07:25.220Z"
+  },
+  {
+    "id": "cmshplvqn000lkw048e5u6s97",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "ADD_TO_CART",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-06T16:07:31.823Z"
+  },
+  {
+    "id": "cmshpoxi6000okw04m6bsb6e6",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-06T16:09:54.078Z"
+  },
+  {
+    "id": "cmshpqdz10002jt04e9a04sg9",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-06T16:11:02.077Z"
+  },
+  {
+    "id": "cmshpr0b60008jt04xmxc79rm",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "ORDER_PLACED",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": {
+      "total": 5500,
+      "orderId": "AMG-HPQI7N"
+    },
+    "createdAt": "2026-08-06T16:11:31.026Z"
+  },
+  {
+    "id": "cmsn6k03r0002l704zc1kc858",
+    "deviceId": "cmsn6jztu0000l7047a71y058",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-08-10T12:00:48.520Z"
+  },
+  {
+    "id": "cmsn6k1ju0005l704deof4zey",
+    "deviceId": "cmsn6jztu0000l7047a71y058",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T12:00:50.395Z"
+  },
+  {
+    "id": "cmsn6mzty0002l604detqsp6b",
+    "deviceId": "cmsn6jztu0000l7047a71y058",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T12:03:08.135Z"
+  },
+  {
+    "id": "cmsn7yr5v0002js0487iswwxm",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": null,
+    "createdAt": "2026-08-10T12:40:16.387Z"
+  },
+  {
+    "id": "cmsn806510005js04b3iwyt2j",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": null,
+    "createdAt": "2026-08-10T12:41:22.453Z"
+  },
+  {
+    "id": "cmsn80cw70008js04f993ekrj",
+    "deviceId": "cmsn80cm60006js04504joi1g",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "demo-nounours-rose",
+    "productSlug": "nounours-rose",
+    "productName": "Nounours rose",
+    "metadata": null,
+    "createdAt": "2026-08-10T12:41:31.207Z"
+  },
+  {
+    "id": "cmsn8nr7r0002jz04u8ux2btc",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-10T12:59:42.856Z"
+  },
+  {
+    "id": "cmsn8nsnw0005jz04whdjetp5",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T12:59:44.733Z"
+  },
+  {
+    "id": "cmsn8o1df0008jz04qbr1wbtw",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T12:59:56.020Z"
+  },
+  {
+    "id": "cmsn8zd9v0002l304re1xbc92",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T13:08:44.660Z"
+  },
+  {
+    "id": "cmsn93ykf0002k4044m45rafm",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T13:12:18.879Z"
+  },
+  {
+    "id": "cmsn941je0005k404nyt8gizd",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T13:12:22.730Z"
+  },
+  {
+    "id": "cmsn99r9h0002ju044522nkph",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T13:16:49.349Z"
+  },
+  {
+    "id": "cmsn99sj40005ju04q74n5l3l",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T13:16:50.993Z"
+  },
+  {
+    "id": "cmsnajzt70002l804pbynmocg",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T13:52:46.603Z"
+  },
+  {
+    "id": "cmsnak22n0005l804pgh1f0yy",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "eda87635-05e2-4681-b066-dbc7395a9000",
+    "productSlug": "chocolat-baileys",
+    "productName": "Chocolat Baileys",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T13:52:49.536Z"
+  },
+  {
+    "id": "cmsnalof10004jv04ck3uzwxm",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T13:54:05.149Z"
+  },
+  {
+    "id": "cmsnbmckf0002jl04u2dxhswo",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:22:36.063Z"
+  },
+  {
+    "id": "cmtivkqyk0002ld04qbgtrqy6",
+    "deviceId": "cmtivkqod0000ld04wkvj5cqz",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": null,
+    "createdAt": "2026-09-01T16:22:05.181Z"
+  },
+  {
+    "id": "cmsnbme8w0005jl046l1f6d2x",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:22:38.240Z"
+  },
+  {
+    "id": "cmsnc9w5l0002kz04v1bbh16w",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:40:54.538Z"
+  },
+  {
+    "id": "cmsnc9x9q0005kz045bdt90fy",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:40:55.983Z"
+  },
+  {
+    "id": "cmsnca1d50008kz0469b0xtze",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:41:01.290Z"
+  },
+  {
+    "id": "cmsncb2wq0003ks049fbam4sd",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:41:49.946Z"
+  },
+  {
+    "id": "cmsncb40v0006ks04iiws64mt",
+    "deviceId": "cms47oh5u0006jl04r6rhrw45",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:41:51.392Z"
+  },
+  {
+    "id": "cmsncdv5l000aks047gpj3yo6",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:43:59.866Z"
+  },
+  {
+    "id": "cmsncdwz0000dks04dp1l2km9",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:44:02.220Z"
+  },
+  {
+    "id": "cmsncgcrh000hks04fxek4xik",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:45:55.997Z"
+  },
+  {
+    "id": "cmsncge5t000kks047bvws6xd",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:45:57.809Z"
+  },
+  {
+    "id": "cmsnchz0u0002ic04mylqr0gk",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:47:11.503Z"
+  },
+  {
+    "id": "cmsnchziu0005ic04ekreyr12",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:47:12.151Z"
+  },
+  {
+    "id": "cmsnci97r0002l1040pdzusqw",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T14:47:24.712Z"
+  },
+  {
+    "id": "cmsncllwp000bic046ng9d968",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:50:01.130Z"
+  },
+  {
+    "id": "cmsnclsq6000eic04ax93pu9r",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 4
+    },
+    "createdAt": "2026-08-10T14:50:09.966Z"
+  },
+  {
+    "id": "cmsnctqky0002la04vjtql8z9",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-10T14:56:20.434Z"
+  },
+  {
+    "id": "cmsnctrts0005la04ok0pbfhy",
+    "deviceId": "cmsnajzj10000l804je1p2mye",
+    "customerId": "cmsnalobt0002jv04dcp0zn5r",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T14:56:22.048Z"
+  },
+  {
+    "id": "cmsnd8wmc0002jp04b3v5p7pr",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T15:08:08.100Z"
+  },
+  {
+    "id": "cmsnd8y700005jp043ht08vs2",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T15:08:10.141Z"
+  },
+  {
+    "id": "cmsniphya0002jt044hdghi11",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T17:41:00.322Z"
+  },
+  {
+    "id": "cmsnipj8c0005jt041ovojyq4",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T17:41:01.980Z"
+  },
+  {
+    "id": "cmsnj28is0002k004ib1zih8w",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T17:50:54.628Z"
+  },
+  {
+    "id": "cmsnjfvin0002l304523xilv8",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:01:30.960Z"
+  },
+  {
+    "id": "cmsnjfx3e0005l304zg67pt65",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:01:33.003Z"
+  },
+  {
+    "id": "cmsnjycjf0002jv046o1c6jza",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:15:52.828Z"
+  },
+  {
+    "id": "cmsnjyecp0005jv04n7l5ffb0",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:15:55.177Z"
+  },
+  {
+    "id": "cmsnjzucq0002jn04kkecafgq",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:17:02.570Z"
+  },
+  {
+    "id": "cmsnjzw180005jn04gfumyy3g",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:17:04.749Z"
+  },
+  {
+    "id": "cmsnk0jqf0002jn04uod5rck4",
+    "deviceId": "cmsnk0jgh0000jn04ds3jmmsi",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:17:35.463Z"
+  },
+  {
+    "id": "cmsnk0le40005jn04i9v8op2b",
+    "deviceId": "cmsnk0jgh0000jn04ds3jmmsi",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "type": "ADD_TO_CART",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:17:37.612Z"
+  },
+  {
+    "id": "cmsnk1nbz0002js04t1g5shur",
+    "deviceId": "cmsnk0jgh0000jn04ds3jmmsi",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T18:18:26.783Z"
+  },
+  {
+    "id": "cmsnkm5aw0002kz04i1g831nx",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:34:23.192Z"
+  },
+  {
+    "id": "cmsnkm6vg0005kz04lm5avz65",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:34:25.228Z"
+  },
+  {
+    "id": "cmsnko0ve0002jo04wwsh3ds7",
+    "deviceId": "cmsnchyqu0000ic04fqdsrnzm",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T18:35:50.763Z"
+  },
+  {
+    "id": "cmsnktdyg0005jo047qj4bywc",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "1cd60f05-58ba-4cdc-aa77-07d6a03f8e79",
+    "productSlug": "chocolat-cappuccino",
+    "productName": "Chocolat Cappuccino",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:40:01.000Z"
+  },
+  {
+    "id": "cmsnkv8oz0008jo04yaxzg2oq",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": null,
+    "createdAt": "2026-08-10T18:41:27.491Z"
+  },
+  {
+    "id": "cmsnkvasw000bjo04hfpjwyx8",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "ADD_TO_CART",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T18:41:30.225Z"
+  },
+  {
+    "id": "cmsnkw2cj0004ju04rfq5cxzs",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-10T18:42:05.923Z"
+  },
+  {
+    "id": "cmsnn7dg30002lc04fhpnk6ov",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "PRODUCT_VIEW",
+    "productId": "629fa721-9016-4a76-8a35-e4f23852d194",
+    "productSlug": "chocolat-vanille",
+    "productName": "Chocolat  vanille",
+    "metadata": null,
+    "createdAt": "2026-08-10T19:46:52.756Z"
+  },
+  {
+    "id": "cmsnn7jfl0005lc0456lfmcit",
+    "deviceId": "cmshplqde000gkw04bmgoyb9z",
+    "customerId": "cmshpqd8a0001l70453mh6h0c",
+    "type": "ADD_TO_CART",
+    "productId": "629fa721-9016-4a76-8a35-e4f23852d194",
+    "productSlug": "chocolat-vanille",
+    "productName": "Chocolat  vanille",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-10T19:47:00.513Z"
+  },
+  {
+    "id": "cmsnnfa5m0002jm041xn5xv8a",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "e04aadec-c8e8-4b2d-9e88-64ef7f150220",
+    "productSlug": "kinder-buenos-baileys",
+    "productName": "Kinder Buenos baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T19:53:01.738Z"
+  },
+  {
+    "id": "cmsno3gst0002l504p7lultke",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T20:11:50.093Z"
+  },
+  {
+    "id": "cmsno3ho20005l5048u842uoe",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T20:11:51.218Z"
+  },
+  {
+    "id": "cmsno3if70008l504z2bx1fou",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "5f8fd4ce-ada0-435c-9ecb-620fe3107a7f",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino baileys",
+    "metadata": null,
+    "createdAt": "2026-08-10T20:11:52.196Z"
+  },
+  {
+    "id": "cmsno952f0002jo0496pe5eei",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "629fa721-9016-4a76-8a35-e4f23852d194",
+    "productSlug": "chocolat-vanille",
+    "productName": "Chocolat  vanille",
+    "metadata": null,
+    "createdAt": "2026-08-10T20:16:14.823Z"
+  },
+  {
+    "id": "cmsoctmvc0002kt04tumlo748",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "629fa721-9016-4a76-8a35-e4f23852d194",
+    "productSlug": "chocolat-vanille",
+    "productName": "Chocolat  vanille",
+    "metadata": null,
+    "createdAt": "2026-08-11T07:44:01.800Z"
+  },
+  {
+    "id": "cmsoctnwp0005kt04wno892og",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "ADD_TO_CART",
+    "productId": "629fa721-9016-4a76-8a35-e4f23852d194",
+    "productSlug": "chocolat-vanille",
+    "productName": "Chocolat  vanille",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-11T07:44:03.145Z"
+  },
+  {
+    "id": "cmsow9y5x0002jp04cu41t1ay",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "PRODUCT_VIEW",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": null,
+    "createdAt": "2026-08-11T16:48:35.638Z"
+  },
+  {
+    "id": "cmsow9z3b0005jp0461c8i58o",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "ADD_TO_CART",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-11T16:48:36.840Z"
+  },
+  {
+    "id": "cmsowa09m0008jp04qhqf24v4",
+    "deviceId": "cmsnktdom0003jo04yve5jg2i",
+    "customerId": "cmsnkw2bn000djo04ker1qu6p",
+    "type": "ADD_TO_CART",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-11T16:48:38.363Z"
+  },
+  {
+    "id": "cmsp2lkh40002l304not15pbi",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "PRODUCT_VIEW",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": null,
+    "createdAt": "2026-08-11T19:45:35.465Z"
+  },
+  {
+    "id": "cmsp2llk90005l304mawfxqgm",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "ADD_TO_CART",
+    "productId": "48929187-e7a4-4eaa-a0d9-86f180671efe",
+    "productSlug": "test-2",
+    "productName": "TEST",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-11T19:45:36.874Z"
+  },
+  {
+    "id": "cmsp2n9vv0008l3044dos5phh",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmrlzfnhs000al904ds23ewtf",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-11T19:46:55.051Z"
+  },
+  {
+    "id": "cmsp2odbw0005js04vfk63x1p",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-11T19:47:46.172Z"
+  },
+  {
+    "id": "cmsp2xo280002l7043ebsq4xw",
+    "deviceId": "cms1x677u0000jl04xc92idag",
+    "customerId": "cmsnk1n430007jn0430b23cbb",
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-11T19:54:59.985Z"
+  },
+  {
+    "id": "cmsq2eykg0002txyg8f3rxcdq",
+    "deviceId": "cmsq2exot0000txygf4xnuv5w",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "2",
+    "productSlug": "mango-passion",
+    "productName": "Mango Passion",
+    "metadata": null,
+    "createdAt": "2026-08-12T12:28:13.311Z"
+  },
+  {
+    "id": "cmsq2kau70005txygyvfw011q",
+    "deviceId": "cmsq2exot0000txygf4xnuv5w",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "e9fd5089-833d-4f6e-baa2-26008b8fcf71",
+    "productSlug": "fraisier",
+    "productName": "Fraisier",
+    "metadata": null,
+    "createdAt": "2026-08-12T12:32:22.496Z"
+  },
+  {
+    "id": "cmsq3da3g0002jp04lcy2pvyh",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-12T12:54:54.556Z"
+  },
+  {
+    "id": "cmsq3dca70005jp04x6przyvv",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-12T12:54:57.391Z"
+  },
+  {
+    "id": "cmsqzzfz50002lb04ejp5g6l3",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-13T04:07:56.322Z"
+  },
+  {
+    "id": "cmsqzznwj0005lb0421mg56ql",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-13T04:08:06.595Z"
+  },
+  {
+    "id": "cmsqzzv8z0008lb04uj7gmmrp",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "1",
+    "productSlug": "vanilla-caramel",
+    "productName": "Vanilla Caramel",
+    "metadata": null,
+    "createdAt": "2026-08-13T04:08:16.115Z"
+  },
+  {
+    "id": "cmsqzzwvf000blb04of6znlls",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "1",
+    "productSlug": "vanilla-caramel",
+    "productName": "Vanilla Caramel",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-13T04:08:18.220Z"
+  },
+  {
+    "id": "cmsr009jj000elb04uidvffl1",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "1",
+    "productSlug": "vanilla-caramel",
+    "productName": "Vanilla Caramel",
+    "metadata": null,
+    "createdAt": "2026-08-13T04:08:34.639Z"
+  },
+  {
+    "id": "cmsr06fn2000hlb04pbgru6p8",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-13T04:13:22.479Z"
+  },
+  {
+    "id": "cmsr06kqf000klb04z8ghkhai",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": {
+      "quantity": 2
+    },
+    "createdAt": "2026-08-13T04:13:29.080Z"
+  },
+  {
+    "id": "cmsr0769z0002l704gtggrxmo",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-13T04:13:57.000Z"
+  },
+  {
+    "id": "cmsr0p8l80002kz04qgqs3fhv",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-13T04:27:59.804Z"
+  },
+  {
+    "id": "cmsr3s8jw0002jr04rc2ps14m",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-13T05:54:18.572Z"
+  },
+  {
+    "id": "cmsrplk640002l304m2p13ots",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "6",
+    "productSlug": "foret-blanche",
+    "productName": "Forêt Blanche",
+    "metadata": null,
+    "createdAt": "2026-08-13T16:04:58.588Z"
+  },
+  {
+    "id": "cmsrplv8d0005l304myt7x2lo",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-13T16:05:12.855Z"
+  },
+  {
+    "id": "cmsuvjrz20002ie04uhod0mdn",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-15T21:14:51.614Z"
+  },
+  {
+    "id": "cmsuvjt9q0005ie04cigdetxf",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-15T21:14:53.294Z"
+  },
+  {
+    "id": "cmsuvko7n0008ie04ij40phh7",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-08-15T21:15:33.395Z"
+  },
+  {
+    "id": "cmsvz06e70002jl04clzedbgc",
+    "deviceId": "cmsvz06410000jl04dcmxgzek",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "13",
+    "productSlug": "bouquet-roses",
+    "productName": "Bouquet de roses",
+    "metadata": null,
+    "createdAt": "2026-08-16T15:39:21.824Z"
+  },
+  {
+    "id": "cmt7lrjwi0002jt047nxt8hno",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "223b50d4-169b-4567-be62-04445ccc9306",
+    "productSlug": "mangue-framboise",
+    "productName": "Mangue framboise",
+    "metadata": null,
+    "createdAt": "2026-08-24T19:01:58.531Z"
+  },
+  {
+    "id": "cmt7ls85z0005jt04lhjril88",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "223b50d4-169b-4567-be62-04445ccc9306",
+    "productSlug": "mangue-framboise",
+    "productName": "Mangue framboise",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-24T19:02:29.975Z"
+  },
+  {
+    "id": "cmt7ltyxr0008jt04y7mgz0l9",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-24T19:03:51.327Z"
+  },
+  {
+    "id": "cmt7luqx4000bjt04f6mrk2g0",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "223b50d4-169b-4567-be62-04445ccc9306",
+    "productSlug": "mangue-framboise",
+    "productName": "Mangue framboise",
+    "metadata": null,
+    "createdAt": "2026-08-24T19:04:27.593Z"
+  },
+  {
+    "id": "cmt7vib510002l604vg4mxfkk",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-24T23:34:43.429Z"
+  },
+  {
+    "id": "cmt7vio2z0005l604vvt9iqje",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "2",
+    "productSlug": "mango-passion",
+    "productName": "Mango Passion",
+    "metadata": null,
+    "createdAt": "2026-08-24T23:35:00.204Z"
+  },
+  {
+    "id": "cmt7viwc70008l604dc67asbw",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-24T23:35:10.903Z"
+  },
+  {
+    "id": "cmt7vj9r6000bl6049rw15t4l",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino Baileys",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-08-24T23:35:28.291Z"
+  },
+  {
+    "id": "cmt7vold3000el6045t6wpv9z",
+    "deviceId": "cmt7lrjmd0000jt042nmqkw0m",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "b257e930-55cd-49f2-bd1e-261ce5e43733",
+    "productSlug": "caramel-cappucino-baileys",
+    "productName": "Caramel cappucino Baileys",
+    "metadata": null,
+    "createdAt": "2026-08-24T23:39:36.615Z"
+  },
+  {
+    "id": "cmtfwt7170002l404j20l3b4f",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": null,
+    "createdAt": "2026-08-30T14:33:20.347Z"
+  },
+  {
+    "id": "cmtfwu17p0005l404sc4w0he1",
+    "deviceId": "cmsq3d9tk0000jp047z3u8rhb",
+    "customerId": null,
+    "type": "PRODUCT_VIEW",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": null,
+    "createdAt": "2026-08-30T14:33:59.462Z"
+  },
+  {
+    "id": "cmtivks6a0005ld040zkmzay4",
+    "deviceId": "cmtivkqod0000ld04wkvj5cqz",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "11",
+    "productSlug": "carte-cadeau",
+    "productName": "Carte cadeau",
+    "metadata": {
+      "quantity": 2
+    },
+    "createdAt": "2026-09-01T16:22:06.754Z"
+  },
+  {
+    "id": "cmtivmcm70008ld04q0m076b9",
+    "deviceId": "cmtivkqod0000ld04wkvj5cqz",
+    "customerId": null,
+    "type": "ADD_TO_CART",
+    "productId": "12",
+    "productSlug": "nounours-beige",
+    "productName": "Nounours beige",
+    "metadata": {
+      "quantity": 1
+    },
+    "createdAt": "2026-09-01T16:23:19.904Z"
+  },
+  {
+    "id": "cmtivmdno0002ib04wsf1vhuv",
+    "deviceId": "cmtivkqod0000ld04wkvj5cqz",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-09-01T16:23:21.253Z"
+  },
+  {
+    "id": "cmtivmdrh0002jp045unn27u6",
+    "deviceId": "cmtivkqod0000ld04wkvj5cqz",
+    "customerId": null,
+    "type": "CHECKOUT_START",
+    "productId": null,
+    "productSlug": null,
+    "productName": null,
+    "metadata": null,
+    "createdAt": "2026-09-01T16:23:21.390Z"
+  }
+]

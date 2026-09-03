@@ -121,23 +121,11 @@ export type SizedProduct = {
   price: number;
 };
 
-/** Nounours en peluche, tarif par taille. */
-export const NOUNOURS: SizedProduct[] = [
-  [20, 10000],
-  [25, 15000],
-  [30, 25000],
-  [80, 35000],
-  [90, 40000],
-  [100, 45000],
-  [120, 50000],
-  [130, 70000],
-  [140, 90000],
-].map(([cm, price]) => ({
-  slug: `nounours-${cm}cm`,
-  name: `Nounours ${cm} cm`,
-  description: `Nounours en peluche, ${cm} cm.`,
-  price: price!,
-}));
+/**
+ * Nounours en peluche — catégorie à stock illimité, paliers de taille à définir.
+ * Laisser vide pour l'instant (aucune donnée de test fictive).
+ */
+export const NOUNOURS: SizedProduct[] = [];
 
 /** Bouquets de roses fraîches. */
 export const BOUQUETS: SizedProduct[] = [

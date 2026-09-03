@@ -1,0 +1,101 @@
+[
+  {
+    "id": "cmstxth4i0000il04giix0rdu",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-15T05:30:37.171Z",
+    "expiresAt": "2027-09-19T05:30:37.170Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-15T05:30:37.171Z",
+    "userAgent": "WhatsApp/2.23.20.0",
+    "ipHash": "a4117914132d701d2ce34b183ae2ece5"
+  },
+  {
+    "id": "cmstxtnfc0001il04d1wa7f5m",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-15T05:30:45.337Z",
+    "expiresAt": "2027-09-19T05:30:45.336Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-15T05:30:45.337Z",
+    "userAgent": "WhatsApp/2.23.20.0",
+    "ipHash": "a4117914132d701d2ce34b183ae2ece5"
+  },
+  {
+    "id": "cmsw8owvr0000ie04x1io4d57",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-16T20:10:32.439Z",
+    "expiresAt": "2027-09-20T20:10:32.438Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-16T20:10:40.912Z",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/143.0.0.0 Mobile Safari/537.36",
+    "ipHash": "4f422a07f6c601d724bd31c7dbf2fca5"
+  },
+  {
+    "id": "cmsq4fgsm0000jv04nm923ui2",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-12T13:24:36.167Z",
+    "expiresAt": "2027-09-16T13:24:36.164Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-12T13:27:54.952Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "ipHash": "b0aac3f5e3739349cc4c58ed0dc0ff05"
+  },
+  {
+    "id": "cmsq4jtwd0000l90466u1go4f",
+    "role": "employe",
+    "name": "Équipe Cotonou",
+    "createdAt": "2026-08-12T13:27:59.773Z",
+    "expiresAt": "2027-09-16T13:27:59.773Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-09-03T17:56:58.358Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    "ipHash": "b0aac3f5e3739349cc4c58ed0dc0ff05"
+  },
+  {
+    "id": "cmsx720nj0000l5046b1dhoia",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-17T12:12:30.800Z",
+    "expiresAt": "2027-09-21T12:12:30.798Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-17T12:13:26.281Z",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Mobile Safari/537.36",
+    "ipHash": "653dc6483aa046eff5978ea63ab76911"
+  },
+  {
+    "id": "cmtabcpvu0000l504dc5u6529",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-26T16:33:48.811Z",
+    "expiresAt": "2027-09-30T16:33:48.809Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-26T16:33:48.811Z",
+    "userAgent": "WhatsApp/2.23.20.0",
+    "ipHash": "577d25514eb589b2121a6b5f8cfa6b13"
+  },
+  {
+    "id": "cmtabcwia0001l504uqc0n4ud",
+    "role": "administrateur",
+    "name": "Fondateur",
+    "createdAt": "2026-08-26T16:33:57.394Z",
+    "expiresAt": "2027-09-30T16:33:57.393Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-08-26T16:33:57.394Z",
+    "userAgent": "WhatsApp/2.23.20.0",
+    "ipHash": "577d25514eb589b2121a6b5f8cfa6b13"
+  },
+  {
+    "id": "cmsw8pxut0000jm04x8swhbff",
+    "role": "employe",
+    "name": "Équipe Cotonou",
+    "createdAt": "2026-08-16T20:11:20.357Z",
+    "expiresAt": "2027-09-20T20:11:20.357Z",
+    "revokedAt": null,
+    "lastSeenAt": "2026-09-01T16:13:08.233Z",
+    "userAgent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/143.0.0.0 Mobile Safari/537.36",
+    "ipHash": "4f422a07f6c601d724bd31c7dbf2fca5"
+  }
+]

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "1a92c0d6-ebab-479a-9fe8-3d021b9898c0",
+    "dayOfWeek": 0,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "03c0526d-85ad-46ed-b9c4-06c33927f737",
+    "dayOfWeek": 0,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  },
+  {
+    "id": "07e74c0b-09b3-4811-90e5-1580dfa655df",
+    "dayOfWeek": 1,
+    "startTime": "13:00",
+    "endTime": "19:45",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "4dbb5178-9e06-4425-a180-620d96ed024d",
+    "dayOfWeek": 1,
+    "startTime": "13:00",
+    "endTime": "18:31",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": false
+  },
+  {
+    "id": "8a79a5e0-0bb1-49e3-a1a5-fcdf36f1dc57",
+    "dayOfWeek": 2,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "de016e0b-1c99-4b4c-98b9-116d7bdc31fb",
+    "dayOfWeek": 2,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  },
+  {
+    "id": "0324ce44-04e7-4026-80c5-67f92bf45a70",
+    "dayOfWeek": 3,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "c15448a8-a9a0-4c59-a199-e72c9e136047",
+    "dayOfWeek": 3,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  },
+  {
+    "id": "2cd9dcc4-fb88-48d6-a7b5-6d9a3d62327e",
+    "dayOfWeek": 4,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "2483f6c2-1c37-4c08-90e7-4e9119c71bfa",
+    "dayOfWeek": 4,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  },
+  {
+    "id": "c4eaa1b5-931d-4967-83cc-31f3d997f053",
+    "dayOfWeek": 5,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "cf091822-8353-4153-9684-0b167a338626",
+    "dayOfWeek": 5,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  },
+  {
+    "id": "ddc7e4cf-ac63-46b4-8f73-aabfd627240d",
+    "dayOfWeek": 6,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "delivery",
+    "isActive": true
+  },
+  {
+    "id": "52e5a20d-943a-469e-abe4-ed91dea72852",
+    "dayOfWeek": 6,
+    "startTime": "13:00",
+    "endTime": "18:30",
+    "slotDuration": 330,
+    "type": "pickup",
+    "isActive": true
+  }
+]

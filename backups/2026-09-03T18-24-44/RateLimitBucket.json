@@ -1,0 +1,567 @@
+[
+  {
+    "key": "cart:quote:197.234.221.171",
+    "count": 1,
+    "resetAt": "2026-08-06T16:06:19.013Z"
+  },
+  {
+    "key": "crm:link:197.234.221.171",
+    "count": 1,
+    "resetAt": "2026-08-06T16:06:48.262Z"
+  },
+  {
+    "key": "cart:quote:197.234.221.181",
+    "count": 3,
+    "resetAt": "2026-07-26T16:26:57.634Z"
+  },
+  {
+    "key": "crm:link:197.234.221.181",
+    "count": 1,
+    "resetAt": "2026-07-26T16:28:09.724Z"
+  },
+  {
+    "key": "crm:activity:197.234.221.181",
+    "count": 1,
+    "resetAt": "2026-07-26T16:28:09.742Z"
+  },
+  {
+    "key": "orders:create:197.234.221.181",
+    "count": 1,
+    "resetAt": "2026-07-26T16:28:13.921Z"
+  },
+  {
+    "key": "payments:initiate:197.234.221.181",
+    "count": 1,
+    "resetAt": "2026-07-26T16:28:17.463Z"
+  },
+  {
+    "key": "orders:tracking:197.234.221.181",
+    "count": 1,
+    "resetAt": "2026-07-26T16:28:22.745Z"
+  },
+  {
+    "key": "crm:activity:197.234.221.171",
+    "count": 2,
+    "resetAt": "2026-08-06T16:06:19.034Z"
+  },
+  {
+    "key": "orders:create:197.234.221.171",
+    "count": 1,
+    "resetAt": "2026-08-06T16:06:56.160Z"
+  },
+  {
+    "key": "payments:initiate:197.234.221.171",
+    "count": 1,
+    "resetAt": "2026-08-06T16:06:59.705Z"
+  },
+  {
+    "key": "cart:quote:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:07:54.258Z"
+  },
+  {
+    "key": "crm:activity:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:08:12.824Z"
+  },
+  {
+    "key": "crm:link:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:08:12.845Z"
+  },
+  {
+    "key": "orders:create:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:08:33.310Z"
+  },
+  {
+    "key": "payments:initiate:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:08:36.775Z"
+  },
+  {
+    "key": "orders:tracking:197.234.221.44",
+    "count": 1,
+    "resetAt": "2026-07-26T17:08:42.484Z"
+  },
+  {
+    "key": "orders:tracking:197.234.221.171",
+    "count": 2,
+    "resetAt": "2026-08-06T16:07:07.839Z"
+  },
+  {
+    "key": "cart:quote:197.234.223.210",
+    "count": 3,
+    "resetAt": "2026-07-27T04:43:54.450Z"
+  },
+  {
+    "key": "crm:link:197.234.223.210",
+    "count": 1,
+    "resetAt": "2026-07-27T04:44:15.922Z"
+  },
+  {
+    "key": "crm:activity:197.234.223.210",
+    "count": 3,
+    "resetAt": "2026-07-27T04:43:47.853Z"
+  },
+  {
+    "key": "orders:create:197.234.223.210",
+    "count": 1,
+    "resetAt": "2026-07-27T04:44:19.317Z"
+  },
+  {
+    "key": "payments:initiate:197.234.223.210",
+    "count": 1,
+    "resetAt": "2026-07-27T04:44:23.408Z"
+  },
+  {
+    "key": "cart:quote:102.202.111.20",
+    "count": 3,
+    "resetAt": "2026-08-11T19:47:44.333Z"
+  },
+  {
+    "key": "crm:link:102.202.111.20",
+    "count": 2,
+    "resetAt": "2026-08-11T19:47:53.917Z"
+  },
+  {
+    "key": "orders:tracking:197.234.223.210",
+    "count": 1,
+    "resetAt": "2026-07-27T05:18:28.956Z"
+  },
+  {
+    "key": "orders:tracking:67.219.192.36",
+    "count": 1,
+    "resetAt": "2026-07-27T05:18:32.100Z"
+  },
+  {
+    "key": "cart:quote:137.255.10.114",
+    "count": 2,
+    "resetAt": "2026-08-10T18:44:01.967Z"
+  },
+  {
+    "key": "crm:activity:192.232.16.71",
+    "count": 1,
+    "resetAt": "2026-07-26T15:29:33.883Z"
+  },
+  {
+    "key": "cart:quote:197.234.221.145",
+    "count": 1,
+    "resetAt": "2026-08-06T16:10:53.056Z"
+  },
+  {
+    "key": "crm:link:197.234.221.145",
+    "count": 1,
+    "resetAt": "2026-08-06T16:11:59.700Z"
+  },
+  {
+    "key": "crm:activity:197.234.221.145",
+    "count": 1,
+    "resetAt": "2026-08-06T16:12:00.384Z"
+  },
+  {
+    "key": "orders:create:197.234.221.145",
+    "count": 1,
+    "resetAt": "2026-08-06T16:12:07.787Z"
+  },
+  {
+    "key": "payments:initiate:197.234.221.145",
+    "count": 1,
+    "resetAt": "2026-08-06T16:12:12.309Z"
+  },
+  {
+    "key": "orders:tracking:209.191.218.132",
+    "count": 1,
+    "resetAt": "2026-07-26T15:32:38.295Z"
+  },
+  {
+    "key": "orders:tracking:197.234.221.145",
+    "count": 3,
+    "resetAt": "2026-08-06T16:12:16.965Z"
+  },
+  {
+    "key": "payments:status:195.242.214.195",
+    "count": 1,
+    "resetAt": "2026-08-12T20:54:58.990Z"
+  },
+  {
+    "key": "cart:quote:197.234.221.51",
+    "count": 4,
+    "resetAt": "2026-07-28T05:25:51.546Z"
+  },
+  {
+    "key": "crm:link:197.234.221.51",
+    "count": 1,
+    "resetAt": "2026-07-28T05:27:01.564Z"
+  },
+  {
+    "key": "crm:activity:197.234.221.51",
+    "count": 1,
+    "resetAt": "2026-07-28T05:27:01.611Z"
+  },
+  {
+    "key": "orders:create:197.234.221.51",
+    "count": 1,
+    "resetAt": "2026-07-28T05:27:06.188Z"
+  },
+  {
+    "key": "orders:create:102.202.111.20",
+    "count": 2,
+    "resetAt": "2026-08-11T19:47:59.506Z"
+  },
+  {
+    "key": "orders:create:137.255.10.114",
+    "count": 3,
+    "resetAt": "2026-08-10T18:44:52.128Z"
+  },
+  {
+    "key": "payments:initiate:137.255.10.114",
+    "count": 3,
+    "resetAt": "2026-08-10T18:44:56.575Z"
+  },
+  {
+    "key": "crm:activity:137.255.37.130",
+    "count": 2,
+    "resetAt": "2026-08-10T15:09:06.940Z"
+  },
+  {
+    "key": "payments:initiate:102.202.111.20",
+    "count": 2,
+    "resetAt": "2026-08-11T19:48:05.611Z"
+  },
+  {
+    "key": "payments:initiate:197.234.221.51",
+    "count": 1,
+    "resetAt": "2026-07-28T05:27:09.621Z"
+  },
+  {
+    "key": "orders:tracking:197.234.221.51",
+    "count": 2,
+    "resetAt": "2026-07-28T05:27:14.606Z"
+  },
+  {
+    "key": "crm:activity:137.255.60.70",
+    "count": 2,
+    "resetAt": "2026-08-10T19:47:51.599Z"
+  },
+  {
+    "key": "cart:quote:137.255.37.130",
+    "count": 1,
+    "resetAt": "2026-08-10T15:27:27.366Z"
+  },
+  {
+    "key": "crm:activity:198.92.97.37",
+    "count": 1,
+    "resetAt": "2026-08-10T12:42:29.694Z"
+  },
+  {
+    "key": "cart:quote:137.255.60.70",
+    "count": 4,
+    "resetAt": "2026-08-10T19:48:04.934Z"
+  },
+  {
+    "key": "crm:activity:41.216.53.180",
+    "count": 2,
+    "resetAt": "2026-07-29T19:36:51.791Z"
+  },
+  {
+    "key": "orders:create:137.255.37.130",
+    "count": 4,
+    "resetAt": "2026-08-10T15:27:30.456Z"
+  },
+  {
+    "key": "payments:initiate:137.255.37.130",
+    "count": 4,
+    "resetAt": "2026-08-10T15:27:35.571Z"
+  },
+  {
+    "key": "cart:quote:41.216.53.180",
+    "count": 1,
+    "resetAt": "2026-07-29T19:39:24.977Z"
+  },
+  {
+    "key": "crm:activity:137.255.10.114",
+    "count": 1,
+    "resetAt": "2026-08-10T20:17:13.111Z"
+  },
+  {
+    "key": "cart:quote:80.79.6.96",
+    "count": 3,
+    "resetAt": "2026-07-30T11:15:00.682Z"
+  },
+  {
+    "key": "crm:link:80.79.6.96",
+    "count": 1,
+    "resetAt": "2026-07-30T11:15:30.419Z"
+  },
+  {
+    "key": "crm:activity:80.79.6.96",
+    "count": 3,
+    "resetAt": "2026-07-30T11:14:51.497Z"
+  },
+  {
+    "key": "orders:create:80.79.6.96",
+    "count": 1,
+    "resetAt": "2026-07-30T11:15:39.856Z"
+  },
+  {
+    "key": "payments:initiate:80.79.6.96",
+    "count": 1,
+    "resetAt": "2026-07-30T11:15:43.312Z"
+  },
+  {
+    "key": "orders:tracking:80.79.6.96",
+    "count": 2,
+    "resetAt": "2026-07-30T11:15:51.531Z"
+  },
+  {
+    "key": "crm:activity:89.33.8.59",
+    "count": 2,
+    "resetAt": "2026-08-11T07:45:00.093Z"
+  },
+  {
+    "key": "cart:quote:89.33.8.59",
+    "count": 1,
+    "resetAt": "2026-08-11T07:45:09.834Z"
+  },
+  {
+    "key": "orders:create:89.33.8.59",
+    "count": 1,
+    "resetAt": "2026-08-11T07:45:12.120Z"
+  },
+  {
+    "key": "orders:tracking:216.221.127.197",
+    "count": 1,
+    "resetAt": "2026-08-11T19:52:25.012Z"
+  },
+  {
+    "key": "crm:activity:45.82.64.237",
+    "count": 3,
+    "resetAt": "2026-08-11T16:49:33.978Z"
+  },
+  {
+    "key": "orders:tracking:137.255.112.152",
+    "count": 1,
+    "resetAt": "2026-08-11T19:52:37.805Z"
+  },
+  {
+    "key": "orders:tracking:197.234.219.142",
+    "count": 1,
+    "resetAt": "2026-08-11T19:53:50.159Z"
+  },
+  {
+    "key": "crm:link:137.255.37.130",
+    "count": 1,
+    "resetAt": "2026-08-10T14:48:22.872Z"
+  },
+  {
+    "key": "orders:tracking:102.202.111.20",
+    "count": 2,
+    "resetAt": "2026-08-11T19:55:35.377Z"
+  },
+  {
+    "key": "crm:activity:102.202.111.20",
+    "count": 1,
+    "resetAt": "2026-08-11T19:55:58.827Z"
+  },
+  {
+    "key": "crm:activity:::ffff:127.0.0.1",
+    "count": 1,
+    "resetAt": "2026-08-12T12:33:20.210Z"
+  },
+  {
+    "key": "payments:status:190.2.151.37",
+    "count": 1,
+    "resetAt": "2026-08-12T12:52:19.038Z"
+  },
+  {
+    "key": "orders:tracking:190.2.151.37",
+    "count": 1,
+    "resetAt": "2026-08-12T12:52:23.584Z"
+  },
+  {
+    "key": "crm:link:137.255.10.114",
+    "count": 1,
+    "resetAt": "2026-08-10T18:43:04.409Z"
+  },
+  {
+    "key": "crm:activity:190.2.151.37",
+    "count": 2,
+    "resetAt": "2026-08-12T12:55:53.764Z"
+  },
+  {
+    "key": "cart:quote:190.2.151.37",
+    "count": 1,
+    "resetAt": "2026-08-12T12:56:00.157Z"
+  },
+  {
+    "key": "admin:entree:190.2.151.37",
+    "count": 2,
+    "resetAt": "2026-08-12T13:39:35.216Z"
+  },
+  {
+    "key": "admin:entree:137.255.40.60",
+    "count": 2,
+    "resetAt": "2026-08-16T20:25:31.374Z"
+  },
+  {
+    "key": "cart:quote:195.242.214.195",
+    "count": 3,
+    "resetAt": "2026-08-12T21:01:19.641Z"
+  },
+  {
+    "key": "feexpay:webhook:169.150.218.37",
+    "count": 1,
+    "resetAt": "2026-08-13T05:25:35.516Z"
+  },
+  {
+    "key": "crm:activity:169.150.218.37",
+    "count": 1,
+    "resetAt": "2026-08-13T05:55:17.240Z"
+  },
+  {
+    "key": "payments:status:169.150.218.57",
+    "count": 1,
+    "resetAt": "2026-08-13T04:09:21.976Z"
+  },
+  {
+    "key": "cart:quote:169.150.218.57",
+    "count": 1,
+    "resetAt": "2026-08-13T04:09:23.313Z"
+  },
+  {
+    "key": "crm:activity:169.150.218.57",
+    "count": 5,
+    "resetAt": "2026-08-13T04:08:55.532Z"
+  },
+  {
+    "key": "crm:activity:45.82.64.231",
+    "count": 2,
+    "resetAt": "2026-08-13T16:05:57.204Z"
+  },
+  {
+    "key": "cart:quote:169.150.218.39",
+    "count": 1,
+    "resetAt": "2026-08-13T04:14:35.998Z"
+  },
+  {
+    "key": "crm:activity:169.150.218.39",
+    "count": 3,
+    "resetAt": "2026-08-13T04:14:21.333Z"
+  },
+  {
+    "key": "orders:create:169.150.218.39",
+    "count": 1,
+    "resetAt": "2026-08-13T04:15:05.050Z"
+  },
+  {
+    "key": "payments:initiate:169.150.218.39",
+    "count": 1,
+    "resetAt": "2026-08-13T04:15:09.836Z"
+  },
+  {
+    "key": "orders:tracking:137.255.55.137",
+    "count": 1,
+    "resetAt": "2026-08-14T00:09:17.110Z"
+  },
+  {
+    "key": "admin:entree:102.202.111.193",
+    "count": 2,
+    "resetAt": "2026-08-15T05:45:36.358Z"
+  },
+  {
+    "key": "crm:activity:45.82.64.235",
+    "count": 3,
+    "resetAt": "2026-08-15T21:15:50.298Z"
+  },
+  {
+    "key": "orders:create:45.82.64.235",
+    "count": 1,
+    "resetAt": "2026-08-15T21:16:38.802Z"
+  },
+  {
+    "key": "cart:quote:45.82.64.235",
+    "count": 4,
+    "resetAt": "2026-08-15T21:15:57.746Z"
+  },
+  {
+    "key": "payments:initiate:45.82.64.235",
+    "count": 1,
+    "resetAt": "2026-08-15T21:16:44.296Z"
+  },
+  {
+    "key": "payments:status:45.82.64.235",
+    "count": 3,
+    "resetAt": "2026-08-15T21:16:51.461Z"
+  },
+  {
+    "key": "crm:activity:102.176.65.180",
+    "count": 1,
+    "resetAt": "2026-08-16T15:40:20.506Z"
+  },
+  {
+    "key": "admin:entree:41.138.91.164",
+    "count": 1,
+    "resetAt": "2026-08-17T12:27:29.842Z"
+  },
+  {
+    "key": "admin:entree:197.234.221.37",
+    "count": 2,
+    "resetAt": "2026-08-26T16:48:47.814Z"
+  },
+  {
+    "key": "cart:quote:137.255.6.83",
+    "count": 2,
+    "resetAt": "2026-08-24T23:36:33.312Z"
+  },
+  {
+    "key": "crm:activity:137.255.6.83",
+    "count": 1,
+    "resetAt": "2026-08-24T23:40:35.842Z"
+  },
+  {
+    "key": "crm:activity:195.242.214.166",
+    "count": 2,
+    "resetAt": "2026-08-30T14:34:18.989Z"
+  },
+  {
+    "key": "crm:activity:197.234.223.215",
+    "count": 2,
+    "resetAt": "2026-09-01T16:23:03.770Z"
+  },
+  {
+    "key": "cart:quote:197.234.223.215",
+    "count": 2,
+    "resetAt": "2026-09-01T16:23:12.461Z"
+  },
+  {
+    "key": "cart:quote:197.234.223.218",
+    "count": 4,
+    "resetAt": "2026-09-01T16:25:26.827Z"
+  },
+  {
+    "key": "crm:activity:197.234.223.218",
+    "count": 3,
+    "resetAt": "2026-09-01T16:24:19.123Z"
+  },
+  {
+    "key": "orders:create:197.234.223.218",
+    "count": 1,
+    "resetAt": "2026-09-01T16:24:30.961Z"
+  },
+  {
+    "key": "payments:initiate:197.234.223.218",
+    "count": 1,
+    "resetAt": "2026-09-01T16:24:36.954Z"
+  },
+  {
+    "key": "feexpay:webhook:54.234.208.142",
+    "count": 1,
+    "resetAt": "2026-09-01T16:24:42.134Z"
+  },
+  {
+    "key": "cart:quote:197.234.221.224",
+    "count": 1,
+    "resetAt": "2026-09-01T17:11:27.209Z"
+  }
+]

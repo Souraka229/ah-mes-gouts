@@ -396,3 +396,14 @@ model PushSubscription {
 
   @@index([isActive])
 }
+
+/// Packs combinés (ex: nounours + bouquet) — prévue pour usage futur
+model PackCombine {
+  id         String   @id @default(cuid())
+  productAId String
+  productBId String
+  packPrice  Int
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

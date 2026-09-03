@@ -1,0 +1,29 @@
+[
+  {
+    "id": "cmsuvkzaa0001l40413nn2y9o",
+    "orderId": "GE-C7WS8EMY5N",
+    "reference": "3c7604b9-091e-41ca-b225-08cd7c184ccb",
+    "method": "MTN_MOMO",
+    "amount": 10000,
+    "status": "FAILED",
+    "initiatedAt": "2026-08-15T21:15:47.747Z",
+    "settledAt": "2026-08-15T21:16:04.011Z",
+    "lastRawResponse": {
+      "date": "2026-08-15T21:15:46.285Z",
+      "amount": 10000,
+      "reason": "LOW_BALANCE_OR_PAYEE_LIMIT_REACHED_OR_NOT_ALLOWED",
+      "status": "FAILED",
+      "comment": "",
+      "transref": "3c7604b9-091e-41ca-b225-08cd7c184ccb",
+      "reference": "3c7604b9-091e-41ca-b225-08cd7c184ccb",
+      "serviceref": "3c7604b9-091e-41ca-b225-08cd7c184ccb",
+      "description": "Commande GE-C7WS8EMY5N",
+      "operator_id": "",
+      "phoneNumber": "2290169949223",
+      "responsemsg": "FAILED",
+      "responsecode": "FAILED",
+      "callback_info": "GE-C7WS8EMY5N"
+    },
+    "failureReason": "Solde insuffisant sur le compte Mobile Money."
+  }
+]

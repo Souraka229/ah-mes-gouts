@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-09-03T18-24-44",
+  "totalTables": 21,
+  "totalRows": 829,
+  "counts": {
+    "DeliveryZone": 5,
+    "DeliverySchedule": 14,
+    "DeliveryOptions": 1,
+    "Product": 19,
+    "Menu": 11,
+    "Driver": 3,
+    "Customer": 14,
+    "CustomerDevice": 27,
+    "CustomerActivity": 238,
+    "CustomerOtp": 0,
+    "Order": 58,
+    "OrderItem": 79,
+    "PaymentAttempt": 1,
+    "AdminSession": 9,
+    "OrderIdempotencyKey": 39,
+    "RateLimitBucket": 113,
+    "SiteSettingsStore": 1,
+    "AdminActionLog": 115,
+    "OrderStatusFeed": 58,
+    "SiteVisitorDay": 24,
+    "PushSubscription": 0
+  }
+}

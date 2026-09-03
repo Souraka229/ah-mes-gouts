@@ -1,0 +1,26 @@
+[
+  {
+    "id": "cd1ba0f2-f3c6-4969-898b-ddc17be852f1",
+    "name": "Kossi Mensah",
+    "phone": "+22997000001",
+    "accessToken": "demo-driver-kossi-token",
+    "isActive": true,
+    "createdAt": "2026-07-10T07:32:14.900Z"
+  },
+  {
+    "id": "ddc1339d-a7f4-4c42-8bdc-56aab8f17a64",
+    "name": "Afi Dossou",
+    "phone": "+22997000002",
+    "accessToken": "demo-driver-afi-token",
+    "isActive": true,
+    "createdAt": "2026-07-10T07:32:15.754Z"
+  },
+  {
+    "id": "402d0ca9-c893-4bba-a39e-f8b2f274e86f",
+    "name": "TEST",
+    "phone": "+2290193527256",
+    "accessToken": "49bbf917-342b-41ed-a03e-65ac8348a1cb",
+    "isActive": true,
+    "createdAt": "2026-07-10T09:04:52.134Z"
+  }
+]

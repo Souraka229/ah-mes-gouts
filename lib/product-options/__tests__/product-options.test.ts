@@ -8,6 +8,11 @@ import {
 } from "@/lib/constants/rose-compositions";
 import { getRoseCompositionOptions } from "@/lib/product-options/compositions";
 import { getExtraProducts, isExtraProduct } from "@/lib/product-options/extras";
+import {
+  isUnlimitedStockCategory,
+  PRODUCT_CATEGORIES,
+  UPSELL_CATEGORIES,
+} from "@/lib/admin/categories";
 import { formatPrice } from "@/lib/format";
 import {
   formatExtraPriceDelta,
@@ -220,5 +225,39 @@ describe("mot manuscrit", () => {
         product("y", "Y", 1000, "Entremets", { isMenuDuJour: true }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("cohérence upsell du checkout", () => {
+  it("propose bien les chocolats au checkout", () => {
+    // `step-upsell.tsx` contient toute la logique « duo rose + chocolat »
+    // (isChocolateSupplement) : si les chocolats ne sont pas des candidats,
+    // cette branche ne se déclenche jamais. C'était le cas avant.
+    expect(UPSELL_CATEGORIES).toContain("Chocolats");
+  });
+
+  it("ne propose pas de bouquet à qui en a déjà un", () => {
+    expect(UPSELL_CATEGORIES).not.toContain("Fleurs");
+  });
+
+  it("n'oublie pas les nounours et les cartes", () => {
+    expect(UPSELL_CATEGORIES).toContain("Nounours");
+    expect(UPSELL_CATEGORIES).toContain("Carte");
+  });
+});
+
+describe("cohérence back-office", () => {
+  it("la catégorie Chocolats est gérable depuis l'admin", () => {
+    // Le formulaire produit boucle sur PRODUCT_CATEGORIES : une catégorie
+    // absente de cette liste serait impossible à créer ou corriger.
+    expect(PRODUCT_CATEGORIES).toContain("Chocolats");
+  });
+
+  it("une catégorie à stock illimité le reste", () => {
+    // Les fleurs et les chocolats sont montés à la demande : un stock suivi
+    // bloquerait des ventes sans raison.
+    expect(isUnlimitedStockCategory("Fleurs")).toBe(true);
+    expect(isUnlimitedStockCategory("Chocolats")).toBe(true);
+    expect(isUnlimitedStockCategory("Entremets")).toBe(false);
   });
 });

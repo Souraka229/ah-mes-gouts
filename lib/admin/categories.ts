@@ -39,8 +39,20 @@ export function isUnlimitedStockCategory(category: string): boolean {
   return UNLIMITED_STOCK_CATEGORIES.includes(category as ProductCategory);
 }
 
-/** Upsell : nounours + cartes. */
-export const UPSELL_CATEGORIES: ProductCategory[] = ["Nounours", "Carte"];
+/**
+ * Candidats à l'upsell du checkout : nounours, cartes, chocolats.
+ *
+ * Les chocolats manquaient ici, alors que `step-upsell.tsx` contient déjà
+ * toute la logique « duo rose + chocolat » (`isChocolateSupplement`) : faute
+ * de candidats, cette branche ne se déclenchait jamais. Les compositions de
+ * roses n'y sont pas : proposer un bouquet à qui en a déjà un n'a pas de sens,
+ * leur cross-sell vit sur la fiche produit.
+ */
+export const UPSELL_CATEGORIES: ProductCategory[] = [
+  "Nounours",
+  "Carte",
+  "Chocolats",
+];
 
 export function inferCategoryFromSlug(slug: string): ProductCategory {
   const s = slug.toLowerCase();

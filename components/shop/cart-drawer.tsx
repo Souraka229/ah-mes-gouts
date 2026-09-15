@@ -19,6 +19,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useCartStore, useCartTotals } from "@/lib/cart-store";
+import { useCheckoutStore } from "@/lib/checkout-store";
+import { CARD_MESSAGE_LABEL } from "@/lib/admin/order-board";
 import { getLineUnitPrice, getLineTotal } from "@/lib/cart-utils";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -134,6 +136,11 @@ export function CartDrawer() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const totals = useCartTotals();
+  // Le mot manuscrit vit dans le checkout (une commande = un mot), pas sur la
+  // ligne de panier. On le remonte ici pour que la cliente voie ce qu'elle a
+  // écrit avant de valider — sinon il n'apparaît qu'au paiement.
+  const giftMessage = useCheckoutStore((state) => state.gift.giftMessage);
+  const cardMessage = giftMessage.trim();
   const isMobile = useIsMobileSheet();
 
   return (
@@ -195,6 +202,17 @@ export function CartDrawer() {
 
         {items.length > 0 && (
           <div className="shrink-0 border-t border-border bg-bg px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(36,23,38,0.08)] sm:px-6">
+            {cardMessage && (
+              <div className="mb-3 rounded-xl border border-secondary/50 bg-secondary/10 px-3.5 py-3">
+                <p className="font-body text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                  {CARD_MESSAGE_LABEL}
+                </p>
+                <p className="mt-1 font-display text-sm leading-relaxed text-text italic">
+                  «&nbsp;{cardMessage}&nbsp;»
+                </p>
+              </div>
+            )}
+
             <div className="flex items-baseline justify-between gap-4">
               <div>
                 <p className="font-body text-xs text-muted-foreground">

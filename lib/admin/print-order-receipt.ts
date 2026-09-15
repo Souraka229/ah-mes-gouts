@@ -1,5 +1,6 @@
 import { formatPrice } from "@/lib/format";
 import {
+  CARD_MESSAGE_LABEL,
   clientLabel,
   formatFulfillmentPlace,
   formatFulfillmentType,
@@ -131,6 +132,10 @@ export function printOrderReceipt(order: SavedOrder): void {
       font-size: 18px; font-weight: 800; color: var(--primary);
     }
     .note { margin-top: 28px; padding: 14px 18px; background: #faf7f3; border-left: 3px solid var(--accent); font-size: 13px; line-height: 1.6; }
+    /* Le mot à recopier sur la carte : encadré et plus gros, il doit se voir
+       au premier coup d'œil sur le bon de préparation. */
+    .card-message { margin-top: 14px; border-left-color: var(--secondary, #0077b3); background: #eef7fc; }
+    .card-message-text { display: block; margin-top: 6px; font-size: 16px; font-style: italic; }
     .note strong { color: var(--primary); }
     .foot { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; }
     .foot .slogan { font-style: italic; color: var(--primary); font-size: 14px; }
@@ -211,8 +216,16 @@ export function printOrderReceipt(order: SavedOrder): void {
 
     <div class="note">
       <strong>Paiement :</strong> ${escapeHtml(paymentLabel(order))}
-      ${cakeMessage ? `<br /><strong>Message :</strong> ${escapeHtml(cakeMessage)}` : ""}
     </div>
+
+    ${
+      cakeMessage
+        ? `<div class="note card-message">
+      <strong>${escapeHtml(CARD_MESSAGE_LABEL)} :</strong>
+      <span class="card-message-text">${escapeHtml(cakeMessage)}</span>
+    </div>`
+        : ""
+    }
 
     <div class="foot">
       <p class="slogan">${escapeHtml(SLOGAN)}</p>

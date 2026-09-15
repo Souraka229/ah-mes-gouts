@@ -77,15 +77,22 @@ export async function priceOrderItems(
     .map((item) => item.slug)
     .filter((slug): slug is string => Boolean(slug));
 
+  // Stock live : une panne de base ne doit pas faire échouer la commande en
+  // 500. On laisse la carte vide — un produit à stock suivi sera alors refusé
+  // plus bas par le contrôle de stock, ce qui est le bon comportement.
   const liveStock = new Map<string, number>();
   if (slugs.length > 0) {
-    const prisma = getPrisma();
-    const rows = await prisma.product.findMany({
-      where: { slug: { in: slugs } },
-      select: { slug: true, stockRemaining: true },
-    });
-    for (const row of rows) {
-      liveStock.set(row.slug, row.stockRemaining);
+    try {
+      const prisma = getPrisma();
+      const rows = await prisma.product.findMany({
+        where: { slug: { in: slugs } },
+        select: { slug: true, stockRemaining: true },
+      });
+      for (const row of rows) {
+        liveStock.set(row.slug, row.stockRemaining);
+      }
+    } catch {
+      // Base injoignable : on continue avec le stock du catalogue.
     }
   }
 

@@ -119,6 +119,14 @@ export function formatFulfillmentPlace(order: SavedOrder): string {
   return mode === "dinein" ? "Boutique (sur place)" : "Boutique (à emporter)";
 }
 
+/**
+ * Libellé du mot manuscrit, affiché à l'équipe qui prépare la commande.
+ *
+ * Jamais « message sur le gâteau » : le même mot accompagne un bouquet, un
+ * nounours ou un entremets — c'est une carte, pas un décor de pâtisserie.
+ */
+export const CARD_MESSAGE_LABEL = "Message de la carte";
+
 export function getCakeMessage(order: SavedOrder): string | null {
   const gift = order.gift?.giftMessage?.trim();
   if (gift) return gift;

@@ -16,6 +16,7 @@ import {
 import { isTomorrowAtShop } from "@/lib/business-date";
 import { Button } from "@/components/ui/button";
 import {
+  CARD_MESSAGE_LABEL,
   STATUS_BORDER_CLASS,
   STATUS_DOT_CLASS,
   clientLabel,
@@ -176,6 +177,22 @@ export function OrderBoardCard({
           <p className="mt-1 font-body text-base text-text">
             {formatItemsSummary(order)}
           </p>
+
+          {/* Le mot manuscrit doit sauter aux yeux : c'est ce que la personne
+              qui prépare la commande doit recopier sur la carte. Affiché sans
+              avoir à déplier la carte, et étiqueté « carte » et non « gâteau »,
+              car il accompagne aussi bien un bouquet qu'un nounours. */}
+          {cakeMessage && (
+            <div className="mt-3 rounded-xl border border-secondary/50 bg-secondary/10 px-3.5 py-3">
+              <p className="font-body text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+                {CARD_MESSAGE_LABEL}
+              </p>
+              <p className="mt-1.5 font-display text-base leading-relaxed text-text italic">
+                «&nbsp;{cakeMessage}&nbsp;»
+              </p>
+            </div>
+          )}
+
           <p className="mt-2 font-display text-2xl font-bold text-primary">
             {formatPrice(order.total)}
           </p>
@@ -212,14 +229,6 @@ export function OrderBoardCard({
                 <span className="text-muted-foreground">Heure :</span>{" "}
                 {formatRetraitHeure(order)}
               </p>
-              {cakeMessage && (
-                <p>
-                  <span className="text-muted-foreground">
-                    Message sur le gâteau :
-                  </span>{" "}
-                  {cakeMessage}
-                </p>
-              )}
               <p>
                 <span className="text-muted-foreground">
                   Photo de référence :

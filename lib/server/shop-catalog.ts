@@ -8,7 +8,6 @@ import { UPSELL_CATEGORIES } from "@/lib/admin/categories";
 import { getAdminCatalog } from "@/lib/server/admin-catalog-repository";
 import { getShopProductsFromActiveMenu } from "@/lib/server/menu-repository";
 import type { Product } from "@/types/product";
-import { unstable_cache } from "next/cache";
 
 export { getShopProductsFromActiveMenu };
 
@@ -22,14 +21,8 @@ export type MenuShowcaseItem = {
   product: Product;
 };
 
-const getCachedCatalog = unstable_cache(
-  async () => getAdminCatalog(),
-  ["shop-full-catalog"],
-  { revalidate: 120, tags: ["catalog"] },
-);
-
 export async function getFullCatalog(): Promise<Product[]> {
-  return getCachedCatalog();
+  return getAdminCatalog();
 }
 
 export async function getShopProductBySlug(

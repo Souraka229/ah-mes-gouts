@@ -26,6 +26,13 @@ export type AdminCatalogProduct = Product & {
 
 
 
+/** Écriture auto interdite sur Vercel / prod — évite la réinjection démo après vidage. */
+function isProductionRuntime(): boolean {
+  return (
+    process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+  );
+}
+
 function seedCatalog(): AdminCatalogProduct[] {
 
   return seedProducts.map((product) => ({
@@ -199,6 +206,12 @@ async function readCatalogFromDb(): Promise<AdminCatalogProduct[] | null> {
 }
 
 async function writeCatalogToDb(catalog: AdminCatalogProduct[]): Promise<void> {
+  if (isProductionRuntime() && catalog.length > 1) {
+    console.warn(
+      "[catalog] writeCatalogToDb bulk bloqué en production — utilisez l'admin ou seed:db",
+    );
+    return;
+  }
   try {
     const prisma = getPrisma();
     await prisma.$transaction([
@@ -258,9 +271,12 @@ function applyGiftOverrides(catalog: AdminCatalogProduct[]): AdminCatalogProduct
 
 export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
   const fromDb = await readCatalogFromDb();
-  const catalog = fromDb ?? seedCatalog();
-  if (!fromDb) await writeCatalogToDb(catalog);
-  return applyGiftOverrides(catalog);
+  if (fromDb) return applyGiftOverrides(fromDb);
+  // Base vide = catalogue vide (prod + build Vercel). Dev local : fallback mémoire sans écriture.
+  if (!isProductionRuntime()) {
+    return applyGiftOverrides(seedCatalog());
+  }
+  return [];
 }
 
 

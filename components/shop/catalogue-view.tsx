@@ -25,7 +25,7 @@ import {
 } from "@/types/product";
 import type { Product } from "@/types/product";
 
-type CatalogueTab = "menu" | "nounours" | "carte" | "all";
+type CatalogueTab = "menu" | "fleurs" | "nounours" | "carte" | "all";
 
 type CatalogueViewProps = {
   menuProducts?: Product[];
@@ -49,7 +49,9 @@ export function CatalogueView({
   /** Aucun entremets commandable aujourd'hui : le menu du jour n'est pas publié. */
   const noMenuToday = menuCatalog.length === 0;
 
-  const [activeTab, setActiveTab] = useState<CatalogueTab>("menu");
+  const [activeTab, setActiveTab] = useState<CatalogueTab>(
+    noMenuToday ? "fleurs" : "menu",
+  );
 
   const [minPrice, maxPrice] = useMemo(
     () => getPriceBounds(fullCatalog),
@@ -88,6 +90,11 @@ export function CatalogueView({
     [fullCatalog, activeFilters],
   );
 
+  const fleursCatalog = useMemo(
+    () => fullCatalog.filter((p) => getProductCategory(p) === "Fleurs"),
+    [fullCatalog],
+  );
+
   const nounoursCatalog = useMemo(
     () =>
       fullCatalog.filter(
@@ -100,9 +107,14 @@ export function CatalogueView({
     () =>
       fullCatalog.filter((p) => {
         const cat = getProductCategory(p);
-        return cat === "Carte" || cat === "Cadeaux";
+        return cat === "Carte" || cat === "Cadeaux" || cat === "Sur commande";
       }),
     [fullCatalog],
+  );
+
+  const filteredFleurs = useMemo(
+    () => filterProducts(fleursCatalog, activeFilters),
+    [fleursCatalog, activeFilters],
   );
 
   const filteredNounours = useMemo(
@@ -118,11 +130,13 @@ export function CatalogueView({
   const activeCount =
     activeTab === "menu"
       ? filteredMenu.length
-      : activeTab === "nounours"
-        ? filteredNounours.length
-        : activeTab === "carte"
-          ? filteredCarte.length
-          : filteredAll.length;
+      : activeTab === "fleurs"
+        ? filteredFleurs.length
+        : activeTab === "nounours"
+          ? filteredNounours.length
+          : activeTab === "carte"
+            ? filteredCarte.length
+            : filteredAll.length;
 
   const filterPanelProps = {
     filters,
@@ -209,8 +223,9 @@ export function CatalogueView({
         {(
           [
             ["menu", "Menu du jour"],
+            ["fleurs", "Fleurs"],
             ["nounours", "Nounours"],
-            ["carte", "Carte"],
+            ["carte", "Sur commande"],
             ["all", "Toute la carte"],
           ] as const
         ).map(([tab, label]) => (
@@ -257,12 +272,31 @@ export function CatalogueView({
               {noMenuToday ? (
                 <MenuUnavailableNotice
                   onBrowseAll={() => setActiveTab("all")}
+                  onBrowseFleurs={() => setActiveTab("fleurs")}
                   onBrowseNounours={() => setActiveTab("nounours")}
                   onBrowseCarte={() => setActiveTab("carte")}
                 />
               ) : (
                 renderProductGrid(filteredMenu, true)
               )}
+            </section>
+          )}
+
+          {activeTab === "fleurs" && (
+            <section aria-labelledby="fleurs-title">
+              <div className="mb-8 border-b border-border pb-6">
+                <h2
+                  id="fleurs-title"
+                  className="font-display text-3xl font-bold text-primary sm:text-4xl"
+                >
+                  Fleurs &amp; bouquets
+                </h2>
+                <p className="mt-2 font-body text-sm text-muted-foreground">
+                  Roses, gypsophile, bambou et bouquets composés — toujours
+                  disponibles.
+                </p>
+              </div>
+              {renderProductGrid(filteredFleurs)}
             </section>
           )}
 
@@ -290,10 +324,11 @@ export function CatalogueView({
                   id="carte-title"
                   className="font-display text-3xl font-bold text-primary sm:text-4xl"
                 >
-                  Carte & cadeaux
+                  Sur commande
                 </h2>
                 <p className="mt-2 font-body text-sm text-muted-foreground">
-                  Cartes cadeau et surprises — commandables sans limite de stock.
+                  Grands entremets à la part — montés à la commande, 6 à 12 parts
+                  selon la recette.
                 </p>
               </div>
               {renderProductGrid(filteredCarte)}
@@ -329,10 +364,12 @@ export function CatalogueView({
  */
 function MenuUnavailableNotice({
   onBrowseAll,
+  onBrowseFleurs,
   onBrowseNounours,
   onBrowseCarte,
 }: {
   onBrowseAll: () => void;
+  onBrowseFleurs: () => void;
   onBrowseNounours: () => void;
   onBrowseCarte: () => void;
 }) {
@@ -359,6 +396,13 @@ function MenuUnavailableNotice({
         </button>
         <button
           type="button"
+          onClick={onBrowseFleurs}
+          className="cursor-pointer rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-primary transition-colors hover:border-primary/40"
+        >
+          Fleurs
+        </button>
+        <button
+          type="button"
           onClick={onBrowseNounours}
           className="cursor-pointer rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-primary transition-colors hover:border-primary/40"
         >
@@ -369,7 +413,7 @@ function MenuUnavailableNotice({
           onClick={onBrowseCarte}
           className="cursor-pointer rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-primary transition-colors hover:border-primary/40"
         >
-          Carte &amp; cadeaux
+          Sur commande
         </button>
       </div>
     </div>

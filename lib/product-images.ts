@@ -14,9 +14,15 @@ const PRODUCT_IMAGES: Record<string, string> = {
   tiramisu: `${PRODUCT_IMAGE_BASE}/tiramisu-caramel.webp`,
   "foret-blanche": `${PRODUCT_IMAGE_BASE}/foret-blanche.webp`,
   "nutella-caramel": `${PRODUCT_IMAGE_BASE}/nutella-baileys-speculos.webp`,
-  speculoos: `${PRODUCT_IMAGE_BASE}/chocolat-cappuccino.webp`,
+  speculoos: `${PRODUCT_IMAGE_BASE}/speculoos.webp`,
   "mousse-chocolat": `${PRODUCT_IMAGE_BASE}/foret-noire.webp`,
-  "carte-cadeau": `${PRODUCT_IMAGE_BASE}/goyave-vanille.webp`,
+  "carte-cadeau": `${PRODUCT_IMAGE_BASE}/carte-cadeau.webp`,
+  // Cadeaux : les photos existent dans produits/. Sans ces entrées,
+  // getProductImageUrl tombait sur le repli cadeau et servait la mauvaise
+  // image — ou aucune, quand le repli pointait vers un fichier absent.
+  nounours: `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
+  "nounours-beige": `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
+  "bouquet-roses": `${PRODUCT_IMAGE_BASE}/bouquet-roses.webp`,
 };
 
 /** Affiches marketing (VERSION B — nom + prix dans l'image). */
@@ -125,7 +131,8 @@ export function getProductImageUrl(slug: string, fallback?: string): string {
     PRODUCT_IMAGES[slug] ??
     getUpsellImageUrl(slug) ??
     fallback ??
-    DEFAULT_PRODUCT_IMAGE
+    // Jamais la photo d'un autre produit : vide = emplacement neutre.
+    ""
   );
 }
 

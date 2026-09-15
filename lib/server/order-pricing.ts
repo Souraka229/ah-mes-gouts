@@ -1,6 +1,11 @@
 import { getProductPrice, getProductCategory } from "@/lib/catalog-utils";
 import { isUnlimitedStockCategory } from "@/lib/admin/categories";
 import {
+  getNounoursSizeByCm,
+  isNounoursProduct,
+  NOUNOURS_SIZES,
+} from "@/lib/constants/nounours-sizes";
+import {
   getFullCatalog,
   getShopProductsFromActiveMenu,
 } from "@/lib/server/shop-catalog";
@@ -31,6 +36,8 @@ export type RawOrderItem = {
   name: string;
   quantity: number;
   supplements: string[];
+  /** Taille en cm — produits à paliers (nounours). */
+  sizeCm?: number;
 };
 
 /** Prix des suppléments, source de vérité serveur (jamais le client). */
@@ -145,6 +152,32 @@ export async function priceOrderItems(
       }
     }
 
+    /**
+     * Produits à paliers : une seule fiche catalogue porte le prix d'entrée,
+     * le vrai prix vient de la taille choisie. Sans cette résolution, un
+     * nounours 80 cm serait facturé au tarif du plus petit — la cliente voit
+     * 35 000 F et paie 10 000 F.
+     */
+    let variantPrice: number | undefined;
+    let itemName = product.name;
+    if (isNounoursProduct(product.slug)) {
+      const size =
+        raw.sizeCm === undefined
+          ? NOUNOURS_SIZES[0]
+          : getNounoursSizeByCm(raw.sizeCm);
+
+      if (!size) {
+        issues.push({
+          name: product.name,
+          message: `Taille indisponible (${raw.sizeCm} cm).`,
+        });
+        continue;
+      }
+
+      variantPrice = size.price;
+      itemName = `${product.name} — ${size.cm} cm`;
+    }
+
     let supplementsPrice = 0;
     let supplementInvalid = false;
     for (const supplementName of raw.supplements) {
@@ -161,11 +194,11 @@ export async function priceOrderItems(
     }
     if (supplementInvalid) continue;
 
-    const unitPrice = getProductPrice(product) + supplementsPrice;
+    const unitPrice = (variantPrice ?? getProductPrice(product)) + supplementsPrice;
     subtotal += unitPrice * raw.quantity;
 
     items.push({
-      name: product.name,
+      name: itemName,
       quantity: raw.quantity,
       unitPrice,
       supplements: raw.supplements,

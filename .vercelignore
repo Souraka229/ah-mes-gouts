@@ -15,3 +15,7 @@ data/*.json
 public/images/catalog
 public/images/generated
 public/images/landing/hero-gift-entremets.png
+
+# Exports de données locales : clients, hashs OTP, sessions admin, paiements.
+# Ne doivent JAMAIS être téléversés dans un déploiement.
+backups

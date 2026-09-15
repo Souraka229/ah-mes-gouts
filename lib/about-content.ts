@@ -3,10 +3,10 @@ import {
   BOUQUETS,
   CLASSIC_CAKES,
   CLASSIC_PART_PRICE,
-  NOUNOURS,
   SIGNATURE_CAKES,
   SIGNATURE_PART_PRICE,
 } from "@/lib/constants/catalogue-maison";
+import { getNounoursPriceRange } from "@/lib/constants/nounours-sizes";
 
 /**
  * Contenu de la page « à propos ».
@@ -34,7 +34,6 @@ export {
   BOUQUETS,
   CLASSIC_CAKES,
   CLASSIC_PART_PRICE,
-  NOUNOURS,
   SIGNATURE_CAKES,
   SIGNATURE_PART_PRICE,
 };
@@ -46,8 +45,7 @@ export function getBouquetRange(): { min: number; max: number } {
 }
 
 export function getNounoursRange(): { min: number; max: number } {
-  const prices = NOUNOURS.map((n) => n.price);
-  return { min: Math.min(...prices), max: Math.max(...prices) };
+  return getNounoursPriceRange();
 }
 
 export type AboutFaq = { question: string; answer: string };
@@ -104,7 +102,7 @@ export function buildAboutFaq(input: {
     },
     {
       question: `${input.siteName} vend-il autre chose que des gâteaux ?`,
-      answer: `Oui. La maison propose des bouquets de roses fraîches, de ${fcfa(bouquets.min)} pour une rose à l'unité à ${fcfa(bouquets.max)} pour un bouquet de vingt roses, ainsi que des nounours en peluche de ${fcfa(nounours.min)} à ${fcfa(nounours.max)} selon la taille, de 20 à 140 cm. Un supplément chocolats peut être ajouté à tout bouquet.`,
+      answer: `Oui. La maison propose des bouquets de roses fraîches, de ${fcfa(bouquets.min)} pour une rose à l'unité à ${fcfa(bouquets.max)} pour un bouquet de vingt roses, ainsi que des nounours en peluche de ${fcfa(nounours.min)} à ${fcfa(nounours.max)} selon la taille, de 25 à 140 cm. Un supplément chocolats peut être ajouté à tout bouquet.`,
     },
     {
       question: "Peut-on offrir un entremets à quelqu'un ?",

@@ -49,3 +49,6 @@ next-env.d.ts
 .vercel
 
 .vercel
+
+# Exports de donnees locales (PII clients, sessions, paiements) — jamais committes
+backups/

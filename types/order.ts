@@ -73,6 +73,8 @@ export type SavedOrder = {
     supplements: string[];
     /** Slug catalogue — utilisé côté serveur pour recalculer prix/stock. */
     slug?: string;
+    /** Taille en cm (nounours) — le serveur reprice le palier depuis ce champ. */
+    sizeCm?: number;
   }[];
   subtotal: number;
   total: number;

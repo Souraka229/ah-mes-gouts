@@ -42,6 +42,12 @@ const orderItemsSchema = z
       quantity: z.number().int().positive().max(99),
       supplements: z.array(z.string()).default([]),
       slug: z.string().optional(),
+      /**
+       * Taille en cm (nounours). Facultative : absente, le produit est facturé
+       * au prix d'entrée du catalogue — jamais moins cher qu'un vrai palier,
+       * donc l'omission ne peut pas servir à sous-payer.
+       */
+      sizeCm: z.number().int().positive().optional(),
     }),
   )
   .min(1);

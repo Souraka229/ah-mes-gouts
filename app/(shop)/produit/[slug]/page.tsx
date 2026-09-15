@@ -23,6 +23,10 @@ import {
   getShopProductBySlug,
   getSimilarShopProducts,
 } from "@/lib/server/shop-catalog";
+import { isRoseProduct } from "@/lib/constants/rose-compositions";
+import { getRoseCompositionOptions } from "@/lib/product-options/compositions";
+import { getProductRecommendations } from "@/lib/product-options/recommendations";
+import { canCarryMessage } from "@/lib/product-options/types";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -69,12 +73,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const [gallery, similar] = await Promise.all([
-    Promise.resolve(getProductGalleryUrls(product)),
+  const [similar, catalog] = await Promise.all([
     getSimilarShopProducts(slug),
+    getFullCatalog(),
   ]);
+  const gallery = getProductGalleryUrls(product);
   const available = isProductAvailable(product);
   const price = getProductPrice(product);
+
+  // Paliers de composition : uniquement sur la fiche des roses, et le
+  // sélecteur navigue vers la fiche du bouquet correspondant — chaque palier
+  // reste un vrai produit, facturé par le serveur.
+  const roseCompositions = isRoseProduct(product.slug)
+    ? getRoseCompositionOptions(catalog)
+    : undefined;
+
+  // Suggestions et mot manuscrit vivent sur la fiche : c'est seulement ici
+  // qu'on sait ce que la cliente a choisi.
+  const recommendation =
+    getProductRecommendations({ product, catalog })[0] ?? null;
+  const allowMessage = canCarryMessage(product);
 
   const breadcrumbs = [
     { name: "Accueil", path: "/" },
@@ -128,7 +146,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </p>
 
             <div className="mt-8">
-              <ProductPurchasePanel product={product} />
+              <ProductPurchasePanel
+                product={product}
+                roseCompositions={roseCompositions}
+                recommendation={recommendation}
+                allowMessage={allowMessage}
+              />
             </div>
           </div>
         </div>

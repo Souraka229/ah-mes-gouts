@@ -17,8 +17,8 @@ const breadcrumbs = [
   { name: "Catalogue", path: "/catalogue" },
 ];
 
-/** ISR — filtres ?promotions= lus côté client (ne casse pas le cache). */
-export const revalidate = 300;
+/** Toujours lire la base — évite un catalogue démo figé en cache après vidage. */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Catalogue glaces artisanales — Cotonou",

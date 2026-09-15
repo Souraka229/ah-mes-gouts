@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
+import {
+  hasProductImage,
+  ProductImagePlaceholder,
+} from "@/components/shop/product-image-placeholder";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -50,13 +54,17 @@ function CartLineItem({
     <li className="rounded-xl border border-border bg-card p-3 sm:p-4">
       <div className="flex gap-3">
         <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-bg sm:size-20">
-          <Image
-            src={item.imageUrl}
-            alt={item.name}
-            fill
-            sizes="80px"
-            className="object-contain object-center"
-          />
+          {hasProductImage(item.imageUrl) ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.name}
+              fill
+              sizes="80px"
+              className="object-contain object-center"
+            />
+          ) : (
+            <ProductImagePlaceholder compact alt={item.name} className="absolute inset-0" />
+          )}
         </div>
 
         <div className="min-w-0 flex-1">

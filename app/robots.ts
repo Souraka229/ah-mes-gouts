@@ -47,7 +47,16 @@ export default function robots(): MetadataRoute.Robots {
       },
       {
         userAgent: AI_AGENTS,
-        allow: ["/", "/catalogue", "/produit/", "/zones-de-livraison", "/infos", "/contact"],
+        allow: [
+          "/",
+          "/ah-mes-gouts",
+          "/a-propos",
+          "/catalogue",
+          "/produit/",
+          "/zones-de-livraison",
+          "/infos",
+          "/contact",
+        ],
         disallow: PRIVATE_PATHS,
       },
     ],

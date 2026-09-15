@@ -35,12 +35,13 @@ export function getCartTotals(items: CartLineItem[]): CartTotals {
 export function buildLineFingerprint(
   productId: string,
   supplements: CartSupplement[],
+  sizeCm?: number,
 ): string {
   const supplementIds = supplements
     .map((supplement) => supplement.id)
     .sort()
     .join(",");
-  return `${productId}:${supplementIds}`;
+  return `${productId}:${sizeCm ?? ""}:${supplementIds}`;
 }
 
 export function createLineId(): string {
@@ -54,11 +55,13 @@ export function mergeCartLine(
   const fingerprint = buildLineFingerprint(
     payload.productId,
     payload.supplements,
+    payload.sizeCm,
   );
 
   const existingIndex = items.findIndex(
     (item) =>
-      buildLineFingerprint(item.productId, item.supplements) === fingerprint,
+      buildLineFingerprint(item.productId, item.supplements, item.sizeCm) ===
+      fingerprint,
   );
 
   if (existingIndex === -1) {
@@ -73,6 +76,7 @@ export function mergeCartLine(
         baseUnitPrice: payload.baseUnitPrice,
         supplements: payload.supplements,
         quantity: payload.quantity,
+        sizeCm: payload.sizeCm,
       },
     ];
   }

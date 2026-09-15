@@ -48,10 +48,13 @@ const SIGNATURES = [
   ["vanille-myrtille", "Vanille Myrtille", "Mousse vanille mascarpone, insert gelée de myrtille.", null],
 ];
 
-const NOUNOURS = [
-  [20, 10000], [25, 15000], [30, 25000], [80, 35000], [90, 40000],
-  [100, 45000], [120, 50000], [130, 70000], [140, 90000],
-];
+const NOUNOURS = {
+  slug: "nounours",
+  name: "Nounours",
+  description:
+    "Nounours en peluche — choisissez la taille (25 à 140 cm) sur la fiche produit.",
+  price: 15000,
+};
 
 const BOUQUETS = [
   ["rose-unite", "Rose à l'unité", "Une rose fraîche, sans emballage.", 3500],
@@ -66,6 +69,24 @@ const BOUQUETS = [
       p,
     ],
   ),
+];
+
+/** Deux paliers distincts — le serveur facture depuis la ligne catalogue. */
+const CHOCOLATS = [
+  {
+    slug: "supplement-chocolats",
+    name: "Quelques chocolats",
+    description:
+      "Une petite sélection de chocolats pour accompagner votre bouquet.",
+    price: 3000,
+  },
+  {
+    slug: "supplement-chocolats-paquet",
+    name: "Paquet complet de chocolats",
+    description:
+      "Le paquet complet — une générosité qui se partage, pour un cadeau qui marque.",
+    price: 10000,
+  },
 ];
 
 /** Visuels existants réutilisés — aucun produit ne part sans image. */
@@ -108,17 +129,15 @@ function rows() {
     });
   }
 
-  for (const [cm, price] of NOUNOURS) {
-    out.push({
-      slug: `nounours-${cm}cm`,
-      name: `Nounours ${cm} cm`,
-      description: `Nounours en peluche, ${cm} cm.`,
-      price,
-      category: "Nounours",
-      imageUrl: IMG.nounours,
-      keyword: `${cm} cm`,
-    });
-  }
+  out.push({
+    slug: NOUNOURS.slug,
+    name: NOUNOURS.name,
+    description: NOUNOURS.description,
+    price: NOUNOURS.price,
+    category: "Nounours",
+    imageUrl: IMG.nounours,
+    keyword: "25 à 140 cm",
+  });
 
   for (const [slug, name, description, price] of BOUQUETS) {
     out.push({
@@ -132,16 +151,17 @@ function rows() {
     });
   }
 
-  out.push({
-    slug: "supplement-chocolats",
-    name: "Supplément chocolats",
-    description:
-      "À ajouter à un bouquet. De quelques chocolats (3 000 F) au paquet complet (10 000 F) — précisez la quantité souhaitée en commentaire.",
-    price: 3000,
-    category: "Fleurs",
-    imageUrl: IMG.fleurs,
-    keyword: "Duo",
-  });
+  for (const c of CHOCOLATS) {
+    out.push({
+      slug: c.slug,
+      name: c.name,
+      description: c.description,
+      price: c.price,
+      category: "Chocolats",
+      imageUrl: "",
+      keyword: "Duo",
+    });
+  }
 
   return out;
 }

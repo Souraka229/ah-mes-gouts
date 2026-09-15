@@ -221,7 +221,7 @@ export default function AboutPage() {
               Nounours et bouquets
             </h3>
             <p className="mt-3 font-body text-base leading-relaxed text-muted-foreground">
-              Nounours en peluche de 20 à 140 cm, de{" "}
+              Nounours en peluche de 25 à 140 cm, de{" "}
               {formatPrice(getNounoursRange().min)} à{" "}
               {formatPrice(getNounoursRange().max)}. Bouquets de roses fraîches
               avec gypsophile, carte et emballage — une rose à l&apos;unité ou

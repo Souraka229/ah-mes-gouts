@@ -1,5 +1,9 @@
 import Image from "next/image";
 
+import {
+  hasProductImage,
+  ProductImagePlaceholder,
+} from "@/components/shop/product-image-placeholder";
 import { cn } from "@/lib/utils";
 
 type ProductImageFrameProps = {
@@ -17,6 +21,9 @@ type ProductImageFrameProps = {
  * Cadre produit sans couture : fond identique à --color-bg (#FAF7F5).
  * Ne pas changer --color-bg sans reshooter le catalogue (photos réelles calées dessus).
  * Texte et prix toujours en overlay HTML, jamais dans l'image.
+ *
+ * Un produit sans image affiche l'emplacement neutre : jamais la photo d'un
+ * autre produit, jamais une carte cadeau par défaut.
  */
 export function ProductImageFrame({
   src,
@@ -28,6 +35,14 @@ export function ProductImageFrame({
   overlay,
   badges,
 }: ProductImageFrameProps) {
+  if (!hasProductImage(src)) {
+    return (
+      <div className={cn("relative overflow-hidden bg-bg", className)}>
+        <ProductImagePlaceholder alt={alt} className="absolute inset-0" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("relative overflow-hidden bg-bg", className)}>
       <Image

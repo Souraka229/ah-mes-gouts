@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
+import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
 import { BrandLogo } from "@/components/shop/brand-logo";
 import { CartIconButton } from "@/components/shop/cart-icon-button";
 import { SITE_NAME_WITH_CREDIT } from "@/lib/seo/site";
@@ -62,7 +63,14 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <CartIconButton />
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <PwaInstallButton
+            label="Installer"
+            className="hidden sm:inline-flex"
+          />
+          <PwaInstallButton compact className="sm:hidden" />
+          <CartIconButton />
+        </div>
       </div>
     </header>
   );

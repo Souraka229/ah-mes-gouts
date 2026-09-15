@@ -1,3 +1,5 @@
+import { isNounoursProduct } from "@/lib/constants/nounours-sizes";
+import { isRoseProduct } from "@/lib/constants/rose-compositions";
 import { GIFT_CARD_SLUG } from "@/lib/constants/products";
 import {
   inferCategoryFromSlug,
@@ -41,8 +43,10 @@ export function isGiftCardProduct(product: Product): boolean {
 export function isGiftBandProduct(product: Product): boolean {
   return (
     isGiftCardProduct(product) ||
-    product.slug === "nounours-beige" ||
-    product.slug === "bouquet-roses"
+    isNounoursProduct(product.slug) ||
+    // `slug === "bouquet-roses"` ne correspondait à aucune composition réelle :
+    // le filtre « cadeaux » du catalogue ne remontait donc aucun bouquet.
+    isRoseProduct(product.slug)
   );
 }
 

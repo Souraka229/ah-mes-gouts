@@ -11,6 +11,10 @@ import {
   getProductPrice,
   isProductAvailable,
 } from "@/lib/catalog-utils";
+import {
+  getNounoursEntryPrice,
+  isNounoursProduct,
+} from "@/lib/constants/nounours-sizes";
 import { getProductAltText } from "@/lib/seo/images";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
@@ -30,6 +34,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const available = isProductAvailable(product);
   const price = getProductPrice(product);
+  const nounours = isNounoursProduct(product.slug);
   const showPromotion =
     product.isPromotion && product.promotionPrice !== undefined;
   const shapeId =
@@ -88,7 +93,9 @@ export function ProductCard({
           </h3>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-body text-sm font-semibold text-text">
-              {formatPrice(price)}
+              {nounours
+                ? `À partir de ${formatPrice(getNounoursEntryPrice())}`
+                : formatPrice(price)}
             </span>
             {showPromotion && (
               <span className="font-body text-xs text-muted-foreground line-through">

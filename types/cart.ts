@@ -15,6 +15,13 @@ export type CartLineItem = {
   baseUnitPrice: number;
   supplements: CartSupplement[];
   quantity: number;
+  /**
+   * Taille en cm pour les produits à paliers (nounours). Transmise au serveur,
+   * qui reprice depuis `NOUNOURS_SIZES` — sans elle, le prix affiché n'est pas
+   * celui facturé. Fait aussi partie de la fingerprint : deux tailles
+   * différentes ne doivent jamais fusionner en une seule ligne.
+   */
+  sizeCm?: number;
 };
 
 export type CartTotals = {
@@ -33,4 +40,5 @@ export type AddToCartPayload = {
   baseUnitPrice: number;
   supplements: CartSupplement[];
   quantity: number;
+  sizeCm?: number;
 };

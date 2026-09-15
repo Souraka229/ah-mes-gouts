@@ -329,9 +329,14 @@ export function StepPayment() {
       items: cartItems.map((item) => ({
         name: item.name,
         quantity: item.quantity,
+        // Affiché et conservé localement ; le serveur recalcule tout depuis le
+        // catalogue et n'utilise jamais ce montant.
         unitPrice: getLineUnitPrice(item),
         supplements: item.supplements.map((s) => s.name),
         slug: item.slug,
+        // Le serveur reprice les paliers depuis NOUNOURS_SIZES : sans cette
+        // taille, un nounours 80 cm serait facturé au prix d'entrée.
+        ...(item.sizeCm !== undefined ? { sizeCm: item.sizeCm } : {}),
       })),
       subtotal: totals.subtotal,
       total: totals.total,

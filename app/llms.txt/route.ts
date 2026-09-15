@@ -6,7 +6,7 @@ import {
   ORDER_PHONE,
 } from "@/lib/business-info";
 import { deliveryZones } from "@/lib/delivery-zones";
-import { BUSINESS, SITE_NAME, SITE_URL } from "@/lib/seo/site";
+import { BUSINESS, ORIGIN_BRAND, SITE_NAME, SITE_URL } from "@/lib/seo/site";
 
 export const revalidate = 3600;
 
@@ -26,9 +26,11 @@ export function GET() {
     .slice(0, 12)
     .join(", ");
 
-  const body = `# ${SITE_NAME}
+  const body = `# ${ORIGIN_BRAND}
 
-> Pâtisserie artisanale spécialisée en entremets glacés, à Cotonou (Bénin).
+> Maison pâtissière artisanale à Cotonou (Bénin), fondée en 2016.
+> ${SITE_NAME} est la boutique en ligne officielle de ${ORIGIN_BRAND}.
+> Pâtisserie artisanale spécialisée en entremets glacés, fleurs et cadeaux.
 > Adresse : ${BOUTIQUE_LOCATION.full}
 > Horaires : ${BOUTIQUE_HOURS.label}, ${BOUTIQUE_HOURS.daysLabel.toLowerCase()}
 > Téléphone et WhatsApp : ${ORDER_PHONE.display}
@@ -57,6 +59,7 @@ ${BUSINESS.paymentAccepted.join(", ")}. Le paiement se fait en ligne, en FCFA.
 
 ## Pages
 
+- [${ORIGIN_BRAND}](${SITE_URL}/ah-mes-gouts) : la maison pâtissière, marque mère de ${SITE_NAME}
 - [Menu du jour](${SITE_URL}/catalogue) : les créations disponibles aujourd'hui
 - [Zones de livraison](${SITE_URL}/zones-de-livraison) : quartiers desservis et tarifs
 - [Informations pratiques](${SITE_URL}/infos) : horaires, retrait, conditions

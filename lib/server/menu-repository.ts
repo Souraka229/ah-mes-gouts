@@ -161,11 +161,25 @@ async function writeMenusToDb(menus: ScheduledMenu[]): Promise<void> {
   }
 }
 
+function isProductionRuntime(): boolean {
+  return (
+    process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+  );
+}
+
 export async function getAllMenus(): Promise<ScheduledMenu[]> {
   const fromDb = await readMenusFromDb();
-  const menus = fromDb ?? (await seedMenus());
-  if (!fromDb) await writeMenusToDb(menus);
-  return menus;
+  if (fromDb) return fromDb;
+  // En production / Vercel, table Menu vide = pas de menu du jour.
+  if (
+    !isProductionRuntime() &&
+    (process.env.ADMIN_DEV_OPEN === "true" || process.env.NODE_ENV !== "production")
+  ) {
+    const menus = await seedMenus();
+    await writeMenusToDb(menus);
+    return menus;
+  }
+  return [];
 }
 
 async function saveMenus(menus: ScheduledMenu[]): Promise<void> {

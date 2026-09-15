@@ -9,6 +9,8 @@ export const PRODUCT_CATEGORIES = [
   "Nounours",
   /** Bouquets de roses fraîches — stock non suivi, montés à la demande. */
   "Fleurs",
+  /** Chocolats d'accompagnement — vendus en duo avec un bouquet. */
+  "Chocolats",
   "Carte",
   "Cadeaux",
   "Boissons",
@@ -27,6 +29,7 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 export const UNLIMITED_STOCK_CATEGORIES: ProductCategory[] = [
   "Nounours",
   "Fleurs",
+  "Chocolats",
   "Sur commande",
   "Carte",
   "Cadeaux",

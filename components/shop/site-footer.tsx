@@ -14,8 +14,8 @@ import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from "@/lib/social-links";
 
 const legalLinks = [
   { href: "/infos", label: "Infos" },
-  // Volontairement discret : la page « à propos » sert le référencement, pas
-  // la navigation. Elle n'a rien à faire dans le menu principal.
+  // Volontairement discret : ces pages servent le référencement, pas la nav principale.
+  { href: "/ah-mes-gouts", label: "Ah Mes Goûts" },
   { href: "/a-propos", label: "Nous lire" },
   { href: "#", label: "Mentions légales" },
   { href: "#", label: "CGV" },

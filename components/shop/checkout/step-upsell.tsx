@@ -5,6 +5,10 @@ import { useMemo } from "react";
 import { Gift, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  hasProductImage,
+  ProductImagePlaceholder,
+} from "@/components/shop/product-image-placeholder";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { formatPrice } from "@/lib/format";
@@ -12,6 +16,11 @@ import {
   getProductPrice,
   isGiftCardProduct,
 } from "@/lib/catalog-utils";
+import {
+  getNounoursEntryPrice,
+  isNounoursProduct,
+  NOUNOURS_SIZES,
+} from "@/lib/constants/nounours-sizes";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
@@ -90,14 +99,23 @@ export function StepUpsell({ candidates, embedded = false }: StepUpsellProps & {
   };
 
   const handleAdd = (product: Product) => {
+    // Le nounours se décline en paliers de taille : sans taille explicite, on
+    // ajoute le plus petit — celui dont le prix est affiché sur la carte — et
+    // on le nomme, pour que le panier et la préparation restent sans ambiguïté.
+    const nounours = isNounoursProduct(product.slug);
+    const entrySize = NOUNOURS_SIZES[0];
+
     addItem({
       productId: product.id,
       slug: product.slug,
-      name: product.name,
+      name: nounours ? `${product.name} — ${entrySize.cm} cm` : product.name,
       imageUrl: product.imageUrl,
-      baseUnitPrice: getProductPrice(product),
+      baseUnitPrice: nounours
+        ? getNounoursEntryPrice()
+        : getProductPrice(product),
       supplements: [],
       quantity: 1,
+      sizeCm: nounours ? entrySize.cm : undefined,
     });
 
     if (
@@ -178,14 +196,22 @@ export function StepUpsell({ candidates, embedded = false }: StepUpsellProps & {
               )}
             >
               <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-bg">
-                <Image
-                  src={product.imageUrl}
-                  alt={product.name}
-                  fill
-                  sizes="96px"
-                  unoptimized={product.imageUrl.endsWith(".svg")}
-                  className="object-contain object-center"
-                />
+                {hasProductImage(product.imageUrl) ? (
+                  <Image
+                    src={product.imageUrl}
+                    alt={product.name}
+                    fill
+                    sizes="96px"
+                    unoptimized={product.imageUrl.endsWith(".svg")}
+                    className="object-contain object-center"
+                  />
+                ) : (
+                  <ProductImagePlaceholder
+                    compact
+                    alt={product.name}
+                    className="absolute inset-0"
+                  />
+                )}
                 {isCard && (
                   <div className="absolute inset-0 flex items-center justify-center bg-primary/20">
                     <Gift className="size-6 text-primary" aria-hidden />

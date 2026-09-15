@@ -9,6 +9,7 @@ import { createPageMetadata } from "@/lib/seo/metadata";
 import {
   buildIceCreamShopSchema,
   buildOrganizationSchema,
+  buildParentBrandSchema,
   buildWebSiteSchema,
 } from "@/lib/seo/schemas";
 
@@ -33,6 +34,7 @@ export default async function HomePage() {
     <>
       <JsonLd
         data={[
+          buildParentBrandSchema(),
           buildOrganizationSchema(),
           buildWebSiteSchema(),
           buildIceCreamShopSchema(),

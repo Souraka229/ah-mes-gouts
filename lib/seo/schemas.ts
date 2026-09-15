@@ -1,6 +1,12 @@
 import { deliveryZones } from "@/lib/delivery-zones";
 import { getOgImageUrl, getProductImageUrl } from "@/lib/seo/images";
-import { DEFAULT_OG_IMAGE, BUSINESS, SITE_NAME, SITE_URL } from "@/lib/seo/site";
+import {
+  DEFAULT_OG_IMAGE,
+  BUSINESS,
+  ORIGIN_BRAND,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo/site";
 import {
   getProductPrice,
   isProductAvailable,
@@ -25,10 +31,38 @@ export function buildBreadcrumbSchema(items: BreadcrumbItem[]) {
   };
 }
 
+/** Maison mère — entité SEO principale « Ah Mes Goûts ». */
+export function buildParentBrandSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#parent-brand`,
+    name: ORIGIN_BRAND,
+    alternateName: ["Ah Mes Gouts", "AH MES GOUTS", "Ah Mes Goûts Cotonou"],
+    url: `${SITE_URL}/ah-mes-gouts`,
+    logo: getOgImageUrl(DEFAULT_OG_IMAGE),
+    telephone: BUSINESS.phone,
+    email: BUSINESS.email,
+    foundingDate: "2016",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: BUSINESS.streetAddress,
+      addressLocality: BUSINESS.addressLocality,
+      addressRegion: BUSINESS.addressRegion,
+      addressCountry: BUSINESS.addressCountry,
+    },
+    areaServed: {
+      "@type": "City",
+      name: "Cotonou",
+      containedInPlace: { "@type": "Country", name: "Bénin" },
+    },
+    subOrganization: { "@id": `${SITE_URL}/#brand` },
+  };
+}
+
 /**
- * Identité de la marque. Distincte de l'IceCreamShop, qui décrit le point de
- * vente : c'est cette entité que les moteurs — classiques comme génératifs —
- * rattachent au nom « Gift & ENTREMETS ».
+ * Boutique en ligne — filiale commerciale de la maison.
+ * Distincte de l'IceCreamShop, qui décrit le point de vente physique.
  */
 export function buildOrganizationSchema() {
   return {
@@ -37,10 +71,12 @@ export function buildOrganizationSchema() {
     "@id": `${SITE_URL}/#brand`,
     name: SITE_NAME,
     legalName: BUSINESS.legalName,
+    alternateName: ["Gift and Entremets", "Gift Entremets Cotonou"],
     url: SITE_URL,
     logo: getOgImageUrl(DEFAULT_OG_IMAGE),
     telephone: BUSINESS.phone,
     email: BUSINESS.email,
+    parentOrganization: { "@id": `${SITE_URL}/#parent-brand` },
     address: {
       "@type": "PostalAddress",
       streetAddress: BUSINESS.streetAddress,
@@ -65,7 +101,7 @@ export function buildWebSiteSchema() {
     name: SITE_NAME,
     url: SITE_URL,
     inLanguage: "fr-BJ",
-    publisher: { "@id": `${SITE_URL}/#brand` },
+    publisher: { "@id": `${SITE_URL}/#parent-brand` },
     potentialAction: {
       "@type": "SearchAction",
       target: {

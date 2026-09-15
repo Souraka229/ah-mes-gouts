@@ -1,3 +1,9 @@
+import {
+  getNounoursEntryPrice,
+  NOUNOURS_PRODUCT_SLUG,
+  NOUNOURS_SIZES,
+} from "@/lib/constants/nounours-sizes";
+
 /**
  * Catalogue de la maison — tarifs communiqués par la cheffe.
  *
@@ -121,11 +127,16 @@ export type SizedProduct = {
   price: number;
 };
 
-/**
- * Nounours en peluche — catégorie à stock illimité, paliers de taille à définir.
- * Laisser vide pour l'instant (aucune donnée de test fictive).
- */
-export const NOUNOURS: SizedProduct[] = [];
+/** Une seule fiche nounours — paliers de taille sur la fiche produit. */
+export const NOUNOURS: SizedProduct = {
+  slug: NOUNOURS_PRODUCT_SLUG,
+  name: "Nounours",
+  description:
+    "Nounours en peluche — choisissez la taille (25 à 140 cm) sur la fiche produit.",
+  price: getNounoursEntryPrice(),
+};
+
+export { NOUNOURS_SIZES };
 
 /** Bouquets de roses fraîches. */
 export const BOUQUETS: SizedProduct[] = [
@@ -170,16 +181,27 @@ export const BOUQUETS: SizedProduct[] = [
 ];
 
 /**
- * Supplément chocolats pour un duo roses + chocolats.
+ * Chocolats d'accompagnement — à ajouter à un bouquet ou à un coffret.
  *
- * Le tarif dépend de la quantité (3 000 F pour quelques chocolats, jusqu'à
- * 10 000 F pour un paquet complet). Le produit porte le prix d'entrée ; la
- * cliente précise la quantité à la commande.
+ * Deux paliers distincts plutôt qu'un seul produit à prix variable : le
+ * serveur facture depuis la ligne catalogue, donc chaque palier doit exister
+ * comme produit à part entière. Les deux slugs conservent le préfixe
+ * `supplement-chocolat` — c'est ce que détecte l'upsell du checkout pour
+ * proposer le duo rose + chocolat.
  */
-export const DUO_CHOCOLAT: SizedProduct = {
-  slug: "supplement-chocolats",
-  name: "Supplément chocolats",
-  description:
-    "À ajouter à un bouquet. De quelques chocolats (3 000 F) au paquet complet (10 000 F) — précisez la quantité souhaitée en commentaire.",
-  price: 3000,
-};
+export const CHOCOLATS: SizedProduct[] = [
+  {
+    slug: "supplement-chocolats",
+    name: "Quelques chocolats",
+    description:
+      "Une petite sélection de chocolats pour accompagner votre bouquet.",
+    price: 3000,
+  },
+  {
+    slug: "supplement-chocolats-paquet",
+    name: "Paquet complet de chocolats",
+    description:
+      "Le paquet complet — une générosité qui se partage, pour un cadeau qui marque.",
+    price: 10000,
+  },
+];

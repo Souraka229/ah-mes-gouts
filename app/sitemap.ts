@@ -20,10 +20,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/formules`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: `${SITE_URL}/zones-de-livraison`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.85,
+    },
+    {
+      url: `${SITE_URL}/ah-mes-gouts`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.88,
     },
     {
       url: `${SITE_URL}/a-propos`,

@@ -101,7 +101,7 @@ export function AdminMenusPage() {
           products: MenuProductDraft[];
         };
         const filtered = (data.products ?? []).filter(
-          (p) => p.slug !== "carte-cadeau" && !p.slug.includes("nounours"),
+          (p) => p.slug !== "carte-cadeau" && p.slug !== "nounours",
         );
         setCatalog(filtered);
       }

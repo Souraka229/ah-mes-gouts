@@ -56,8 +56,8 @@ const SOURCES = [
   },
   {
     slug: "bouquet-2-roses",
-    pexelsId: "29741224",
-    note: "Petit bouquet serré, gypsophile et nœud",
+    pexelsId: "1161751",
+    note: "Exactement deux roses rouges",
   },
   {
     slug: "bouquet-3-roses",
@@ -66,18 +66,18 @@ const SOURCES = [
   },
   {
     slug: "bouquet-5-roses",
-    pexelsId: "31069852",
-    note: "Bouquet lié, boutons serrés",
+    pexelsId: "34051908",
+    note: "Une poignée de roses rouges (6 comptées)",
   },
   {
     slug: "bouquet-10-roses",
-    pexelsId: "34051908",
-    note: "Roses en nombre, feuillage",
+    pexelsId: "39617403",
+    note: "Bouquet emballé, roses rouges et crème, gypsophile — 10 fleurs comptées",
   },
   {
     slug: "bouquet-15-roses",
-    pexelsId: "34051913",
-    note: "Bouquet dense, roses serrées",
+    pexelsId: "31069852",
+    note: "Bouquet lié, une douzaine de roses comptées",
   },
   {
     slug: "bouquet-20-roses",

@@ -4,60 +4,76 @@
 
 Neuf fiches fleurs partageaient la même photo `bouquet-roses.webp` : la fiche
 « 1 rose » et la fiche « 20 roses » affichaient exactement le même visuel.
-Chaque palier a maintenant **son propre visuel**, du plus petit au plus grand.
+Chaque palier a maintenant **son propre visuel**, choisi pour coller au nombre
+annoncé.
 
 ## D'où viennent ces images
 
-Ce sont des **photos de banque d'images (Pexels)**, sous
+Des **photos de banque d'images (Pexels)**, sous
 [Pexels License](https://www.pexels.com/license/) : usage commercial autorisé,
 attribution non requise.
 
-**Ce ne sont pas les bouquets de la boutique.** C'est pourquoi elles vivent sous
-`public/images/placeholders/` et non sous `public/images/produits/` : ce préfixe
-est la source unique de vérité de `isReferenceVisual`
-(`lib/product-images.ts`) et déclenche automatiquement le badge
-« Visuel indicatif — Photos non contractuelles » sur la fiche produit, la
-galerie et le back-office.
+**Ce ne sont pas les bouquets de la boutique.** Elles vivent sous
+`public/images/placeholders/` et non sous `public/images/produits/` : c'est la
+convention de rangement qui permet de savoir, dans le dépôt, quelles fiches
+tournent encore sur une photo de banque d'images et lesquelles ont une vraie
+photo d'atelier. L'interface ne le signale plus à la cliente.
 
-Elles ne prétendent pas reproduire exactement le nombre de roses annoncé — le
-badge le dit déjà. Elles servent à ce que chaque palier soit **reconnaissable au
-premier coup d'œil**, en attendant les vraies photos.
+Les vrais bouquets de la boutique sont les fiches **7, 9 et 12 roses** — leurs
+photos sont dans `public/images/produits/`.
+
+## Où le compte est exact
+
+| Fiche | Compte | Visuel |
+|---|---|---|
+| `rose-unite` | **1 — exact** | une rose, tige nue |
+| `bouquet-1-rose` | **1 — exact** | une rose emballée en cornet |
+| `bouquet-2-roses` | **2 — exact** | deux roses rouges |
+| `bouquet-3-roses` | **3 — exact** | trois roses rouges |
+| `bouquet-5-roses` | ≈ 6 | une poignée de roses rouges |
+| `bouquet-10-roses` | ≈ 10 | bouquet emballé, roses rouges et crème, gypsophile |
+| `bouquet-15-roses` | ≈ 12 | bouquet lié, roses serrées |
+| `bouquet-20-roses` | masse | grande composition |
+
+**Honnêteté sur les comptes** : 1, 2 et 3 sont exacts au poil. Pour 5, 10, 15 et
+20, aucune banque d'images ne garantit un nombre comptable — les moteurs de
+recherche consultables (Pexels, Unsplash, Openverse, Wikimedia Commons) ne
+classent pas leurs photos par nombre de fleurs, et ceux qui indexent Pexels
+bloquent les requêtes automatisées. Les visuels retenus sont les plus proches
+trouvés, choisis en comptant les fleurs à la main sur chaque candidat.
+
+Si l'exactitude au comptant compte pour la vente, la seule voie fiable reste la
+photo d'atelier de chaque palier.
 
 ## Tableau des sources
 
 Généré par `scripts/import-rose-placeholders.mjs` dans
 `data/rose-placeholders-manifest.json`.
 
-| Fiche | Visuel | Source | Licence |
-|---|---|---|---|
-| `rose-unite` | Une rose, tige nue | [Pexels 6616436](https://www.pexels.com/photo/6616436/) | Pexels License |
-| `bouquet-1-rose` | Une rose emballée en cornet | [Pexels 12252125](https://www.pexels.com/photo/12252125/) | Pexels License |
-| `bouquet-2-roses` | Petit bouquet serré, gypsophile, nœud | [Pexels 29741224](https://www.pexels.com/photo/29741224/) | Pexels License |
-| `bouquet-3-roses` | Trois roses | [Pexels 6616438](https://www.pexels.com/photo/6616438/) | Pexels License |
-| `bouquet-5-roses` | Bouquet lié, boutons serrés | [Pexels 31069852](https://www.pexels.com/photo/31069852/) | Pexels License |
-| `bouquet-10-roses` | Roses en nombre, feuillage | [Pexels 34051908](https://www.pexels.com/photo/34051908/) | Pexels License |
-| `bouquet-15-roses` | Bouquet dense, roses serrées | [Pexels 34051913](https://www.pexels.com/photo/34051913/) | Pexels License |
-| `bouquet-20-roses` | Grande composition, masse de roses | [Pexels 35400909](https://www.pexels.com/photo/35400909/) | Pexels License |
+| Fiche | Source | Licence |
+|---|---|---|
+| `rose-unite` | [Pexels 6616436](https://www.pexels.com/photo/6616436/) | Pexels License |
+| `bouquet-1-rose` | [Pexels 12252125](https://www.pexels.com/photo/12252125/) | Pexels License |
+| `bouquet-2-roses` | [Pexels 1161751](https://www.pexels.com/photo/1161751/) | Pexels License |
+| `bouquet-3-roses` | [Pexels 6616438](https://www.pexels.com/photo/6616438/) | Pexels License |
+| `bouquet-5-roses` | [Pexels 34051908](https://www.pexels.com/photo/34051908/) | Pexels License |
+| `bouquet-10-roses` | [Pexels 39617403](https://www.pexels.com/photo/39617403/) | Pexels License |
+| `bouquet-15-roses` | [Pexels 31069852](https://www.pexels.com/photo/31069852/) | Pexels License |
+| `bouquet-20-roses` | [Pexels 35400909](https://www.pexels.com/photo/35400909/) | Pexels License |
 
 ## Ce qui n'a PAS été touché
 
 - `bouquet-7-roses`, `bouquet-9-roses`, `bouquet-12-roses` : **vraies photos de
-  l'atelier**, déjà en place (`public/images/produits/`).
+  l'atelier**, déjà en place.
 - `bouquet-roses` (fiche générique) : garde son visuel.
 
 ## Remplacer un visuel par une vraie photo
 
-Un par un, sans toucher au reste :
-
-1. Téléverser la vraie photo depuis le back-office (`/admin/produits` → la fiche
-   → l'image), ou déposer le fichier en 800×800 WebP dans
-   `public/images/produits/`.
-2. Le badge « Photos non contractuelles » disparaît tout seul, dès que l'URL ne
-   commence plus par `/images/placeholders/`.
-
-Après le remplacement, retirer l'entrée correspondante dans `PRODUCT_IMAGES`
-(`lib/product-images.ts`) pour que vider l'image en base ne fasse pas
-réapparaître le visuel indicatif.
+Un par un, sans toucher au reste : téléverser la vraie photo depuis
+`/admin/produits` (la vignette de la ligne est le bouton), ou déposer un fichier
+800×800 WebP dans `public/images/produits/`. Retirer ensuite l'entrée
+correspondante de `PRODUCT_IMAGES` (`lib/product-images.ts`) pour que vider
+l'image en base ne fasse pas réapparaître le visuel de banque d'images.
 
 ## Rejouer l'import
 

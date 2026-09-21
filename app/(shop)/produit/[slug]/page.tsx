@@ -8,6 +8,7 @@ import { ProductPurchasePanel } from "@/components/shop/product-purchase-panel";
 import { ProductViewTracker } from "@/components/shop/product-view-tracker";
 import { SimilarProducts } from "@/components/shop/similar-products";
 import { Badge } from "@/components/ui/badge";
+import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
 import { formatPrice } from "@/lib/format";
 import { getProductPrice, isProductAvailable } from "@/lib/catalog-utils";
 import { getOgImageUrl } from "@/lib/seo/images";
@@ -140,6 +141,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h1 className="font-display text-4xl font-semibold text-primary sm:text-5xl">
               {product.name}
             </h1>
+            <PlaceholderWarningBadge imageUrl={product.imageUrl} />
 
             <p className="mt-3 font-body text-lg text-muted-foreground lg:hidden">
               {formatPrice(price)}

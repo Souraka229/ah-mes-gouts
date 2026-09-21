@@ -32,16 +32,23 @@ export function getCartTotals(items: CartLineItem[]): CartTotals {
   };
 }
 
+/**
+ * Empreinte d'une ligne de panier.
+ *
+ * La variante en fait partie : un nounours 20 cm et un nounours 150 cm sont
+ * deux lignes distinctes, jamais fusionnées. `variantKey` accepte l'ancien
+ * `sizeCm` numérique pour les paniers déjà en LocalStorage.
+ */
 export function buildLineFingerprint(
   productId: string,
   supplements: CartSupplement[],
-  sizeCm?: number,
+  variantKey?: string | number,
 ): string {
   const supplementIds = supplements
     .map((supplement) => supplement.id)
     .sort()
     .join(",");
-  return `${productId}:${sizeCm ?? ""}:${supplementIds}`;
+  return `${productId}:${variantKey ?? ""}:${supplementIds}`;
 }
 
 export function createLineId(): string {
@@ -52,16 +59,20 @@ export function mergeCartLine(
   items: CartLineItem[],
   payload: AddToCartPayload,
 ): CartLineItem[] {
+  const payloadVariant = payload.variantCode ?? payload.sizeCm;
   const fingerprint = buildLineFingerprint(
     payload.productId,
     payload.supplements,
-    payload.sizeCm,
+    payloadVariant,
   );
 
   const existingIndex = items.findIndex(
     (item) =>
-      buildLineFingerprint(item.productId, item.supplements, item.sizeCm) ===
-      fingerprint,
+      buildLineFingerprint(
+        item.productId,
+        item.supplements,
+        item.variantCode ?? item.sizeCm,
+      ) === fingerprint,
   );
 
   if (existingIndex === -1) {
@@ -76,6 +87,7 @@ export function mergeCartLine(
         baseUnitPrice: payload.baseUnitPrice,
         supplements: payload.supplements,
         quantity: payload.quantity,
+        variantCode: payload.variantCode,
         sizeCm: payload.sizeCm,
       },
     ];

@@ -4,22 +4,25 @@ import { formatPrice } from "@/lib/format";
 import {
   NOUNOURS_SIZES,
   type NounoursSize,
+  getNounoursTypeFromSlug,
 } from "@/lib/constants/nounours-sizes";
 import { cn } from "@/lib/utils";
 
 type NounoursSizePickerProps = {
   value: number;
   onChange: (cm: number) => void;
+  slug?: string;
 };
 
-export function NounoursSizePicker({ value, onChange }: NounoursSizePickerProps) {
+export function NounoursSizePicker({ value, onChange, slug }: NounoursSizePickerProps) {
+  const nounoursType = getNounoursTypeFromSlug(slug ?? "nounours");
   return (
     <div>
       <p className="font-display text-xl font-semibold text-primary">
-        Taille
+        Nounours {nounoursType !== "Nounours" ? nounoursType : ""}
       </p>
       <p className="mt-1 font-body text-sm text-muted-foreground">
-        Choisissez la taille du nounours — le prix s&apos;ajuste automatiquement.
+        Choisissez la taille du nounours {nounoursType !== "Nounours" ? `— ${nounoursType}` : ""} — le prix s&apos;ajuste automatiquement.
       </p>
       <ul className="mt-4 grid gap-2 sm:grid-cols-2">
         {NOUNOURS_SIZES.map((size) => (

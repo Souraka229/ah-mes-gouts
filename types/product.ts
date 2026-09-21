@@ -24,6 +24,35 @@ export type Product = {
   giftCardMessage?: string;
   /** Catégorie back-office (Entremets, Nounours, Carte…) */
   category?: string;
+  /**
+   * Visibilité éditoriale : `draft` | `published` | `hidden`.
+   * Défaut `published` — un produit existant reste visible.
+   */
+  visibility?: ProductVisibility;
+  /** Libellé du sélecteur de variante : « Taille », « Format », « Personnes ». */
+  variantLabel?: string;
+  /** Sous-type libre piloté par l'admin (nounours : stitch | teddy | labubu). */
+  subtype?: string;
+  /**
+   * Variantes actives, quand le produit en a.
+   *
+   * Rempli par les lectures boutique ; le prix facturé est toujours recalculé
+   * côté serveur, ces valeurs ne servent qu'à l'affichage.
+   */
+  variants?: ProductVariantView[];
+};
+
+export type ProductVisibility = "draft" | "published" | "hidden";
+
+/** Variante telle que l'interface la consomme. */
+export type ProductVariantView = {
+  id: string;
+  code: string;
+  label: string;
+  price: number;
+  sortOrder: number;
+  isActive: boolean;
+  stockRemaining: number | null;
 };
 
 export type CatalogueFilters = {

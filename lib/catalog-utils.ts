@@ -15,6 +15,26 @@ export function getProductPrice(product: Product): number {
   return product.price;
 }
 
+/** Une variante active est-elle proposée sur ce produit ? */
+export function hasVariants(product: Product): boolean {
+  return (product.variants ?? []).some((variant) => variant.isActive);
+}
+
+/**
+ * Prix d'appel affiché sur une carte produit — le « à partir de ».
+ *
+ * Produit à variantes : le plus bas palier **actif**, qui est bien le prix que
+ * le serveur facturera si la cliente choisit ce palier. Sinon, le prix
+ * catalogue habituel (promotion incluse).
+ *
+ * Ces variantes viennent du serveur : la carte n'invente aucun prix.
+ */
+export function getProductStartingPrice(product: Product): number {
+  const active = (product.variants ?? []).filter((variant) => variant.isActive);
+  if (active.length === 0) return getProductPrice(product);
+  return Math.min(...active.map((variant) => variant.price));
+}
+
 export function getProductCategory(product: Product): string {
   return product.category?.trim() || inferCategoryFromSlug(product.slug);
 }

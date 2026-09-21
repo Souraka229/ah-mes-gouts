@@ -33,6 +33,16 @@ function isProductionRuntime(): boolean {
   );
 }
 
+/** Visibilités admises — toute valeur inconnue retombe sur « publié ». */
+export const PRODUCT_VISIBILITIES = ["draft", "published", "hidden"] as const;
+export type ProductVisibilityValue = (typeof PRODUCT_VISIBILITIES)[number];
+
+export function normalizeVisibility(value: string | null | undefined): ProductVisibilityValue {
+  return PRODUCT_VISIBILITIES.includes(value as ProductVisibilityValue)
+    ? (value as ProductVisibilityValue)
+    : "published";
+}
+
 function seedCatalog(): AdminCatalogProduct[] {
 
   return seedProducts.map((product) => ({
@@ -89,6 +99,12 @@ function toCatalogProduct(row: {
 
   category: string;
 
+  visibility: string;
+
+  variantLabel: string | null;
+
+  subtype: string | null;
+
   updatedAt: Date;
 
 }): AdminCatalogProduct {
@@ -127,6 +143,12 @@ function toCatalogProduct(row: {
     giftCardMessage: row.giftCardMessage ?? undefined,
 
     category: row.category,
+
+    visibility: normalizeVisibility(row.visibility),
+
+    variantLabel: row.variantLabel ?? undefined,
+
+    subtype: row.subtype ?? undefined,
 
     updatedAt: row.updatedAt.toISOString(),
 
@@ -186,6 +208,12 @@ function toProductRow(product: AdminCatalogProduct) {
 
     category: product.category,
 
+    visibility: normalizeVisibility(product.visibility),
+
+    variantLabel: product.variantLabel?.trim() || null,
+
+    subtype: product.subtype?.trim() || null,
+
     updatedAt: new Date(product.updatedAt),
 
   };
@@ -214,6 +242,22 @@ async function writeCatalogToDb(catalog: AdminCatalogProduct[]): Promise<void> {
   }
   try {
     const prisma = getPrisma();
+
+    /**
+     * Garde-fou : cette écriture fait `deleteMany()` sur "Product", et
+     * "ProductVariant" est en `onDelete: Cascade`. Un seul appel détruirait
+     * donc **toutes les variantes de tous les produits** — tailles, prix,
+     * ordre — sans confirmation. Aucun appelant aujourd'hui : on refuse plutôt
+     * que de laisser ce piège armé.
+     */
+    const variantCount = await prisma.productVariant.count();
+    if (variantCount > 0) {
+      console.warn(
+        `[catalog] écriture bulk refusée : ${variantCount} variante(s) en base seraient effacées en cascade.`,
+      );
+      return;
+    }
+
     await prisma.$transaction([
       prisma.product.deleteMany(),
       prisma.product.createMany({ data: catalog.map(toProductRow) }),
@@ -364,6 +408,12 @@ export type CatalogProductPatch = Partial<
 
     | "stockMinimum"
 
+    | "visibility"
+
+    | "variantLabel"
+
+    | "subtype"
+
   >
 
 >;
@@ -381,6 +431,9 @@ export async function createCatalogProduct(input: {
   imageUrl?: string;
   imageUrls?: string[];
   slug?: string;
+  visibility?: ProductVisibilityValue;
+  variantLabel?: string;
+  subtype?: string;
 }): Promise<AdminCatalogProduct> {
   const catalog = await getAdminCatalog();
   const baseSlug = (input.slug?.trim() || slugify(input.name)) || "produit";
@@ -395,9 +448,12 @@ export async function createCatalogProduct(input: {
     imageUrl: input.imageUrl,
     imageUrls: input.imageUrls,
   });
-  const imageUrl =
-    images.imageUrl || "/images/produits/mangue-passion.webp";
-  const imageUrls = images.imageUrls.length > 0 ? images.imageUrls : [imageUrl];
+  // Aucune image fournie : emplacement neutre, jamais celle d'un autre produit.
+  // (Le repli sur mango-passion.webp attribuait la photo d'un entremets à un
+  // produit qui n'en avait pas — contraire à la règle « jamais la photo d'un
+  // autre produit », cf. components/shop/product-image-placeholder.tsx)
+  const imageUrl = images.imageUrl || "";
+  const imageUrls = images.imageUrls;
 
   const product: AdminCatalogProduct = {
     id: randomUUID(),
@@ -416,6 +472,9 @@ export async function createCatalogProduct(input: {
     isPopular: false,
     updatedAt: new Date().toISOString(),
     category: input.category,
+    visibility: input.visibility ?? "published",
+    variantLabel: input.variantLabel?.trim() || undefined,
+    subtype: input.subtype?.trim() || undefined,
   };
 
   const prisma = getPrisma();

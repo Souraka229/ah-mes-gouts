@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { IceCreamCone, Search } from "lucide-react";
 
 import { EmptyState } from "@/components/shop/empty-state";
+import { NounoursReferenceDisplay } from "@/components/shop/nounours-reference-display";
 import {
   CatalogueFiltersDrawer,
   CatalogueFiltersSidebar,
@@ -313,7 +314,10 @@ export function CatalogueView({
                   Toujours disponibles — parfaits en cadeau ou en upsell.
                 </p>
               </div>
-              {renderProductGrid(filteredNounours)}
+              <NounoursReferenceDisplay />
+              <div className="mt-8">
+                {renderProductGrid(filteredNounours)}
+              </div>
             </section>
           )}
 

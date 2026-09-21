@@ -138,6 +138,10 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         supplements: item.supplements,
+        // Snapshot : la commande reste lisible même si la variante change,
+        // est désactivée, ou disparaît du catalogue.
+        variantId: item.variantId ?? null,
+        variantLabel: item.variantLabel ?? null,
       })),
     },
   };
@@ -194,6 +198,8 @@ export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
       unitPrice: item.unitPrice,
       supplements: item.supplements,
       slug: item.slug ?? undefined,
+      variantId: item.variantId ?? undefined,
+      variantLabel: item.variantLabel ?? undefined,
     })),
     subtotal: row.subtotal,
     total: row.total,

@@ -43,9 +43,16 @@ const orderItemsSchema = z
       supplements: z.array(z.string()).default([]),
       slug: z.string().optional(),
       /**
-       * Taille en cm (nounours). Facultative : absente, le produit est facturé
-       * au prix d'entrée du catalogue — jamais moins cher qu'un vrai palier,
-       * donc l'omission ne peut pas servir à sous-payer.
+       * Code de la variante choisie (taille, format…). Le serveur le résout
+       * dans sa propre table et facture le prix qu'il y trouve : ce champ est un
+       * **identifiant de choix**, jamais un montant.
+       */
+      variantCode: z.string().min(1).max(40).optional(),
+      /**
+       * @deprecated Ancien champ taille nounours. Accepté le temps que les
+       * paniers déjà ouverts se vident ; converti en code de variante côté
+       * serveur. Ne peut pas servir à sous-payer : une taille absente de la
+       * grille est refusée.
        */
       sizeCm: z.number().int().positive().optional(),
     }),

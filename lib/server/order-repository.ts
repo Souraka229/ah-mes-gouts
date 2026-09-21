@@ -122,6 +122,53 @@ export class OrderStockError extends Error {
  * il ferme la fenêtre TOCTOU entre la vérification et l'écriture.
  * Les produits absents de la base (catalogue mock/fallback) ne sont pas suivis.
  */
+/**
+ * Décrémente le stock d'une ligne de commande.
+ *
+ * Une variante peut porter **son propre** stock : une taille peut être épuisée
+ * sans que le produit le soit. Sinon c'est le stock du produit qui descend,
+ * comme avant. Dans les deux cas la garde `gte` rend l'opération atomique — si
+ * le stock est passé sous la quantité demandée entre la validation et
+ * l'écriture, `count` vaut 0 et on refuse plutôt que de survendre.
+ */
+async function decrementStockForClaim(
+  tx: Prisma.TransactionClient,
+  claim: StockClaim,
+): Promise<void> {
+  if (claim.unlimitedStock) return;
+
+  if (claim.variantStockTracked && claim.variantId) {
+    const variantResult = await tx.productVariant.updateMany({
+      where: { id: claim.variantId, stockRemaining: { gte: claim.quantity } },
+      data: { stockRemaining: { decrement: claim.quantity } },
+    });
+
+    if (variantResult.count === 0) {
+      throw new OrderStockError([
+        { name: claim.name, message: "Cette option vient d'être épuisée." },
+      ]);
+    }
+    return;
+  }
+
+  const tracked = await tx.product.findUnique({
+    where: { slug: claim.slug },
+    select: { id: true },
+  });
+  if (!tracked) return;
+
+  const result = await tx.product.updateMany({
+    where: { slug: claim.slug, stockRemaining: { gte: claim.quantity } },
+    data: { stockRemaining: { decrement: claim.quantity } },
+  });
+
+  if (result.count === 0) {
+    throw new OrderStockError([
+      { name: claim.name, message: "Ce produit vient d'être épuisé." },
+    ]);
+  }
+}
+
 export async function createServerOrderWithStock(
   order: SavedOrder,
   stockClaims: StockClaim[],
@@ -131,27 +178,7 @@ export async function createServerOrderWithStock(
 
   await prisma.$transaction(async (tx) => {
     for (const claim of stockClaims) {
-      if (claim.unlimitedStock) continue;
-
-      const tracked = await tx.product.findUnique({
-        where: { slug: claim.slug },
-        select: { id: true },
-      });
-      if (!tracked) continue;
-
-      const result = await tx.product.updateMany({
-        where: { slug: claim.slug, stockRemaining: { gte: claim.quantity } },
-        data: { stockRemaining: { decrement: claim.quantity } },
-      });
-
-      if (result.count === 0) {
-        throw new OrderStockError([
-          {
-            name: claim.name,
-            message: "Ce produit vient d'être épuisé.",
-          },
-        ]);
-      }
+      await decrementStockForClaim(tx, claim);
     }
 
     await tx.order.create({ data });
@@ -193,27 +220,7 @@ export async function confirmServerOrderPayment(
       }
 
       for (const claim of stockClaims) {
-        if ("unlimitedStock" in claim && claim.unlimitedStock) continue;
-
-        const tracked = await tx.product.findUnique({
-          where: { slug: claim.slug },
-          select: { id: true },
-        });
-        if (!tracked) continue;
-
-        const result = await tx.product.updateMany({
-          where: { slug: claim.slug, stockRemaining: { gte: claim.quantity } },
-          data: { stockRemaining: { decrement: claim.quantity } },
-        });
-
-        if (result.count === 0) {
-          throw new OrderStockError([
-            {
-              name: claim.name,
-              message: "Ce produit vient d'être épuisé.",
-            },
-          ]);
-        }
+        await decrementStockForClaim(tx, claim);
       }
 
       const row = await tx.order.update({

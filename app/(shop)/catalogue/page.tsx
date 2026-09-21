@@ -8,7 +8,8 @@ import { getProductCategory } from "@/lib/catalog-utils";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { buildBreadcrumbSchema } from "@/lib/seo/schemas";
 import {
-  getFullCatalog,
+  attachVariants,
+  getShopCatalogue,
   getShopProductsFromActiveMenu,
 } from "@/lib/server/shop-catalog";
 
@@ -29,8 +30,9 @@ export const metadata: Metadata = createPageMetadata({
 
 export default async function CataloguePage() {
   const [menuProducts, allProducts] = await Promise.all([
-    getShopProductsFromActiveMenu(),
-    getFullCatalog(),
+    getShopProductsFromActiveMenu().then(attachVariants),
+    // Catalogue public : publiés uniquement, variantes actives attachées.
+    getShopCatalogue(),
   ]);
   const menuSlugs = new Set(menuProducts.map((product) => product.slug));
   const dailyCatalog = allProducts.filter(

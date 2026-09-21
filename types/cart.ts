@@ -16,10 +16,15 @@ export type CartLineItem = {
   supplements: CartSupplement[];
   quantity: number;
   /**
-   * Taille en cm pour les produits à paliers (nounours). Transmise au serveur,
-   * qui reprice depuis `NOUNOURS_SIZES` — sans elle, le prix affiché n'est pas
-   * celui facturé. Fait aussi partie de la fingerprint : deux tailles
-   * différentes ne doivent jamais fusionner en une seule ligne.
+   * Code de la variante choisie (taille, format…). Transmis au serveur, qui
+   * résout le prix dans sa propre table — sans lui, le prix affiché n'est pas
+   * celui facturé. Fait partie de la fingerprint : deux tailles différentes ne
+   * doivent jamais fusionner en une seule ligne.
+   */
+  variantCode?: string;
+  /**
+   * @deprecated Ancien champ taille nounours, remplacé par `variantCode`.
+   * Conservé pour les paniers déjà en LocalStorage.
    */
   sizeCm?: number;
 };
@@ -40,5 +45,7 @@ export type AddToCartPayload = {
   baseUnitPrice: number;
   supplements: CartSupplement[];
   quantity: number;
+  variantCode?: string;
+  /** @deprecated Remplacé par `variantCode`. */
   sizeCm?: number;
 };

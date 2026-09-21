@@ -12,6 +12,7 @@ import { useCartStore } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { formatPrice } from "@/lib/format";
 import { NounoursSizePicker } from "@/components/shop/nounours-size-picker";
+import { VariantPicker } from "@/components/shop/variant-picker";
 import {
   getProductPrice,
   getMaxOrderQuantity,
@@ -22,9 +23,12 @@ import {
   getNounoursSizeByCm,
   isNounoursProduct,
   NOUNOURS_SIZES,
+  getNounoursTypeFromSlug,
 } from "@/lib/constants/nounours-sizes";
 import type { ProductRecommendation } from "@/lib/product-options/types";
 import type { RoseCompositionOption } from "@/lib/product-options/compositions";
+import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
+import { GiftComposerButton } from "@/components/shop/gift-composer-button";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
@@ -47,23 +51,56 @@ export function ProductPurchasePanel({
   const addItem = useCartStore((state) => state.addItem);
   const setIsGift = useCheckoutStore((state) => state.setIsGift);
   const setGiftMessage = useCheckoutStore((state) => state.setGiftMessage);
+  const isGift = useCheckoutStore((state) => state.isGift);
 
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
-  const [selectedCm, setSelectedCm] = useState<number>(NOUNOURS_SIZES[0]!.cm);
   const [selectedExtraSlugs, setSelectedExtraSlugs] = useState<string[]>([]);
   const [message, setMessage] = useState("");
 
-  const isNounours = isNounoursProduct(product.slug);
+  /**
+   * Variantes servies par la base : c'est la voie normale. Une taille
+   * désactivée au back-office disparaît d'ici, un prix modifié s'y reflète.
+   */
+  const activeVariants = (product.variants ?? []).filter(
+    (variant) => variant.isActive,
+  );
+  const usesStoredVariants = activeVariants.length > 0;
+
+  const [selectedCode, setSelectedCode] = useState<string | undefined>(
+    () => activeVariants[0]?.code,
+  );
+  const selectedVariant = activeVariants.find(
+    (variant) => variant.code === selectedCode,
+  );
+
+  /**
+   * Repli transitoire, aligné sur celui du serveur : un nounours dont les
+   * paliers ne sont pas encore en base reste vendu sur la grille officielle du
+   * code. À supprimer une fois toutes les fiches nounours semées.
+   */
+  const isLegacyNounours =
+    !usesStoredVariants && isNounoursProduct(product.slug);
+  const isNounours = isLegacyNounours;
+  const [selectedCm, setSelectedCm] = useState<number>(NOUNOURS_SIZES[0]!.cm);
 
   const available = isProductAvailable(product);
   const maxQuantity = getMaxOrderQuantity(product);
 
-  const selectedSize = isNounours ? getNounoursSizeByCm(selectedCm) : undefined;
-  const baseUnitPrice = isNounours
-    ? (selectedSize?.price ?? getNounoursEntryPrice())
-    : getProductPrice(product);
+  const selectedSize = isLegacyNounours
+    ? getNounoursSizeByCm(selectedCm)
+    : undefined;
+
+  /**
+   * Le prix affiché vient de la variante choisie (donc du serveur) ou, à
+   * défaut, du prix catalogue. Le serveur le recalcule de toute façon.
+   */
+  const baseUnitPrice = usesStoredVariants
+    ? (selectedVariant?.price ?? activeVariants[0]!.price)
+    : isLegacyNounours
+      ? (selectedSize?.price ?? getNounoursEntryPrice())
+      : getProductPrice(product);
 
   const extras = (recommendation?.products ?? []).filter((candidate) =>
     selectedExtraSlugs.includes(candidate.slug),
@@ -75,9 +112,15 @@ export function ProductPurchasePanel({
 
   const unitPrice = baseUnitPrice;
   const totalPrice = unitPrice * quantity + extrasTotal;
-  const displayName =
-    isNounours && selectedSize
-      ? `${product.name} — ${selectedSize.cm} cm`
+  const nounoursType = isLegacyNounours
+    ? getNounoursTypeFromSlug(product.slug)
+    : undefined;
+  const displayName = usesStoredVariants
+    ? selectedVariant
+      ? `${product.name} — ${selectedVariant.label}`
+      : product.name
+    : isLegacyNounours && selectedSize
+      ? `Nounours ${nounoursType} — ${selectedSize.cm} cm`
       : product.name;
 
   const toggleExtra = (slug: string) =>
@@ -101,7 +144,10 @@ export function ProductPurchasePanel({
       baseUnitPrice,
       supplements: [],
       quantity,
-      sizeCm: isNounours ? selectedCm : undefined,
+      // Seul un **code de choix** part au serveur : jamais un montant. Le
+      // serveur résout le prix dans sa propre table.
+      variantCode: usesStoredVariants ? selectedVariant?.code : undefined,
+      sizeCm: isLegacyNounours ? selectedCm : undefined,
     });
 
     // Les compléments sont de vraies lignes de panier, facturées par le
@@ -148,13 +194,12 @@ export function ProductPurchasePanel({
     <div className="space-y-8">
       <div>
         <p className="font-body text-sm font-medium tracking-widest text-muted-foreground uppercase">
-          {isNounours ? "Prix" : "Prix de base"}
+          {usesStoredVariants || isLegacyNounours ? "Prix" : "Prix de base"}
         </p>
         <p className="mt-2 font-display text-4xl font-semibold text-primary">
-          {isNounours && !selectedSize
-            ? `À partir de ${formatPrice(getNounoursEntryPrice())}`
-            : formatPrice(baseUnitPrice)}
+          {formatPrice(baseUnitPrice)}
         </p>
+        <PlaceholderWarningBadge imageUrl={product.imageUrl} />
         <p className="mt-4 font-body leading-relaxed text-muted-foreground">
           {product.description}
         </p>
@@ -167,8 +212,27 @@ export function ProductPurchasePanel({
         />
       )}
 
-      {isNounours && (
-        <NounoursSizePicker value={selectedCm} onChange={setSelectedCm} />
+      {usesStoredVariants && (
+        <VariantPicker
+          label={product.variantLabel ?? "Taille"}
+          variants={activeVariants}
+          value={selectedCode}
+          onChange={setSelectedCode}
+        />
+      )}
+
+      {isLegacyNounours && (
+        <NounoursSizePicker value={selectedCm} onChange={setSelectedCm} slug={product.slug} />
+      )}
+
+      {!isNounours && !allowMessage && (
+        <GiftComposerButton
+          isGift={isGift}
+          onToggle={(v) => {
+            setIsGift(v);
+            if (!v) setGiftMessage("");
+          }}
+        />
       )}
 
       {recommendation && recommendation.products.length > 0 && (

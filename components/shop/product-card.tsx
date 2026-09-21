@@ -9,6 +9,8 @@ import {
 import { formatPrice } from "@/lib/format";
 import {
   getProductPrice,
+  getProductStartingPrice,
+  hasVariants,
   isProductAvailable,
 } from "@/lib/catalog-utils";
 import {
@@ -34,7 +36,17 @@ export function ProductCard({
 }: ProductCardProps) {
   const available = isProductAvailable(product);
   const price = getProductPrice(product);
-  const nounours = isNounoursProduct(product.slug);
+  /**
+   * Produit à variantes (base) : la carte annonce le prix d'appel. Le prix
+   * affiché ici est purement indicatif — le serveur refacture le palier choisi.
+   */
+  const hasVariantChoices = hasVariants(product);
+  const startingPrice = getProductStartingPrice(product);
+  /**
+   * Repli transitoire : un nounours pas encore semé en base garde son « à
+   * partir de » sur la grille officielle du code.
+   */
+  const nounoursLegacy = !hasVariantChoices && isNounoursProduct(product.slug);
   const showPromotion =
     product.isPromotion && product.promotionPrice !== undefined;
   const shapeId =
@@ -93,9 +105,11 @@ export function ProductCard({
           </h3>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-body text-sm font-semibold text-text">
-              {nounours
-                ? `À partir de ${formatPrice(getNounoursEntryPrice())}`
-                : formatPrice(price)}
+              {hasVariantChoices
+                ? `À partir de ${formatPrice(startingPrice)}`
+                : nounoursLegacy
+                  ? `À partir de ${formatPrice(getNounoursEntryPrice())}`
+                  : formatPrice(price)}
             </span>
             {showPromotion && (
               <span className="font-body text-xs text-muted-foreground line-through">

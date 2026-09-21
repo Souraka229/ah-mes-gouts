@@ -294,6 +294,13 @@ model OrderItem {
   quantity Int
   unitPrice Int
   supplements String[] @default([])
+  /// Snapshot de la variante choisie (taille, format…).
+  ///
+  /// Volontairement **sans clé étrangère** : une variante désactivée ou
+  /// supprimée ne doit jamais pouvoir casser une commande passée. Le libellé
+  /// et le prix sont figés ici, la commande reste lisible pour toujours.
+  variantId    String?
+  variantLabel String?
 }
 
 enum MenuStatus {
@@ -321,8 +328,47 @@ model Product {
   isGiftCard      Boolean  @default(false)
   giftCardMessage String?
   category        String   @default("Entremets")
+  /// draft | published | hidden.
+  ///
+  /// Défaut « published » : les produits existants restent visibles, aucune
+  /// donnée à reprendre. Un brouillon ne doit jamais fuiter côté public — la
+  /// policy RLS `product_public_read` filtre là-dessus.
+  visibility      String   @default("published")
+  /// Libellé du sélecteur de variante : « Taille », « Format », « Personnes ».
+  variantLabel    String?
+  /// Sous-type libre, piloté par l'admin (nounours : stitch | teddy | labubu).
+  subtype         String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  variants ProductVariant[]
+}
+
+/// Variante d'un produit — tailles de nounours, formats de bouquet, nombre de
+/// personnes d'un entremets. **Générique** : le prix d'une ligne de commande est
+/// résolu depuis ici, jamais depuis le client.
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  /// Ce que le client envoie — identifiant stable : "150", "petit", "6".
+  code  String
+  /// Ce qui s'affiche : "150 cm", "Petit", "6 personnes".
+  label String
+  price Int
+  /// Ordre d'affichage, et valeur de tri.
+  sortOrder Int     @default(0)
+  /// Une variante inactive disparaît du site et est refusée au checkout.
+  isActive  Boolean @default(true)
+  /// Stock propre à la variante. `null` = stock porté par le produit.
+  stockRemaining Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, code])
+  @@index([productId, isActive, sortOrder])
 }
 
 model Menu {

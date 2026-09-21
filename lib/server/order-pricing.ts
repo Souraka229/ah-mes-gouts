@@ -3,8 +3,11 @@ import { isUnlimitedStockCategory } from "@/lib/admin/categories";
 import {
   getNounoursSizeByCm,
   isNounoursProduct,
-  NOUNOURS_SIZES,
 } from "@/lib/constants/nounours-sizes";
+import {
+  findVariantByCode,
+  getActiveVariantsByProductIds,
+} from "@/lib/server/variant-repository";
 import {
   getFullCatalog,
   getShopProductsFromActiveMenu,
@@ -21,6 +24,10 @@ export type StockClaim = {
   quantity: number;
   category?: string;
   unlimitedStock?: boolean;
+  /** Variante concernée, le cas échéant. */
+  variantId?: string;
+  /** La variante porte son propre stock — sinon c'est celui du produit. */
+  variantStockTracked?: boolean;
 };
 
 export type PricedOrder = {
@@ -36,7 +43,13 @@ export type RawOrderItem = {
   name: string;
   quantity: number;
   supplements: string[];
-  /** Taille en cm — produits à paliers (nounours). */
+  /** Code de variante — « 150 », « petit », « 6 ». */
+  variantCode?: string;
+  /**
+   * @deprecated Alias historique du code de variante, conservé le temps que les
+   * paniers déjà ouverts se vident. Les nounours utilisent leur taille en cm
+   * comme code, la conversion est donc directe.
+   */
   sizeCm?: number;
 };
 
@@ -46,9 +59,23 @@ const supplementPriceByName = new Map(
 );
 
 /**
+ * Code de variante demandé par le client.
+ *
+ * Le client n'envoie qu'un **identifiant de choix** : jamais un montant, jamais
+ * un libellé, jamais un prix. Tout le reste est relu en base.
+ */
+function resolveVariantCode(raw: RawOrderItem): string | undefined {
+  const explicit = raw.variantCode?.trim();
+  if (explicit) return explicit.toLowerCase();
+  if (raw.sizeCm !== undefined) return String(raw.sizeCm);
+  return undefined;
+}
+
+/**
  * Recalcule prix unitaires, sous-total et stock à partir du catalogue serveur.
  * Ignore totalement les montants envoyés par le client (anti-fraude).
- * Retourne les problèmes (stock, produit/supplément inconnu) le cas échéant.
+ * Retourne les problèmes (stock, produit/variante/supplément inconnu) le cas
+ * échéant.
  */
 export async function priceOrderItems(
   rawItems: RawOrderItem[],
@@ -71,6 +98,15 @@ export async function priceOrderItems(
   const byName = new Map(catalog.map((product) => [product.name, product]));
   const activeMenuSlugs = new Set(
     activeMenuProducts.map((product) => product.slug),
+  );
+
+  /**
+   * Variantes actives de tout le catalogue, en **une** requête. Le catalogue
+   * compte quelques dizaines de produits : sur-lire est moins coûteux qu'une
+   * requête par ligne de panier.
+   */
+  const activeVariants = await getActiveVariantsByProductIds(
+    catalog.map((product) => product.id),
   );
 
   const slugs = rawItems
@@ -160,28 +196,92 @@ export async function priceOrderItems(
     }
 
     /**
-     * Produits à paliers : une seule fiche catalogue porte le prix d'entrée,
-     * le vrai prix vient de la taille choisie. Sans cette résolution, un
-     * nounours 80 cm serait facturé au tarif du plus petit — la cliente voit
-     * 35 000 F et paie 10 000 F.
+     * Produits à variantes : la fiche catalogue ne porte qu'un prix d'entrée,
+     * le prix réel vient de la variante choisie. Sans variante active
+     * sélectionnée on **refuse** — facturer le prix d'entrée laisserait partir
+     * une commande sur une taille que la cliente n'a pas choisie.
      */
     let variantPrice: number | undefined;
+    let variantId: string | undefined;
+    let variantLabel: string | undefined;
+    let variantStockTracked = false;
     let itemName = product.name;
-    if (isNounoursProduct(product.slug)) {
-      const size =
-        raw.sizeCm === undefined
-          ? NOUNOURS_SIZES[0]
-          : getNounoursSizeByCm(raw.sizeCm);
+
+    const variants = activeVariants.get(product.id) ?? [];
+    if (variants.length > 0) {
+      const code = resolveVariantCode(raw);
+
+      if (!code) {
+        issues.push({
+          name: product.name,
+          message: `Choisissez une option (${product.variantLabel ?? "taille"}).`,
+        });
+        continue;
+      }
+
+      const variant = findVariantByCode(variants, code);
+      if (!variant) {
+        issues.push({
+          name: product.name,
+          message: `Option indisponible (${code}).`,
+        });
+        continue;
+      }
+
+      // Stock porté par la variante, quand elle en a un.
+      if (variant.stockRemaining !== null) {
+        variantStockTracked = true;
+
+        if (variant.stockRemaining <= 0) {
+          issues.push({
+            name: product.name,
+            message: `${variant.label} vient d'être épuisé.`,
+          });
+          continue;
+        }
+
+        if (raw.quantity > variant.stockRemaining) {
+          issues.push({
+            name: product.name,
+            message: `Stock insuffisant pour ${variant.label} (${variant.stockRemaining} restant${
+              variant.stockRemaining > 1 ? "s" : ""
+            }).`,
+          });
+          continue;
+        }
+      }
+
+      variantPrice = variant.price;
+      variantId = variant.id;
+      variantLabel = variant.label;
+      itemName = `${product.name} — ${variant.label}`;
+    } else if (isNounoursProduct(product.slug)) {
+      /**
+       * FILET DE SÉCURITÉ TRANSITOIRE — à supprimer une fois les variantes
+       * nounours semées en base.
+       *
+       * Tant qu'une fiche nounours n'a pas de variante en base, on retombe sur
+       * la grille officielle du code. Sans ce repli, la fiche serait facturée
+       * au prix d'entrée quel que soit le palier choisi — exactement le bug de
+       * facturation corrigé le 15 septembre. Ce repli ne facture **jamais moins
+       * cher** qu'un palier réel : il ne peut pas servir à sous-payer.
+       */
+      const cm = raw.sizeCm;
+      const size = cm === undefined ? undefined : getNounoursSizeByCm(cm);
 
       if (!size) {
         issues.push({
           name: product.name,
-          message: `Taille indisponible (${raw.sizeCm} cm).`,
+          message:
+            cm === undefined
+              ? "Choisissez une taille."
+              : `Taille indisponible (${cm} cm).`,
         });
         continue;
       }
 
       variantPrice = size.price;
+      variantLabel = `${size.cm} cm`;
       itemName = `${product.name} — ${size.cm} cm`;
     }
 
@@ -201,7 +301,8 @@ export async function priceOrderItems(
     }
     if (supplementInvalid) continue;
 
-    const unitPrice = (variantPrice ?? getProductPrice(product)) + supplementsPrice;
+    const unitPrice =
+      (variantPrice ?? getProductPrice(product)) + supplementsPrice;
     subtotal += unitPrice * raw.quantity;
 
     items.push({
@@ -210,13 +311,17 @@ export async function priceOrderItems(
       unitPrice,
       supplements: raw.supplements,
       slug: product.slug,
+      variantId,
+      variantLabel,
     });
     stockClaims.push({
       slug: product.slug,
-      name: product.name,
+      name: itemName,
       quantity: raw.quantity,
       category,
       unlimitedStock,
+      variantId,
+      variantStockTracked,
     });
   }
 

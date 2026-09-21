@@ -334,8 +334,11 @@ export function StepPayment() {
         unitPrice: getLineUnitPrice(item),
         supplements: item.supplements.map((s) => s.name),
         slug: item.slug,
-        // Le serveur reprice les paliers depuis NOUNOURS_SIZES : sans cette
-        // taille, un nounours 80 cm serait facturé au prix d'entrée.
+        // Le serveur résout le prix de la variante dans sa propre table : sans
+        // ce code, un nounours 150 cm serait facturé au prix d'entrée. C'est un
+        // identifiant de choix, jamais un montant.
+        ...(item.variantCode !== undefined ? { variantCode: item.variantCode } : {}),
+        // Repli transitoire pour les paniers ouverts avant les variantes.
         ...(item.sizeCm !== undefined ? { sizeCm: item.sizeCm } : {}),
       })),
       subtotal: totals.subtotal,

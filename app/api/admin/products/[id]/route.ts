@@ -30,6 +30,12 @@ const patchSchema = z
     promotionPrice: z.number().int().positive().nullable().optional(),
     stockRemaining: z.number().int().min(0).max(100_000).optional(),
     toggleAvailable: z.boolean().optional(),
+    /** draft | published | hidden */
+    visibility: z.enum(["draft", "published", "hidden"]).optional(),
+    /** Libellé du sélecteur de variante : « Taille », « Format », « Personnes ». */
+    variantLabel: z.string().trim().max(40).nullable().optional(),
+    /** Sous-type libre (nounours : stitch | teddy | labubu). */
+    subtype: z.string().trim().max(40).nullable().optional(),
   })
   .strict();
 
@@ -105,6 +111,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       patch.promotionPrice =
         body.promotionPrice === null ? undefined : body.promotionPrice;
     }
+    if (body.visibility !== undefined) patch.visibility = body.visibility;
+    if (body.variantLabel !== undefined) {
+      patch.variantLabel = body.variantLabel ?? undefined;
+    }
+    if (body.subtype !== undefined) patch.subtype = body.subtype ?? undefined;
 
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ error: "Aucune modification" }, { status: 400 });

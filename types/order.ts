@@ -73,7 +73,16 @@ export type SavedOrder = {
     supplements: string[];
     /** Slug catalogue — utilisé côté serveur pour recalculer prix/stock. */
     slug?: string;
-    /** Taille en cm (nounours) — le serveur reprice le palier depuis ce champ. */
+    /**
+     * Snapshot de la variante choisie, figé à la commande.
+     * Le libellé et le prix ne bougent plus, même si la variante change ensuite.
+     */
+    variantId?: string;
+    variantLabel?: string;
+    /**
+     * @deprecated Ancien champ taille nounours. Remplacé par `variantCode`
+     * dans le panier et `variantLabel` dans la commande.
+     */
     sizeCm?: number;
   }[];
   subtotal: number;

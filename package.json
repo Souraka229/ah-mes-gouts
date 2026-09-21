@@ -20,6 +20,8 @@
     "deploy:check": "node scripts/deploy-check.mjs",
     "deploy:env": "node scripts/push-vercel-env.mjs",
     "sync:zones": "node scripts/sync-delivery-zones.mjs",
+    "seed:nounours": "node scripts/seed-nounours-variants.mjs",
+    "seed:nounours:dry": "node scripts/seed-nounours-variants.mjs --dry-run",
     "images:gift": "node scripts/import-gift-images.mjs",
     "images:optimize": "node scripts/optimize-produits-images.mjs",
     "images:restore": "node scripts/restore-produits-images.mjs && node scripts/optimize-produits-images.mjs",

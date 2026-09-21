@@ -119,7 +119,11 @@ export function CheckoutWizard({ upsellCandidates }: CheckoutWizardProps = {}) {
         </div>
       </div>
 
-      <CheckoutMobileTotalBar />
+      {/*
+        Sur « Votre commande », c'est le formulaire lui-même qui porte la barre
+        d'action mobile — avec le bouton Continuer. On n'en affiche qu'une.
+      */}
+      {step === "payment" && <CheckoutMobileTotalBar />}
     </div>
   );
 }

@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 import { StepClientForm } from "@/components/shop/checkout/step-client-form";
 import { StepDeliveryZone } from "@/components/shop/checkout/step-delivery-zone";
 import { StepMode } from "@/components/shop/checkout/step-mode";
 import { StepSchedule } from "@/components/shop/checkout/step-schedule";
 import { StepUpsell } from "@/components/shop/checkout/step-upsell";
+import { useCheckoutTotal } from "@/components/shop/checkout/checkout-summary";
 import { Button } from "@/components/ui/button";
+import { formatPrice } from "@/lib/format";
 import {
   loadSavedClient,
   saveClient,
@@ -28,15 +31,22 @@ type StepCommandeProps = {
 
 function Section({
   title,
+  done = false,
   children,
 }: {
   title: string;
+  /** Section remplie — une coche situe la progression d'un coup d'œil. */
+  done?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <section className="space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-5">
-      <h2 className="font-display text-lg font-semibold text-primary sm:text-xl">
-        {title}
+      <h2 className="flex items-center gap-2 font-display text-lg font-semibold text-primary sm:text-xl">
+        {done && (
+          <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
+        )}
+        <span>{title}</span>
+        {done && <span className="sr-only"> — rempli</span>}
       </h2>
       {children}
     </section>
@@ -229,6 +239,42 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
     setStep("payment");
   };
 
+  /**
+   * Avancement réel du formulaire.
+   *
+   * La page empile plusieurs sections derrière un seul bouton : sans repère,
+   * on ne sait ni ce qui est déjà rempli, ni ce qu'il reste. On le calcule donc
+   * en continu plutôt que de le découvrir en appuyant sur « Continuer ».
+   */
+  const clientErrors = useMemo(
+    () => validateClientBlock(mode, client, isGift, gift),
+    [mode, client, isGift, gift],
+  );
+
+  const steps = useMemo(() => {
+    const entries = [
+      { key: "mode", label: "le mode de réception", done: Boolean(mode) },
+    ];
+    if (mode === "delivery") {
+      entries.push({ key: "zone", label: "votre quartier", done: Boolean(zoneId) });
+    }
+    entries.push(
+      { key: "schedule", label: "le créneau", done: Boolean(scheduledSlot) },
+      {
+        key: "client",
+        label: "vos coordonnées",
+        done: Boolean(mode) && Object.keys(clientErrors).length === 0,
+      },
+    );
+    return entries;
+  }, [mode, zoneId, scheduledSlot, clientErrors]);
+
+  const remaining = steps.filter((entry) => !entry.done);
+  const doneCount = steps.length - remaining.length;
+  const isDone = (key: string) =>
+    steps.find((entry) => entry.key === key)?.done ?? false;
+  const { total, itemCount } = useCheckoutTotal();
+
   return (
     <div className="space-y-6">
       <div>
@@ -241,14 +287,14 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
       </div>
 
       <div id="checkout-section-mode" className="scroll-mt-24">
-        <Section title="1. Comment recevoir ?">
+        <Section title="1. Comment recevoir ?" done={isDone("mode")}>
           <StepMode embedded />
         </Section>
       </div>
 
       {mode === "delivery" && (
         <div id="checkout-section-zone" className="scroll-mt-24">
-          <Section title="2. Où livrer ?">
+          <Section title="2. Où livrer ?" done={isDone("zone")}>
             <StepDeliveryZone embedded />
           </Section>
         </div>
@@ -256,7 +302,10 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
 
       {mode && (
         <div id="checkout-section-schedule" className="scroll-mt-24">
-          <Section title={mode === "delivery" ? "3. Quand ?" : "2. Quand ?"}>
+          <Section
+            title={mode === "delivery" ? "3. Quand ?" : "2. Quand ?"}
+            done={isDone("schedule")}
+          >
             <StepSchedule embedded />
           </Section>
         </div>
@@ -270,6 +319,7 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
                 ? "4. Vos informations"
                 : "3. Vos informations"
             }
+            done={isDone("client")}
           >
             <StepClientForm embedded />
           </Section>
@@ -288,13 +338,50 @@ export function StepCommande({ upsellCandidates }: StepCommandeProps) {
         </p>
       )}
 
+      {remaining.length > 0 && (
+        <p className="font-body text-sm text-muted-foreground">
+          Il reste à renseigner{" "}
+          <span className="font-medium text-text">
+            {remaining.map((entry) => entry.label).join(", ")}
+          </span>
+          .
+        </p>
+      )}
+
       <Button
-        className="h-12 min-h-12 w-full cursor-pointer bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 sm:w-auto sm:px-10"
+        className="hidden h-12 min-h-12 w-full cursor-pointer bg-accent text-base font-semibold text-accent-foreground hover:bg-accent/90 sm:inline-flex sm:w-auto sm:px-10"
         disabled={!mode}
         onClick={handleContinue}
       >
         Continuer vers le paiement
       </Button>
+
+      {/*
+        Barre d'action mobile. Le seul bouton du tunnel vivait en bas d'une page
+        de plusieurs écrans : on pouvait remplir le formulaire sans jamais
+        trouver comment avancer. L'action est maintenant toujours sous le pouce,
+        avec le total et l'avancement.
+      */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-bg/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <div className="min-w-0">
+            <p className="font-body text-[11px] leading-tight text-muted-foreground">
+              {doneCount}/{steps.length} rempli{doneCount > 1 ? "s" : ""} ·{" "}
+              {itemCount} article{itemCount > 1 ? "s" : ""}
+            </p>
+            <p className="font-display text-lg font-semibold text-primary">
+              {formatPrice(total)}
+            </p>
+          </div>
+          <Button
+            className="ml-auto h-12 min-h-12 shrink-0 cursor-pointer bg-accent px-6 text-sm font-semibold text-accent-foreground hover:bg-accent/90"
+            disabled={!mode}
+            onClick={handleContinue}
+          >
+            Continuer
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

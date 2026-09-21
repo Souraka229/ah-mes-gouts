@@ -26,6 +26,11 @@ const PRODUCT_IMAGES: Record<string, string> = {
   "nounours-teddy": `/images/placeholders/nounours/teddy-placeholder.webp`,
   "nounours-labubu": `/images/placeholders/nounours/labubu-placeholder.webp`,
   "bouquet-roses": `${PRODUCT_IMAGE_BASE}/bouquet-roses.webp`,
+  // Photos réelles des compositions — sans ces entrées, vider l'image d'une
+  // fiche en base la ferait retomber sur la photo d'un autre bouquet.
+  "bouquet-7-roses": `${PRODUCT_IMAGE_BASE}/bouquet-7-roses.webp`,
+  "bouquet-9-roses": `${PRODUCT_IMAGE_BASE}/bouquet-9-roses.webp`,
+  "bouquet-12-roses": `${PRODUCT_IMAGE_BASE}/bouquet-12-roses.webp`,
 };
 
 /** Affiches marketing (VERSION B — nom + prix dans l'image). */

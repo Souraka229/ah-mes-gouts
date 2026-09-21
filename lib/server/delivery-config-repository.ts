@@ -177,25 +177,55 @@ async function readConfigFromDb(): Promise<DeliveryConfig | null> {
   };
 }
 
+/**
+ * Écrit la configuration livraison.
+ *
+ * **Jamais de `deleteMany()` sur les zones.** Les lieux (`DeliveryArea`) sont
+ * rattachés à leur zone en `ON DELETE CASCADE` : vider la table des zones
+ * effaçait toute la grille tarifaire d'un coup. C'est arrivé — 113 lieux, au
+ * premier enregistrement depuis la page livraison de l'admin. Un upsert par
+ * zone ne peut pas produire ça.
+ *
+ * Une zone retirée par l'admin n'est supprimée que si elle ne porte aucun
+ * lieu ; sinon elle est désactivée, ce qui la fait disparaître du checkout sans
+ * perdre ses tarifs.
+ */
 async function writeConfigToDb(config: DeliveryConfig): Promise<void> {
   const prisma = getPrisma();
+  const incomingIds = config.zones.map((z) => z.id);
 
   await prisma.$transaction([
-    prisma.deliveryZone.deleteMany(),
+    ...config.zones.map((z) =>
+      prisma.deliveryZone.upsert({
+        where: { id: z.id },
+        update: { name: z.name, cost: z.cost, isActive: z.isActive },
+        create: {
+          id: z.id,
+          name: z.name,
+          cost: z.cost,
+          isActive: z.isActive,
+          createdAt: new Date(z.createdAt),
+          updatedAt: new Date(z.updatedAt),
+        },
+      }),
+    ),
     prisma.deliverySchedule.deleteMany(),
   ]);
 
-  if (config.zones.length > 0) {
-    await prisma.deliveryZone.createMany({
-      data: config.zones.map((z) => ({
-        id: z.id,
-        name: z.name,
-        cost: z.cost,
-        isActive: z.isActive,
-        createdAt: new Date(z.createdAt),
-        updatedAt: new Date(z.updatedAt),
-      })),
-    });
+  // Zones absentes de la configuration reçue.
+  const orphans = await prisma.deliveryZone.findMany({
+    where: { id: { notIn: incomingIds } },
+    select: { id: true, _count: { select: { areas: true } } },
+  });
+  for (const zone of orphans) {
+    if (zone._count.areas === 0) {
+      await prisma.deliveryZone.delete({ where: { id: zone.id } });
+    } else {
+      await prisma.deliveryZone.update({
+        where: { id: zone.id },
+        data: { isActive: false },
+      });
+    }
   }
 
   if (config.schedules.length > 0) {

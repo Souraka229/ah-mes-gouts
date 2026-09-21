@@ -1,5 +1,16 @@
-import { formatPrice } from "@/lib/format";
 import type { DeliveryAreaOption, DeliveryZone } from "@/types/order";
+
+/**
+ * Ce fichier n'a **aucune dépendance d'exécution**, et ça compte :
+ * `scripts/sync-delivery-areas.mjs` l'importe directement pour semer la base en
+ * lisant la grille officielle, sans en recopier les tarifs. Node ne sait pas
+ * résoudre l'alias `@/`, donc le moindre import de valeur ici casserait le
+ * script. D'où ce formatage local plutôt que `formatPrice` de `lib/format` —
+ * le test vérifie que les deux rendent exactement la même chaîne.
+ */
+function formatFcfa(amount: number): string {
+  return `${amount.toLocaleString("fr-FR")} F`;
+}
 
 /**
  * Grille tarifaire officielle de livraison.
@@ -226,8 +237,8 @@ export function getZonePriceLabel(zoneId: string): string {
   const min = prices[0]!;
   const max = prices[prices.length - 1]!;
 
-  if (min === max) return formatPrice(min);
-  return `de ${formatPrice(min)} à ${formatPrice(max)}`;
+  if (min === max) return formatFcfa(min);
+  return `de ${formatFcfa(min)} à ${formatFcfa(max)}`;
 }
 
 function escapeRegExp(value: string): string {

@@ -1,3 +1,4 @@
+import { getProductCategory, isGiftCardProduct } from "@/lib/catalog-utils";
 import type { Product } from "@/types/product";
 
 /**
@@ -20,10 +21,14 @@ export type ProductRecommendation = {
 };
 
 /**
- * Le mot manuscrit est offert sur les créations cadeau. On l'écarte sur le
- * menu du jour : ce sont des pièces du jour, à consommer tout de suite, et un
- * bloc de saisie y serait du bruit.
+ * Le mot manuscrit est offert **sur les cartes uniquement**.
+ *
+ * La règle précédente (`!isMenuDuJour`) l'affichait sur presque tout le
+ * catalogue, entremets et glaces compris, en annonçant « Offert » sur des
+ * produits qui ne portent pas de carte. Le bloc de saisie ne doit apparaître
+ * que là où la carte est réellement jointe.
  */
 export function canCarryMessage(product: Product): boolean {
-  return !product.isMenuDuJour;
+  if (isGiftCardProduct(product)) return true;
+  return getProductCategory(product) === "Carte";
 }

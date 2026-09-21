@@ -19,6 +19,14 @@ const quoteSchema = z.object({
         name: z.string().trim().min(1),
         quantity: z.number().int().positive().max(99),
         supplements: z.array(z.string()).default([]),
+        /**
+         * Code de la variante choisie. Sans lui, une fiche à tailles est
+         * refusée par la facturation (« Choisissez une option ») : ce champ est
+         * un **identifiant de choix**, jamais un montant.
+         */
+        variantCode: z.string().min(1).max(40).optional(),
+        /** @deprecated Ancien champ taille nounours, converti en code. */
+        sizeCm: z.number().int().positive().optional(),
       }),
     )
     .min(1)

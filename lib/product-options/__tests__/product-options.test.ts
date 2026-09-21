@@ -218,11 +218,32 @@ describe("suggestions sur la fiche produit", () => {
 });
 
 describe("mot manuscrit", () => {
-  it("n'est pas proposé sur une pièce du menu du jour", () => {
-    expect(canCarryMessage(product("x", "X", 1000, "Entremets"))).toBe(true);
+  it("n'est proposé que sur les cartes", () => {
+    // Une carte cadeau et un produit de la catégorie « Carte » portent la carte
+    // manuscrite ; le reste du catalogue ne doit plus annoncer « Offert ».
+    expect(canCarryMessage(product("x", "X", 1000, "Carte"))).toBe(true);
     expect(
       canCarryMessage(
-        product("y", "Y", 1000, "Entremets", { isMenuDuJour: true }),
+        product("carte-cadeau", "Carte cadeau", 1000, "Carte", {
+          isGiftCard: true,
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("n'est pas proposé sur un entremets, une glace ou le menu du jour", () => {
+    expect(canCarryMessage(product("a", "Entremets", 1000, "Entremets"))).toBe(
+      false,
+    );
+    expect(
+      canCarryMessage(product("b", "Glace", 3000, "Menu du jour")),
+    ).toBe(false);
+    expect(canCarryMessage(product("c", "Nounours", 10000, "Nounours"))).toBe(
+      false,
+    );
+    expect(
+      canCarryMessage(
+        product("d", "Du jour", 3000, "Menu du jour", { isMenuDuJour: true }),
       ),
     ).toBe(false);
   });

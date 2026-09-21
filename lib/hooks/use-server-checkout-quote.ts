@@ -64,6 +64,14 @@ export function useServerCheckoutQuote(): void {
               name: item.name,
               quantity: item.quantity,
               supplements: item.supplements.map((supplement) => supplement.name),
+              // Le serveur résout le prix de la variante dans sa propre table :
+              // sans ce code, une fiche à tailles est refusée (« Choisissez une
+              // option ») et le devis échoue.
+              ...(item.variantCode !== undefined
+                ? { variantCode: item.variantCode }
+                : {}),
+              // Repli transitoire pour les paniers ouverts avant les variantes.
+              ...(item.sizeCm !== undefined ? { sizeCm: item.sizeCm } : {}),
             })),
           }),
         });

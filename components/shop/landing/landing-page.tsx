@@ -2,6 +2,7 @@ import { LandingBrandValues } from "@/components/shop/landing/landing-brand-valu
 import { LandingClosing } from "@/components/shop/landing/landing-closing";
 import { LandingGiftBanner } from "@/components/shop/landing/landing-gift-banner";
 import { LandingHero } from "@/components/shop/landing/landing-hero";
+import { LandingMenuBanner } from "@/components/shop/landing/landing-menu-banner";
 import { LandingMenuSection } from "@/components/shop/landing/landing-menu-section";
 import { LandingShell } from "@/components/shop/landing/landing-shell";
 import { LandingSignatures } from "@/components/shop/landing/landing-signatures";
@@ -24,6 +25,13 @@ export function LandingPage({ content }: { content: HomePageContent }) {
 
   return (
     <LandingShell>
+      {/*
+        Bandeau d'annonce en tête de page : c'est la première chose qu'on lit en
+        arrivant, et il n'existe que les jours où un menu est publié. Il ouvre la
+        page plutôt que de s'intercaler entre deux sections.
+      */}
+      <LandingMenuBanner count={content.menuShowcase.length} />
+
       <LandingHero
         featured={content.menuShowcase[0] ?? null}
         fallbackImage={content.hero.imageUrl}

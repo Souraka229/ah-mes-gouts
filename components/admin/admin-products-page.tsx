@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import {
   IceCreamCone,
+  ImagePlus,
   Loader2,
   Plus,
   Trash2,
@@ -181,6 +182,73 @@ export function AdminProductsPage() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Suppression échouée");
     }
+  };
+
+  /**
+   * Remplace la photo d'un produit **déjà en ligne**.
+   *
+   * Le formulaire n'étant qu'en création, aucune fiche publiée ne pouvait
+   * jusqu'ici changer de photo. On passe par `patchProduct`, qui gère déjà
+   * l'affichage optimiste, le toast et le retour arrière en cas d'échec.
+   */
+  const changeProductImage = async (product: AdminProduct, file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error ?? "Envoi échoué");
+
+      const url = data.url;
+      const previous = {
+        imageUrl: product.imageUrl,
+        imageUrls: product.imageUrls ?? [],
+      };
+
+      await patchProduct(
+        product.id,
+        { imageUrl: url, imageUrls: [url] },
+        `Photo de ${product.name} mise à jour`,
+        () => patchProduct(product.id, previous, "Photo rétablie"),
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Envoi échoué");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  /**
+   * Détache la photo d'un produit en ligne.
+   *
+   * Un fichier livré avec le site n'est jamais effacé — on retire seulement le
+   * lien depuis la fiche, sinon les autres produits qui le partagent perdraient
+   * leur image. Seul un envoi de l'admin part réellement du stockage.
+   */
+  const clearProductImage = async (product: AdminProduct) => {
+    const url = product.imageUrl;
+    const previous = {
+      imageUrl: url,
+      imageUrls: product.imageUrls ?? [],
+    };
+    const isUpload =
+      url.startsWith("/images/uploads/") || url.includes("/cms-images/");
+
+    if (isUpload) {
+      await fetch("/api/admin/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      }).catch(() => undefined);
+    }
+
+    await patchProduct(
+      product.id,
+      { imageUrl: "", imageUrls: [] },
+      isUpload ? "Photo supprimée" : "Photo détachée de la fiche",
+      () => patchProduct(product.id, previous, "Photo rétablie"),
+    );
   };
 
   const createProduct = async () => {
@@ -492,7 +560,15 @@ export function AdminProductsPage() {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-bg">
+                        {/*
+                          La vignette est le bouton : cliquer dessus remplace la
+                          photo. C'est l'affordance la plus directe pour changer
+                          l'image d'un produit déjà en ligne.
+                        */}
+                        <label
+                          className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-transparent bg-bg transition-colors hover:border-primary/40"
+                          title={product.imageUrl ? "Changer la photo" : "Ajouter une photo"}
+                        >
                           {product.imageUrl ? (
                             <Image
                               src={product.imageUrl}
@@ -502,8 +578,36 @@ export function AdminProductsPage() {
                               sizes="48px"
                               unoptimized={product.imageUrl.startsWith("/")}
                             />
-                          ) : null}
-                        </div>
+                          ) : (
+                            <span className="flex size-full items-center justify-center text-muted-foreground">
+                              <ImagePlus className="size-4" aria-hidden />
+                            </span>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            disabled={uploading}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void changeProductImage(product, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+
+                        {product.imageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => void clearProductImage(product)}
+                            className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
+                            title="Retirer la photo"
+                            aria-label={`Retirer la photo de ${product.name}`}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                          </button>
+                        )}
+
                         <div>
                           <p className="font-medium text-text">{product.name}</p>
                           <p className="text-xs text-muted-foreground">

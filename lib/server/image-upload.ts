@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import path from "path";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -69,4 +69,63 @@ export async function uploadSiteImage(file: File): Promise<UploadResult> {
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(objectPath);
   return { url: data.publicUrl, provider: "supabase" };
+}
+
+const LOCAL_UPLOAD_PREFIX = "/images/uploads/";
+
+/**
+ * Supprime un visuel **téléversé** depuis l'administration.
+ *
+ * Ne touche jamais aux fichiers livrés avec le site (`/images/produits`,
+ * `/images/placeholders` — les vraies photos de l'atelier) : seuls les envois
+ * de l'admin sont supprimables. Toute URL qui ne pointe pas vers l'espace de
+ * téléversement est refusée, et les `..` sont rejetés — sans ces garde-fous,
+ * une URL forgée permettrait d'effacer n'importe quel fichier du stockage.
+ */
+export async function deleteSiteImage(
+  url: string,
+): Promise<{ provider: UploadResult["provider"] }> {
+  const value = url.trim();
+  if (!value) throw new Error("Adresse d'image manquante.");
+
+  // ── Envoi local (développement uniquement) ────────────────────────────────
+  if (value.startsWith(LOCAL_UPLOAD_PREFIX)) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Suppression locale indisponible en production.");
+    }
+    const name = value.slice(LOCAL_UPLOAD_PREFIX.length);
+    if (!name || name !== path.basename(name) || name.includes("..")) {
+      throw new Error("Chemin d'image invalide.");
+    }
+    const target = path.join(process.cwd(), "public", "images", "uploads", name);
+    if (existsSync(target)) rmSync(target);
+    return { provider: "local" };
+  }
+
+  // ── Envoi Supabase Storage ────────────────────────────────────────────────
+  const marker = `/${BUCKET}/`;
+  const index = value.indexOf(marker);
+  if (index === -1) {
+    throw new Error(
+      "Cette image ne vient pas de l'espace de téléversement : elle n'est pas supprimable ici.",
+    );
+  }
+
+  const objectPath = value.slice(index + marker.length).split("?")[0] ?? "";
+  if (!objectPath || objectPath.includes("..")) {
+    throw new Error("Chemin d'image invalide.");
+  }
+
+  const supabase = getSupabaseServerClient();
+  if (!supabase) {
+    throw new Error("Stockage distant indisponible.");
+  }
+
+  const { error } = await supabase.storage.from(BUCKET).remove([objectPath]);
+  if (error) {
+    console.error("[upload] suppression refusée par le stockage:", error);
+    throw new Error("Suppression refusée par le stockage.");
+  }
+
+  return { provider: "supabase" };
 }

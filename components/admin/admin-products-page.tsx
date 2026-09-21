@@ -6,6 +6,7 @@ import {
   IceCreamCone,
   Loader2,
   Plus,
+  Trash2,
   Upload,
   X,
   Download,
@@ -144,6 +145,41 @@ export function AdminProductsPage() {
       toast.error(e instanceof Error ? e.message : "Upload échoué");
     } finally {
       setUploading(false);
+    }
+  };
+
+  /**
+   * Retire la photo de la fiche.
+   *
+   * Un visuel **livré avec le site** (`/images/produits`, `/images/placeholders`)
+   * n'est jamais effacé du stockage : on détache seulement la fiche, sinon les
+   * autres produits qui partagent ce fichier perdraient leur image. Seul un
+   * envoi de l'admin est réellement supprimé.
+   */
+  const removeImage = async () => {
+    const url = form.imageUrl;
+    if (!url) return;
+
+    setForm((f) => ({ ...f, imageUrl: "" }));
+
+    const isUpload =
+      url.startsWith("/images/uploads/") || url.includes("/cms-images/");
+    if (!isUpload) {
+      toast.success("Photo retirée de la fiche — le fichier du site est conservé");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/admin/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Suppression échouée");
+      toast.success("Photo supprimée");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Suppression échouée");
     }
   };
 
@@ -340,6 +376,18 @@ export function AdminProductsPage() {
                     }}
                   />
                 </label>
+
+                {form.imageUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 cursor-pointer gap-2 text-destructive hover:text-destructive"
+                    onClick={() => void removeImage()}
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                    Retirer la photo
+                  </Button>
+                )}
               </div>
             </div>
           </div>

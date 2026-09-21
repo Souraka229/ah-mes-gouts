@@ -1,13 +1,13 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { LANDING_AMBIANCE } from "@/lib/landing-data";
 
 /**
  * Bannière cadeau — écrin de nuit.
  *
- * Un grand aplat rouge casserait le 60/30/10 : le rouge reste réservé au CTA,
- * qui est ici l'unique touche colorée de la section.
+ * Volontairement **sans bouton** : le texte porte seul l'invitation, et la
+ * navigation se fait par le menu et les sections voisines. La section reste en
+ * noir plutôt qu'en rouge, le rouge étant réservé au CTA principal de la page.
  */
 export function LandingGiftBanner() {
   const thumbs = LANDING_AMBIANCE.slice(0, 3);
@@ -28,13 +28,6 @@ export function LandingGiftBanner() {
             Message manuscrit, emballage soigné, livraison au créneau choisi.
             Vous nous dites l’occasion, on s’occupe du reste.
           </p>
-
-          <Link
-            href="/catalogue"
-            className="mt-9 inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full bg-accent px-8 font-body text-base font-semibold text-accent-foreground shadow-sm transition-[transform,box-shadow] duration-300 hover:scale-[1.02] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white motion-reduce:hover:scale-100"
-          >
-            Composer un cadeau
-          </Link>
 
           <div className="mt-9 flex items-center gap-4">
             <div className="flex" aria-hidden>

@@ -1,18 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Check, MessageCircle, Sparkles } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { formatPrice } from "@/lib/format";
 import {
   generatePredefinedWhatsAppLink,
   getTierForAmount,
   PRICING_TIERS,
 } from "@/lib/pricing-tiers";
-import { cn } from "@/lib/utils";
 
 const MIN_AMOUNT = PRICING_TIERS[0]!.minPrice;
 const MAX_AMOUNT = PRICING_TIERS[PRICING_TIERS.length - 1]!.maxPrice;
@@ -28,9 +25,9 @@ interface CustomTierSelectorProps {
 /**
  * Sélecteur de palier avantages.
  *
- * Le montant pilote l'affichage des avantages ; la commande réelle se compose
- * dans le composeur de cadeau, où chaque produit est un vrai produit du
- * catalogue. Ce sélecteur ne met donc rien au panier lui-même.
+ * Le montant pilote l'affichage des avantages — rien de plus. Ce sélecteur ne
+ * met rien au panier : la commande se compose dans le catalogue, où chaque
+ * produit est un vrai produit, facturé par le serveur.
  */
 export function CustomTierSelector({
   categoryName = "Toutes catégories",
@@ -167,16 +164,6 @@ export function CustomTierSelector({
       </div>
 
       <div className="space-y-3 border-t border-border pt-4">
-        <Link
-          href="/catalogue"
-          className={cn(
-            buttonVariants({ variant: "cta", size: "lg" }),
-            "w-full cursor-pointer",
-          )}
-        >
-          Composer un cadeau à ce montant
-        </Link>
-
         <a
           href={whatsappLink}
           target="_blank"

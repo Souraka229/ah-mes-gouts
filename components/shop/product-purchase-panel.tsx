@@ -27,7 +27,6 @@ import {
 } from "@/lib/constants/nounours-sizes";
 import type { ProductRecommendation } from "@/lib/product-options/types";
 import type { RoseCompositionOption } from "@/lib/product-options/compositions";
-import { GiftComposerButton } from "@/components/shop/gift-composer-button";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
@@ -50,7 +49,6 @@ export function ProductPurchasePanel({
   const addItem = useCartStore((state) => state.addItem);
   const setIsGift = useCheckoutStore((state) => state.setIsGift);
   const setGiftMessage = useCheckoutStore((state) => state.setGiftMessage);
-  const isGift = useCheckoutStore((state) => state.isGift);
 
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
@@ -81,7 +79,6 @@ export function ProductPurchasePanel({
    */
   const isLegacyNounours =
     !usesStoredVariants && isNounoursProduct(product.slug);
-  const isNounours = isLegacyNounours;
   const [selectedCm, setSelectedCm] = useState<number>(NOUNOURS_SIZES[0]!.cm);
 
   const available = isProductAvailable(product);
@@ -221,16 +218,6 @@ export function ProductPurchasePanel({
 
       {isLegacyNounours && (
         <NounoursSizePicker value={selectedCm} onChange={setSelectedCm} slug={product.slug} />
-      )}
-
-      {!isNounours && !allowMessage && (
-        <GiftComposerButton
-          isGift={isGift}
-          onToggle={(v) => {
-            setIsGift(v);
-            if (!v) setGiftMessage("");
-          }}
-        />
       )}
 
       {recommendation && recommendation.products.length > 0 && (

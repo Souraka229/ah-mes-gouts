@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { CustomTierSelector } from "@/components/shop/tier-selector";
-import { buttonVariants } from "@/components/ui/button";
 import { createPageMetadata } from "@/lib/seo/metadata";
 import { PRICING_TIERS } from "@/lib/pricing-tiers";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Formules & paliers avantages (10 000 à 110 000 FCFA)",
@@ -54,16 +51,6 @@ export default function FormulesPage() {
             votre mot manuscrit, offert.
           </li>
         </ol>
-
-        <Link
-          href="/catalogue"
-          className={cn(
-            buttonVariants({ variant: "cta" }),
-            "mt-6 inline-flex cursor-pointer",
-          )}
-        >
-          Composer mon cadeau
-        </Link>
       </section>
     </div>
   );

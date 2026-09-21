@@ -1,5 +1,20 @@
 # RAPPORT FINAL — NOUNOURS / PELUCHES (Feature complète)
 
+> **INSTANTANÉ DATÉ — 17 septembre 2026. Ne décrit plus l'état actuel.**
+>
+> Ce rapport décrit ce qui existait à cette date. Depuis, trois choses qu'il
+> annonce comme absentes ou à venir ont été faites :
+>
+> | Ce que dit ce rapport | État réel |
+> |---|---|
+> | « aucune table `ProductVariant` », « aucune migration » | La table existe — migration `20260921120000_product_variants_visibility`. Les paliers de taille sont **en base**. |
+> | « gérer les variantes depuis le back-office » = amélioration future | Fait : panneau « Tailles / options » sur la fiche produit admin (créer, tarifer, désactiver chaque palier). |
+> | `NOUNOURS_SIZES` (code) = source des prix | Devenu un simple **filet de sécurité** pour une fiche sans variante en base. La base fait foi. |
+>
+> Pour l'état courant : `prisma/schema.prisma` (modèles `ProductVariant` et
+> `Product.variantLabel`), `lib/server/variant-repository.ts`, et
+> `components/admin/product-variants-panel.tsx`.
+
 ## 1. Audit (ce qui a été trouvé)
 
 - **Projet réel** : `C:\Users\DELL\GLACE` (Gift & ENTREMETS)

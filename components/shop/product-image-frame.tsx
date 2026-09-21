@@ -22,6 +22,14 @@ type ProductImageFrameProps = {
  * Ne pas changer --color-bg sans reshooter le catalogue (photos réelles calées dessus).
  * Texte et prix toujours en overlay HTML, jamais dans l'image.
  *
+ * **L'image remplit le cadre (`object-cover`), elle n'y est pas contenue.**
+ * Le catalogue n'a pas un format unique : les entremets sont en 4:5, les
+ * compositions de roses et les nounours en carré, deux cartes en paysage. Avec
+ * `contain`, ces dernières n'occupaient que le tiers du cadre et le produit
+ * paraissait plus petit que ses voisins — une grille irrégulière, pour rien.
+ * `cover` met toutes les cartes à la même échelle. Ce qu'il rogne est du fond
+ * de photo, jamais le sujet.
+ *
  * Un produit sans image affiche l'emplacement neutre : jamais la photo d'un
  * autre produit, jamais une carte cadeau par défaut.
  */
@@ -54,7 +62,7 @@ export function ProductImageFrame({
         quality={75}
         unoptimized={src.endsWith(".svg")}
         className={cn(
-          "object-contain object-center transition-transform duration-[250ms] motion-reduce:transition-none",
+          "object-cover object-center transition-transform duration-[250ms] motion-reduce:transition-none",
           imageClassName,
         )}
       />

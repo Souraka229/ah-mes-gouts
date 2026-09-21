@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { getProductAltText } from "@/lib/seo/images";
-import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
 import { cn } from "@/lib/utils";
 
 type ProductGalleryProps = {
@@ -44,7 +43,6 @@ export function ProductGallery({
             "lg:group-hover:scale-[1.03] motion-reduce:lg:group-hover:scale-100",
           )}
         />
-        <PlaceholderWarningBadge imageUrl={images[activeIndex] ?? images[0] ?? ""} />
       </div>
 
       {images.length > 1 && (

@@ -27,7 +27,6 @@ import {
 } from "@/lib/constants/nounours-sizes";
 import type { ProductRecommendation } from "@/lib/product-options/types";
 import type { RoseCompositionOption } from "@/lib/product-options/compositions";
-import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
 import { GiftComposerButton } from "@/components/shop/gift-composer-button";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
@@ -199,7 +198,6 @@ export function ProductPurchasePanel({
         <p className="mt-2 font-display text-4xl font-semibold text-primary">
           {formatPrice(baseUnitPrice)}
         </p>
-        <PlaceholderWarningBadge imageUrl={product.imageUrl} />
         <p className="mt-4 font-body leading-relaxed text-muted-foreground">
           {product.description}
         </p>

@@ -167,8 +167,12 @@ const MAX_GALLERY_IMAGES = 3;
 /**
  * Visuels de **référence** — jamais une vraie photo du produit.
  *
- * Source unique de vérité : c'est ce préfixe, et lui seul, qui déclenche la
- * mention « Visuel indicatif — photos non contractuelles » dans l'interface.
+ * Convention de rangement, pas règle d'affichage : l'interface ne signale plus
+ * ces visuels à la cliente (décision boutique). Ce préfixe reste la façon de
+ * savoir, dans le dépôt, quelles fiches tournent encore sur une photo de banque
+ * d'images et lesquelles ont une vraie photo d'atelier — voir
+ * `docs/PHOTOS-ROSES-SOURCES.md`.
+ *
  * Un visuel réel (photo boutique ou upload admin) ne doit jamais vivre ici.
  */
 export const REFERENCE_IMAGE_PREFIX = `${REFERENCE_IMAGE_BASE}/`;

@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { ProductVariantsPanel } from "@/components/admin/product-variants-panel";
-import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -440,7 +439,6 @@ export function AdminProductsPage() {
                       className="object-contain"
                       unoptimized
                     />
-                    <PlaceholderWarningBadge imageUrl={form.imageUrl} />
                   </div>
                 ) : (
                   <div className="flex size-24 items-center justify-center rounded-xl border border-dashed border-border bg-bg text-muted-foreground">

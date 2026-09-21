@@ -4,6 +4,7 @@ import {
   clientLabel,
   formatFulfillmentPlace,
   formatFulfillmentType,
+  formatOrderItem,
   formatScheduleLabel,
   getCakeMessage,
   paymentLabel,
@@ -49,7 +50,7 @@ export function printOrderReceipt(order: SavedOrder): void {
           ? `<div class="supp">+ ${escapeHtml(item.supplements.join(", "))}</div>`
           : "";
       return `<tr>
-        <td class="desc"><span class="name">${escapeHtml(item.name)}</span>${supplements}</td>
+        <td class="desc"><span class="name">${escapeHtml(formatOrderItem(item))}</span>${supplements}</td>
         <td class="qty">${item.quantity}</td>
         <td class="price">${escapeHtml(formatPrice(item.unitPrice))}</td>
         <td class="price">${escapeHtml(formatPrice(lineTotal))}</td>

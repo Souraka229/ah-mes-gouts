@@ -106,6 +106,15 @@ vi.mock("@/lib/server/variant-repository", () => ({
     }
     return active;
   },
+  // Toutes les variantes, actives ou non — ce que lit le back-office pour
+  // afficher la gamme de prix d'un produit.
+  getVariantsByProductIds: async () => {
+    const all = new Map<string, unknown[]>();
+    for (const [productId, variants] of VARIANTS_BY_PRODUCT) {
+      all.set(productId, variants);
+    }
+    return all;
+  },
   findVariantByCode: (variants: { code: string }[], code: string) =>
     variants.find((variant) => variant.code === code),
 }));

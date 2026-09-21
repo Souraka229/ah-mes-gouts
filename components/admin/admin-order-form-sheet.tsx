@@ -23,7 +23,23 @@ import {
   type SavedOrder,
 } from "@/types/order";
 
-type ItemRow = { name: string; quantity: number; unitPrice: number };
+/**
+ * Une ligne d'article telle que l'admin la voit et la corrige.
+ *
+ * `variantLabel` est éditable : une commande prise par téléphone pour un
+ * nounours doit pouvoir enregistrer la taille annoncée. `slug`, `variantId` et
+ * `supplements` ne le sont pas — ils viennent de la commande et sont renvoyés
+ * tels quels, pour que corriger un prix ne les efface pas.
+ */
+type ItemRow = {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  variantLabel?: string;
+  slug?: string;
+  variantId?: string;
+  supplements?: string[];
+};
 
 type FormState = {
   firstName: string;
@@ -74,6 +90,10 @@ function formFromOrder(order: SavedOrder): FormState {
           name: i.name,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
+          variantLabel: i.variantLabel,
+          slug: i.slug,
+          variantId: i.variantId,
+          supplements: i.supplements,
         }))
       : [{ ...EMPTY_ITEM }],
   };
@@ -141,10 +161,19 @@ export function AdminOrderFormSheet({
     if (!canSave || saving) return;
     setSaving(true);
 
+    // On ne renvoie `variantLabel` que s'il est renseigné : une chaîne vide
+    // écraserait un libellé existant, alors que « champ laissé tel quel » et
+    // « champ vidé » ne veulent pas dire la même chose.
     const cleanItems = form.items.map((item) => ({
       name: item.name.trim(),
       quantity: Math.max(1, Math.round(item.quantity)),
       unitPrice: Math.max(0, Math.round(item.unitPrice)),
+      ...(item.variantLabel?.trim()
+        ? { variantLabel: item.variantLabel.trim() }
+        : {}),
+      ...(item.slug ? { slug: item.slug } : {}),
+      ...(item.variantId ? { variantId: item.variantId } : {}),
+      ...(item.supplements?.length ? { supplements: item.supplements } : {}),
     }));
 
     const client = {
@@ -369,8 +398,11 @@ export function AdminOrderFormSheet({
               </Button>
             </div>
             {form.items.map((item, index) => (
-              <div key={index} className="flex items-end gap-2">
-                <div className="flex-1 space-y-1">
+              <div
+                key={index}
+                className="flex flex-wrap items-end gap-2 rounded-xl border border-border/70 p-2"
+              >
+                <div className="min-w-40 flex-1 space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">Nom</Label>
                   )}
@@ -379,6 +411,21 @@ export function AdminOrderFormSheet({
                     placeholder="Ex: Tiramisu Caramel"
                     onChange={(e) =>
                       updateItem(index, { name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="w-24 space-y-1">
+                  {index === 0 && (
+                    <Label className="text-xs text-muted-foreground">
+                      Option
+                    </Label>
+                  )}
+                  <Input
+                    value={item.variantLabel ?? ""}
+                    placeholder="30 cm"
+                    title="Taille, format… ce que la cliente a choisi"
+                    onChange={(e) =>
+                      updateItem(index, { variantLabel: e.target.value })
                     }
                   />
                 </div>

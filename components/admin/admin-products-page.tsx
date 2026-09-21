@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { ProductVariantsPanel } from "@/components/admin/product-variants-panel";
 import { PlaceholderWarningBadge } from "@/components/shop/image-status-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,25 @@ const emptyForm = {
   imageUrl: "",
 };
 
-const ADMIN_TABS = ["Tous", "Entremets", "Nounours", "Carte", "Menu du jour", "Promo"] as const;
+/**
+ * Onglets de la liste produits.
+ *
+ * Chaque catégorie de `PRODUCT_CATEGORIES` doit avoir son onglet : sans lui,
+ * ses fiches n'existent que sous « Tous ». C'est ce qui rendait les onze
+ * compositions de roses introuvables (« Fleurs » manquait), alors qu'elles
+ * étaient bien en base et bien en vente.
+ */
+const ADMIN_TABS = [
+  "Tous",
+  "Entremets",
+  "Nounours",
+  "Fleurs",
+  "Chocolats",
+  "Carte",
+  "Cadeaux",
+  "Menu du jour",
+  "Promo",
+] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
 
 export function AdminProductsPage() {
@@ -47,6 +66,9 @@ export function AdminProductsPage() {
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>("Tous");
+  /** Produit dont on gère les tailles / options — `null` = panneau fermé. */
+  const [variantsProduct, setVariantsProduct] =
+    useState<AdminProduct | null>(null);
 
   const filteredProducts = products.filter((product) => {
     if (activeTab === "Tous") return true;
@@ -553,6 +575,18 @@ export function AdminProductsPage() {
                   product.category ?? "Entremets",
                 );
                 const available = unlimited || product.stockRemaining > 0;
+                // Seuls les paliers actifs sont proposés à la cliente : ce sont
+                // eux, et eux seuls, qui définissent la gamme de prix affichée.
+                const activeVariants = (product.variants ?? []).filter(
+                  (variant) => variant.isActive,
+                );
+                const variantSummary = activeVariants.length
+                  ? {
+                      count: activeVariants.length,
+                      min: Math.min(...activeVariants.map((v) => v.price)),
+                      max: Math.max(...activeVariants.map((v) => v.price)),
+                    }
+                  : null;
                 return (
                   <tr
                     key={product.id}
@@ -617,7 +651,31 @@ export function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {editingPrice === product.id ? (
+                      {/*
+                        Un produit à paliers ne se résume pas à son prix
+                        d'entrée : un nounours affiché « 10 000 F » se vend
+                        jusqu'à 100 000 F. On montre la gamme, et c'est elle
+                        qu'on vient corriger — pas un montant qui ne serait
+                        jamais facturé tel quel.
+                      */}
+                      {variantSummary ? (
+                        <div className="space-y-0.5">
+                          <p className="font-medium tabular-nums text-text">
+                            {formatPrice(variantSummary.min)}
+                            {variantSummary.max > variantSummary.min &&
+                              ` → ${formatPrice(variantSummary.max)}`}
+                          </p>
+                          <button
+                            type="button"
+                            title="Gérer les tailles et leurs prix"
+                            className="cursor-pointer rounded-lg text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setVariantsProduct(product)}
+                          >
+                            {variantSummary.count} taille
+                            {variantSummary.count > 1 ? "s" : ""} — gérer
+                          </button>
+                        </div>
+                      ) : editingPrice === product.id ? (
                         <input
                           type="number"
                           autoFocus
@@ -631,17 +689,29 @@ export function AdminProductsPage() {
                           className="w-24 rounded-lg border border-border px-2 py-1"
                         />
                       ) : (
-                        <button
-                          type="button"
-                          title="Cliquer pour modifier le prix"
-                          className="cursor-pointer rounded-lg px-2 py-1 hover:bg-bg"
-                          onClick={() => {
-                            setEditingPrice(product.id);
-                            setPriceDraft(String(product.price));
-                          }}
-                        >
-                          {formatPrice(product.price)}
-                        </button>
+                        <div className="space-y-0.5">
+                          <button
+                            type="button"
+                            title="Cliquer pour modifier le prix"
+                            className="cursor-pointer rounded-lg px-2 py-1 hover:bg-bg"
+                            onClick={() => {
+                              setEditingPrice(product.id);
+                              setPriceDraft(String(product.price));
+                            }}
+                          >
+                            {formatPrice(product.price)}
+                          </button>
+                          <div>
+                            <button
+                              type="button"
+                              title="Proposer des tailles ou des options à la cliente"
+                              className="cursor-pointer rounded-lg text-xs font-semibold text-muted-foreground hover:text-primary hover:underline"
+                              onClick={() => setVariantsProduct(product)}
+                            >
+                              + Tailles
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
@@ -679,6 +749,15 @@ export function AdminProductsPage() {
           </table>
         </div>
       )}
+
+      <ProductVariantsPanel
+        product={variantsProduct}
+        open={variantsProduct !== null}
+        onOpenChange={(next) => {
+          if (!next) setVariantsProduct(null);
+        }}
+        onChanged={() => void load()}
+      />
     </div>
   );
 }

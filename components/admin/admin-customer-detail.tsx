@@ -10,6 +10,7 @@ import {
   Smartphone,
 } from "lucide-react";
 
+import { formatOrderItem } from "@/lib/admin/order-board";
 import { formatPrice } from "@/lib/format";
 import type { AdminCustomerDetail } from "@/types/crm";
 import { ORDER_STATUS_LABELS, RECEPTION_MODE_LABELS } from "@/types/order";
@@ -179,7 +180,7 @@ export function AdminCustomerDetailPage({ customerId }: { customerId: string }) 
                     </p>
                     <p className="mt-1 font-body text-xs text-text">
                       {order.items
-                        .map((i) => `${i.quantity}× ${i.name}`)
+                        .map((i) => `${i.quantity}× ${formatOrderItem(i)}`)
                         .join(", ")}
                     </p>
                     {(order.client.address || order.client.landmark) && (

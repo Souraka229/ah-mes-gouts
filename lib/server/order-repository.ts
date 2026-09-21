@@ -411,24 +411,58 @@ export type OrderDetailsPatch = {
     message?: string;
   };
   deliveryFee?: number;
-  items: { name: string; quantity: number; unitPrice: number }[];
+  items: {
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    /**
+     * Snapshot du choix (taille, format) et appartenance au catalogue.
+     *
+     * Optionnels **exprès** : le formulaire admin les renvoie tels quels, mais
+     * une ligne qu'il ne connaît pas ne doit pas les effacer. Absents = on
+     * reprend ceux de la ligne existante au même rang (voir plus bas).
+     */
+    slug?: string;
+    variantId?: string;
+    variantLabel?: string;
+    supplements?: string[];
+  }[];
 };
 
-/** Édition complète (client + articles) d'une commande existante par l'admin. */
+/**
+ * Édition complète (client + articles) d'une commande existante par l'admin.
+ *
+ * Les articles sont **remplacés** (deleteMany + create), donc tout ce que le
+ * formulaire ne renvoie pas est perdu. C'est ce qui effaçait la taille choisie
+ * par la cliente, son `slug` catalogue et ses suppléments : la commande ne
+ * gardait qu'un nom et un prix. On reprend donc explicitement ces champs, du
+ * patch quand il les porte, sinon de la ligne existante au même rang.
+ */
 export async function updateServerOrderDetails(
   orderId: string,
   patch: OrderDetailsPatch,
 ): Promise<SavedOrder | undefined> {
   const prisma = getPrisma();
-  const existing = await prisma.order.findUnique({ where: { id: orderId } });
+  const existing = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true },
+  });
   if (!existing) return undefined;
 
-  const items = patch.items.map((item) => ({
-    name: item.name.trim(),
-    quantity: Math.max(1, Math.round(item.quantity)),
-    unitPrice: Math.max(0, Math.round(item.unitPrice)),
-    supplements: [] as string[],
-  }));
+  const previousItems = existing.items;
+
+  const items = patch.items.map((item, index) => {
+    const previous = previousItems[index];
+    return {
+      slug: item.slug ?? previous?.slug ?? null,
+      name: item.name.trim(),
+      quantity: Math.max(1, Math.round(item.quantity)),
+      unitPrice: Math.max(0, Math.round(item.unitPrice)),
+      supplements: item.supplements ?? previous?.supplements ?? [],
+      variantId: item.variantId ?? previous?.variantId ?? null,
+      variantLabel: item.variantLabel ?? previous?.variantLabel ?? null,
+    };
+  });
   const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0,

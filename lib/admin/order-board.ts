@@ -74,11 +74,26 @@ export function clientLabel(order: SavedOrder): string {
   return full || "Client";
 }
 
+/**
+ * Libellé d'une ligne, choix compris.
+ *
+ * `variantLabel` est le champ **structuré** du choix (taille, format), figé à
+ * la commande. Le nom le contient déjà le plus souvent (« Nounours Teddy —
+ * 30 cm »), donc on ne l'ajoute que s'il manque : sans ça, une fiche renommée
+ * en back-office ferait disparaître la taille de l'affichage.
+ *
+ * Utilisé partout où une ligne de commande est montrée — liste, fiche client,
+ * reçu — pour qu'il n'existe qu'une seule façon de la lire.
+ */
+export function formatOrderItem(item: SavedOrder["items"][number]): string {
+  const label = item.variantLabel?.trim();
+  if (label && !item.name.includes(label)) return `${item.name} — ${label}`;
+  return item.name;
+}
+
 export function formatItemsSummary(order: SavedOrder): string {
   if (order.items.length === 0) return "—";
-  const parts = order.items.map(
-    (i) => `${i.quantity}× ${i.name}`,
-  );
+  const parts = order.items.map((i) => `${i.quantity}× ${formatOrderItem(i)}`);
   return parts.join(", ");
 }
 

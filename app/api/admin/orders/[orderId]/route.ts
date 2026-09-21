@@ -13,10 +13,22 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ orderId: string }> };
 
+/**
+ * Ligne d'article éditée par l'admin.
+ *
+ * `variantLabel` / `variantId` / `slug` / `supplements` sont optionnels mais
+ * **doivent être acceptés** : sans eux dans ce schéma, Zod les retirait avant
+ * même d'atteindre le dépôt, et l'édition d'une commande effaçait la taille
+ * choisie par la cliente.
+ */
 const itemSchema = z.object({
   name: z.string().trim().min(1).max(120),
   quantity: z.number().int().min(1).max(999),
   unitPrice: z.number().int().min(0).max(10_000_000),
+  slug: z.string().trim().max(120).optional(),
+  variantId: z.string().trim().max(120).optional(),
+  variantLabel: z.string().trim().max(60).optional(),
+  supplements: z.array(z.string().trim().min(1).max(120)).max(20).optional(),
 });
 
 const patchSchema = z.object({

@@ -5,6 +5,7 @@ import { inferCategoryFromSlug } from "@/lib/admin/categories";
 import { products as seedProducts } from "@/lib/mock-data";
 import { normalizeProductImages, GIFT_CATALOG_OVERRIDE } from "@/lib/product-images";
 import { getPrisma } from "@/lib/prisma";
+import { getVariantsByProductIds } from "@/lib/server/variant-repository";
 import type { Product } from "@/types/product";
 
 
@@ -313,12 +314,51 @@ function applyGiftOverrides(catalog: AdminCatalogProduct[]): AdminCatalogProduct
 
 
 
+/**
+ * Attache les variantes de chaque produit — une seule requête pour tout le
+ * catalogue (`in (...)`), jamais une par produit.
+ *
+ * Sans elles, la liste admin n'affichait que le prix d'entrée : un nounours
+ * vendu de 10 000 à 100 000 F ressemblait à un article à 10 000 F, et
+ * l'administrateur n'avait aucun moyen de voir ni corriger les paliers.
+ *
+ * `ProductVariantView` porte `productId` en plus : inutile ici, on le retire
+ * pour ne pas alourdir la charge utile de l'API admin.
+ */
+async function withVariants(
+  catalog: AdminCatalogProduct[],
+): Promise<AdminCatalogProduct[]> {
+  if (catalog.length === 0) return catalog;
+
+  const byProduct = await getVariantsByProductIds(catalog.map((p) => p.id));
+  if (byProduct.size === 0) return catalog;
+
+  return catalog.map((product) => {
+    const variants = byProduct.get(product.id);
+    if (!variants?.length) return product;
+    return {
+      ...product,
+      // `productId` sert de clé de regroupement, il n'a rien à faire dans la
+      // charge utile renvoyée à l'admin.
+      variants: variants.map((variant) => ({
+        id: variant.id,
+        code: variant.code,
+        label: variant.label,
+        price: variant.price,
+        sortOrder: variant.sortOrder,
+        isActive: variant.isActive,
+        stockRemaining: variant.stockRemaining,
+      })),
+    };
+  });
+}
+
 export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
   const fromDb = await readCatalogFromDb();
-  if (fromDb) return applyGiftOverrides(fromDb);
+  if (fromDb) return withVariants(applyGiftOverrides(fromDb));
   // Base vide = catalogue vide (prod + build Vercel). Dev local : fallback mémoire sans écriture.
   if (!isProductionRuntime()) {
-    return applyGiftOverrides(seedCatalog());
+    return withVariants(applyGiftOverrides(seedCatalog()));
   }
   return [];
 }

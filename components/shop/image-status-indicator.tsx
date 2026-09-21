@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Check, ImageOff } from "lucide-react";
+import { AlertTriangle, ImageOff } from "lucide-react";
 
 import { isReferenceVisual } from "@/lib/product-images";
 
@@ -27,14 +27,9 @@ export function getImageOrigin(imageUrl: string | undefined): ImageOrigin {
 }
 
 const ORIGIN_STYLE: Record<
-  ImageOrigin,
-  { label: string; className: string; icon: typeof Check }
+  Exclude<ImageOrigin, "photo">,
+  { label: string; className: string; icon: typeof AlertTriangle }
 > = {
-  photo: {
-    label: "Photo réelle du produit",
-    className: "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-50",
-    icon: Check,
-  },
   reference: {
     label: "Visuel indicatif",
     className: "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-50",
@@ -48,12 +43,18 @@ const ORIGIN_STYLE: Record<
 };
 
 /**
- * État du visuel d'un produit, affiché au client **et** à l'administrateur.
- * La vraie photo devient prioritaire dès qu'elle existe : le badge bascule tout
- * seul de `reference` à `photo`, aucune action manuelle n'est requise.
+ * État du visuel d'un produit.
+ *
+ * Une **vraie photo ne s'annonce pas** : « Photo réelle du produit » n'apprend
+ * rien au client et encombre la fiche. Seuls les cas qui demandent une
+ * explication s'affichent — un visuel de référence (non contractuel) ou
+ * l'absence de photo. La vraie photo devient prioritaire dès qu'elle existe :
+ * le badge disparaît tout seul, sans action manuelle.
  */
 export function PlaceholderWarningBadge({ imageUrl }: { imageUrl: string }) {
   const origin = getImageOrigin(imageUrl);
+  if (origin === "photo") return null;
+
   const style = ORIGIN_STYLE[origin];
   const Icon = style.icon;
 

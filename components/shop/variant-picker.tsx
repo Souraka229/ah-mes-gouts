@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ProductVariantView } from "@/types/product";
@@ -67,26 +69,51 @@ function VariantOption({
   // Stock porté par la variante : une taille peut être épuisée sans que le
   // produit le soit.
   const soldOut = variant.stockRemaining !== null && variant.stockRemaining <= 0;
+  const price = soldOut ? "Épuisé" : formatPrice(variant.price);
 
   return (
     <button
       type="button"
       onClick={onSelect}
       disabled={soldOut}
-      className={cn(
-        "flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left transition-colors",
-        soldOut
-          ? "cursor-not-allowed border-border bg-muted/50 text-muted-foreground"
-          : "cursor-pointer",
-        !soldOut && selected
-          ? "border-primary bg-primary/5 text-primary"
-          : !soldOut && "border-border bg-card text-primary hover:border-primary/40",
-      )}
       aria-pressed={selected}
+      aria-label={`${variant.label} — ${price}`}
+      className={cn(
+        "group relative flex w-full flex-col gap-1 rounded-2xl border p-4 text-left transition-all duration-200",
+        "focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:outline-none",
+        soldOut
+          ? "cursor-not-allowed border-dashed border-border bg-muted/40"
+          : "cursor-pointer hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_10px_28px_rgba(59,31,77,0.07)]",
+        !soldOut &&
+          selected &&
+          "border-primary bg-primary/[0.04] shadow-[0_10px_28px_rgba(59,31,77,0.09)]",
+      )}
     >
-      <span className="font-body text-sm font-semibold">{variant.label}</span>
-      <span className="font-body text-sm tabular-nums text-muted-foreground">
-        {soldOut ? "Épuisé" : formatPrice(variant.price)}
+      {selected && !soldOut && (
+        <span
+          className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground"
+          aria-hidden
+        >
+          <Check className="size-3" />
+        </span>
+      )}
+
+      <span
+        className={cn(
+          "font-body text-sm font-semibold",
+          soldOut ? "text-muted-foreground line-through" : "text-primary",
+        )}
+      >
+        {variant.label}
+      </span>
+
+      <span
+        className={cn(
+          "font-display text-lg font-semibold tabular-nums",
+          soldOut ? "text-muted-foreground" : "text-text",
+        )}
+      >
+        {price}
       </span>
     </button>
   );

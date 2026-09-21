@@ -3,6 +3,8 @@ import { getUpsellImageUrl } from "@/lib/upsell-images";
 
 const PRODUCT_IMAGE_BASE = "/images/produits";
 const POSTER_IMAGE_BASE = `${PRODUCT_IMAGE_BASE}/affiches`;
+/** Visuels de référence, jamais des photos du produit — voir `isReferenceVisual`. */
+const REFERENCE_IMAGE_BASE = "/images/placeholders";
 
 /** Visuels produits — WhatsApp rognés (VERSION A, sans texte). */
 const PRODUCT_IMAGES: Record<string, string> = {
@@ -22,15 +24,27 @@ const PRODUCT_IMAGES: Record<string, string> = {
   // image — ou aucune, quand le repli pointait vers un fichier absent.
   nounours: `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
   "nounours-beige": `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
-  "nounours-stitch": `/images/placeholders/nounours/stitch-placeholder.webp`,
-  "nounours-teddy": `/images/placeholders/nounours/teddy-placeholder.webp`,
-  "nounours-labubu": `/images/placeholders/nounours/labubu-placeholder.webp`,
+  // Les trois nounours à variantes ont désormais de vraies photos en base :
+  // aucune entrée de repli ici, sinon vider leur image ferait réapparaître un
+  // visuel « non contractuel ».
   "bouquet-roses": `${PRODUCT_IMAGE_BASE}/bouquet-roses.webp`,
   // Photos réelles des compositions — sans ces entrées, vider l'image d'une
   // fiche en base la ferait retomber sur la photo d'un autre bouquet.
   "bouquet-7-roses": `${PRODUCT_IMAGE_BASE}/bouquet-7-roses.webp`,
   "bouquet-9-roses": `${PRODUCT_IMAGE_BASE}/bouquet-9-roses.webp`,
   "bouquet-12-roses": `${PRODUCT_IMAGE_BASE}/bouquet-12-roses.webp`,
+  // Visuels INDICATIFS des autres paliers — photos de banque d'images, pas les
+  // bouquets de la boutique. Le préfixe `placeholders/` est ce qui déclenche le
+  // badge « Photos non contractuelles » : ces entrées ne doivent jamais migrer
+  // vers `produits/` sans une vraie photo d'atelier à la place.
+  "rose-unite": `${REFERENCE_IMAGE_BASE}/roses/rose-unite.webp`,
+  "bouquet-1-rose": `${REFERENCE_IMAGE_BASE}/roses/bouquet-1-rose.webp`,
+  "bouquet-2-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-2-roses.webp`,
+  "bouquet-3-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-3-roses.webp`,
+  "bouquet-5-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-5-roses.webp`,
+  "bouquet-10-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-10-roses.webp`,
+  "bouquet-15-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-15-roses.webp`,
+  "bouquet-20-roses": `${REFERENCE_IMAGE_BASE}/roses/bouquet-20-roses.webp`,
 };
 
 /** Affiches marketing (VERSION B — nom + prix dans l'image). */
@@ -157,7 +171,7 @@ const MAX_GALLERY_IMAGES = 3;
  * mention « Visuel indicatif — photos non contractuelles » dans l'interface.
  * Un visuel réel (photo boutique ou upload admin) ne doit jamais vivre ici.
  */
-export const REFERENCE_IMAGE_PREFIX = "/images/placeholders/";
+export const REFERENCE_IMAGE_PREFIX = `${REFERENCE_IMAGE_BASE}/`;
 
 export function isReferenceVisual(url: string | undefined): boolean {
   const value = url?.trim() ?? "";

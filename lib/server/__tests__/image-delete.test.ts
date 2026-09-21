@@ -25,7 +25,7 @@ describe("suppression d'image — refus", () => {
     ).rejects.toThrow(/ne vient pas de l'espace de téléversement/);
 
     await expect(
-      deleteSiteImage("/images/placeholders/nounours/teddy-placeholder.webp"),
+      deleteSiteImage("/images/placeholders/roses/bouquet-20-roses.webp"),
     ).rejects.toThrow(/ne vient pas de l'espace de téléversement/);
   });
 

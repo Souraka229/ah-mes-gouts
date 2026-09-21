@@ -36,14 +36,31 @@ photos sont dans `public/images/produits/`.
 | `bouquet-20-roses` | masse | grande composition |
 
 **Honnêteté sur les comptes** : 1, 2 et 3 sont exacts au poil. Pour 5, 10, 15 et
-20, aucune banque d'images ne garantit un nombre comptable — les moteurs de
-recherche consultables (Pexels, Unsplash, Openverse, Wikimedia Commons) ne
-classent pas leurs photos par nombre de fleurs, et ceux qui indexent Pexels
-bloquent les requêtes automatisées. Les visuels retenus sont les plus proches
-trouvés, choisis en comptant les fleurs à la main sur chaque candidat.
+20, les visuels retenus sont les plus proches trouvés — comptés à la main sur
+chaque candidat, jamais d'après le titre.
 
-Si l'exactitude au comptant compte pour la vente, la seule voie fiable reste la
-photo d'atelier de chaque palier.
+**La recherche a été poussée jusqu'au bout, et elle est close.** Ne la refaites
+pas sans une raison nouvelle. Ce qui a été essayé :
+
+| Source | Résultat |
+|---|---|
+| Pexels (via moteur de recherche) | a répondu trois fois puis bloqué (HTTP 202) |
+| Unsplash | bloqué (protection anti-robot) |
+| Pixabay | 403 |
+| Openverse | 123 candidats moissonnés et comptés un par un — aucun 10/15/20 exact |
+| Wikimedia Commons | ni les descriptions (`insource:`) ni les noms de fichiers ne portent le compte |
+| StockSnap | exploitable, mais petite banque sans compte étiqueté |
+
+Le fait qui bloque tout : **aucune banque d'images ne classe ses photos par
+nombre de fleurs.** 1, 2 et 3 se trouvent parce que le compte est évident et
+souvent dans le titre. Au-delà, il faut ouvrir chaque photo et compter. Plus de
+160 candidates ont été ouvertes : 10, 15 et 20 roses comptables n'y existent
+pratiquement pas.
+
+Deux voies resteraient, si le besoin revient : une **clé API Pexels** (gratuite,
+immédiate) pour tirer des centaines de photos professionnelles et les compter,
+ou — seule voie qui garantit le compte — la **photo d'atelier** de chaque
+palier. Décision prise : on en reste aux visuels actuels.
 
 ## Tableau des sources
 

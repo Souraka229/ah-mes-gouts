@@ -34,12 +34,22 @@ export type GiftDetails = {
   senderVisible: boolean;
 };
 
+/**
+ * Un lieu livré et **son** tarif.
+ *
+ * Le prix vit ici, pas sur la zone : la grille réelle mélange les tarifs au
+ * sein d'un même palier, et « Hors Cotonou » va de 2 000 à 4 000 F.
+ */
+export type DeliveryAreaOption = {
+  name: string;
+  price: number;
+};
+
 export type DeliveryZone = {
   id: string;
   code: string;
   name: string;
-  price: number;
-  areas: string[];
+  areas: DeliveryAreaOption[];
 };
 
 export type CheckoutStep = "commande" | "payment";

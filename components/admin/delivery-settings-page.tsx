@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Loader2, Plus, Save } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,16 @@ import type {
 import { cn } from "@/lib/utils";
 
 const ADMIN_DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+
+/** Un lieu livré et son tarif — la ligne que l'admin corrige. */
+type DeliveryAreaRow = {
+  id: string;
+  zoneId: string;
+  name: string;
+  price: number;
+  sortOrder: number;
+  isActive: boolean;
+};
 
 const DAY_LABELS: Record<number, string> = {
   0: "Dimanche",
@@ -147,6 +157,13 @@ export function DeliverySettingsPage() {
   const [editingCostId, setEditingCostId] = useState<string | null>(null);
   const [draftCost, setDraftCost] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  /** Zone dont la liste de lieux est dépliée — `null` = tout replié. */
+  const [expandedZoneId, setExpandedZoneId] = useState<string | null>(null);
+  const [areas, setAreas] = useState<DeliveryAreaRow[]>([]);
+  const [areasLoading, setAreasLoading] = useState(false);
+  const [draftAreaPrices, setDraftAreaPrices] = useState<Record<string, string>>(
+    {},
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -194,6 +211,71 @@ export function DeliverySettingsPage() {
     const next = { ...config, zones };
     setConfig(next);
     void saveConfig(next);
+  };
+
+  /**
+   * Déplie les lieux d'une zone et leur tarif.
+   *
+   * C'est **le lieu** qui porte le prix facturé : corriger un quartier se fait
+   * ici, sans redéploiement. Le champ « coût » de la zone ne sert plus que de
+   * repli quand aucun quartier n'est précisé.
+   */
+  const toggleZoneAreas = useCallback(
+    async (zoneId: string) => {
+      if (expandedZoneId === zoneId) {
+        setExpandedZoneId(null);
+        return;
+      }
+      setExpandedZoneId(zoneId);
+      setAreasLoading(true);
+      try {
+        const response = await fetch(
+          `/api/admin/delivery/areas?zoneId=${encodeURIComponent(zoneId)}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) throw new Error();
+        const data = (await response.json()) as { areas: DeliveryAreaRow[] };
+        setAreas(data.areas);
+        setDraftAreaPrices(
+          Object.fromEntries(data.areas.map((a) => [a.id, String(a.price)])),
+        );
+      } catch {
+        setAreas([]);
+        setMessage("Impossible de charger les lieux de cette zone.");
+      } finally {
+        setAreasLoading(false);
+      }
+    },
+    [expandedZoneId],
+  );
+
+  const patchArea = async (
+    area: DeliveryAreaRow,
+    patch: { price?: number; isActive?: boolean },
+  ) => {
+    try {
+      const response = await fetch("/api/admin/delivery/areas", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ update: { id: area.id, ...patch } }),
+      });
+      if (!response.ok) throw new Error();
+      const data = (await response.json()) as { area: DeliveryAreaRow };
+      setAreas((prev) =>
+        prev.map((a) => (a.id === area.id ? data.area : a)),
+      );
+      setDraftAreaPrices((prev) => ({
+        ...prev,
+        [data.area.id]: String(data.area.price),
+      }));
+      setMessage(
+        patch.price !== undefined
+          ? `${data.area.name} → ${data.area.price.toLocaleString("fr-FR")} F`
+          : `${data.area.name} ${data.area.isActive ? "activé" : "désactivé"}.`,
+      );
+    } catch {
+      setMessage("Modification impossible.");
+    }
   };
 
   const addZone = async () => {
@@ -305,12 +387,14 @@ export function DeliverySettingsPage() {
               <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="pb-3 pr-4 font-medium">Zone</th>
                 <th className="pb-3 pr-4 font-medium">Coût (FCFA)</th>
+                <th className="pb-3 pr-4 font-medium">Lieux</th>
                 <th className="pb-3 font-medium">Statut</th>
               </tr>
             </thead>
             <tbody>
               {sortedZones.map((zone) => (
-                <tr key={zone.id} className="border-b border-border/60">
+                <Fragment key={zone.id}>
+                <tr className="border-b border-border/60">
                   <td className="py-3 pr-4">
                     <Input
                       value={zone.name}
@@ -361,6 +445,16 @@ export function DeliverySettingsPage() {
                       </button>
                     )}
                   </td>
+                  <td className="py-3 pr-4">
+                    <button
+                      type="button"
+                      onClick={() => void toggleZoneAreas(zone.id)}
+                      aria-expanded={expandedZoneId === zone.id}
+                      className="cursor-pointer rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-muted"
+                    >
+                      {expandedZoneId === zone.id ? "▾" : "▸"} Gérer les lieux
+                    </button>
+                  </td>
                   <td className="py-3">
                     <button
                       type="button"
@@ -378,6 +472,109 @@ export function DeliverySettingsPage() {
                     </button>
                   </td>
                 </tr>
+                {expandedZoneId === zone.id && (
+                  <tr className="border-b border-border/60 bg-bg/50">
+                    <td colSpan={4} className="px-2 py-4">
+                      {areasLoading ? (
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                          Chargement des lieux…
+                        </span>
+                      ) : areas.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          Aucun lieu dans cette zone.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="mb-3 text-xs text-muted-foreground">
+                            Le tarif facturé est celui du <strong>lieu</strong>,
+                            pas celui de la zone. Modifier un prix ici prend
+                            effet immédiatement, sans redéploiement.
+                          </p>
+                          <ul className="grid gap-1.5 sm:grid-cols-2">
+                            {areas.map((area) => (
+                              <li
+                                key={area.id}
+                                className="flex items-center gap-2 rounded-lg bg-card px-2 py-1.5"
+                              >
+                                <span
+                                  className={cn(
+                                    "min-w-0 flex-1 truncate",
+                                    area.isActive
+                                      ? "text-text"
+                                      : "text-muted-foreground line-through",
+                                  )}
+                                  title={area.name}
+                                >
+                                  {area.name}
+                                </span>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  aria-label={`Tarif de ${area.name}`}
+                                  value={
+                                    draftAreaPrices[area.id] ?? String(area.price)
+                                  }
+                                  onChange={(e) =>
+                                    setDraftAreaPrices((prev) => ({
+                                      ...prev,
+                                      [area.id]: e.target.value,
+                                    }))
+                                  }
+                                  onBlur={() => {
+                                    const next = Number(draftAreaPrices[area.id]);
+                                    if (
+                                      Number.isFinite(next) &&
+                                      next > 0 &&
+                                      Math.round(next) !== area.price
+                                    ) {
+                                      void patchArea(area, {
+                                        price: Math.round(next),
+                                      });
+                                    } else {
+                                      setDraftAreaPrices((prev) => ({
+                                        ...prev,
+                                        [area.id]: String(area.price),
+                                      }));
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.currentTarget.blur();
+                                    }
+                                  }}
+                                  className="h-8 w-24 text-right"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void patchArea(area, {
+                                      isActive: !area.isActive,
+                                    })
+                                  }
+                                  title={
+                                    area.isActive
+                                      ? "Retirer ce lieu du choix"
+                                      : "Proposer ce lieu à nouveau"
+                                  }
+                                  className={cn(
+                                    "shrink-0 cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                    area.isActive
+                                      ? "bg-success/20 text-success"
+                                      : "bg-muted text-muted-foreground",
+                                  )}
+                                >
+                                  {area.isActive ? "Actif" : "Retiré"}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

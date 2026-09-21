@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/seo/breadcrumbs";
 import { GoogleMapsEmbed } from "@/components/shop/google-maps-embed";
 import { JsonLd } from "@/components/seo/json-ld";
 import { deliveryFaq, deliveryZoneSeoContent } from "@/lib/seo/delivery-zone-content";
-import { deliveryZones } from "@/lib/delivery-zones";
+import { deliveryZones, getZonePriceLabel } from "@/lib/delivery-zones";
 import { formatPrice } from "@/lib/format";
 import {
   buildBreadcrumbSchema,
@@ -44,17 +44,19 @@ export default function DeliveryZonesPage() {
           Livraison de glaces à Cotonou et environs
         </h1>
         <p className="mt-4 font-body text-lg leading-relaxed text-muted-foreground">
-          Grille officielle Destinations E → A : de{" "}
+          Grille officielle Destinations E → A, plus Hors Cotonou : de{" "}
           <span className="font-semibold text-text">500 F</span> à{" "}
-          <span className="font-semibold text-text">1 500 F</span>. Choisissez
-          votre quartier au checkout — les frais s&apos;ajoutent
-          automatiquement.
+          <span className="font-semibold text-text">4 000 F</span>. Le tarif est
+          celui de votre quartier — il s&apos;affiche et s&apos;ajoute
+          automatiquement dès que vous le choisissez au checkout.
         </p>
 
         <div className="mt-10 space-y-8">
           {deliveryZoneSeoContent.map((section) => {
             const zone = deliveryZones.find((z) => z.id === section.zoneId);
             if (!zone) return null;
+
+            const varying = new Set(zone.areas.map((a) => a.price)).size > 1;
 
             return (
               <article
@@ -67,7 +69,7 @@ export default function DeliveryZonesPage() {
                     {section.headline}
                   </h2>
                   <span className="rounded-full bg-accent px-4 py-1 font-body text-sm font-semibold text-accent-foreground">
-                    {formatPrice(zone.price)}
+                    {getZonePriceLabel(zone.id)}
                   </span>
                 </div>
                 <p className="mt-4 font-body leading-relaxed text-muted-foreground">
@@ -77,12 +79,19 @@ export default function DeliveryZonesPage() {
                   Quartiers desservis
                 </h3>
                 <ul className="mt-2 flex flex-wrap gap-2">
-                  {section.neighborhoods.map((neighborhood) => (
+                  {/* Le tarif est porté par le quartier : on l'affiche quand la
+                      zone n'en a pas un seul (Hors Cotonou va de 2000 à 4000). */}
+                  {zone.areas.map((area) => (
                     <li
-                      key={neighborhood}
+                      key={area.name}
                       className="rounded-full bg-muted px-3 py-1 font-body text-sm text-text"
                     >
-                      {neighborhood}
+                      {area.name}
+                      {varying && (
+                        <span className="ml-1.5 font-semibold text-muted-foreground">
+                          {formatPrice(area.price)}
+                        </span>
+                      )}
                     </li>
                   ))}
                 </ul>

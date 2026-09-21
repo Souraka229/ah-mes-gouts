@@ -42,6 +42,11 @@ enum PaymentAttemptStatus {
   EXPIRED
 }
 
+/// Palier de livraison — « Destinations A », « Hors Cotonou »…
+///
+/// `cost` reste le tarif du palier pour A–E, mais il n'est plus la source de
+/// vérité du montant facturé : **le prix est porté par le lieu**
+/// (`DeliveryArea.price`). Une zone n'est qu'un regroupement, rangé par prix.
 model DeliveryZone {
   id        String   @id @default(cuid())
   name      String
@@ -49,6 +54,30 @@ model DeliveryZone {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  areas DeliveryArea[]
+}
+
+/// Lieu livré — le prix que la cliente paie vient d'ici.
+///
+/// Séparé de la zone parce que la grille réelle ne se laisse pas réduire à un
+/// tarif par palier : « Hors Cotonou » va de 2 000 à 4 000 F selon le lieu, et
+/// certaines zones mélangent plusieurs prix. Sans cette table, corriger le tarif
+/// d'un seul quartier demandait un déploiement.
+model DeliveryArea {
+  id        String   @id @default(cuid())
+  zoneId    String
+  zone      DeliveryZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  name      String
+  /// Tarif en FCFA — entier, jamais négatif.
+  price     Int
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([zoneId, name])
+  @@index([zoneId, isActive, sortOrder])
 }
 
 model DeliverySchedule {

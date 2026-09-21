@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import {
   getDeliveryLocalityOptions,
-  getDeliveryZoneById,
   parseLocalityValue,
 } from "@/lib/delivery-zones";
 import { formatPrice } from "@/lib/format";
@@ -48,9 +47,16 @@ export function StepDeliveryZone({ embedded = false }: { embedded?: boolean }) {
     (opt) => opt.value === localityValue,
   );
 
+  /**
+   * Le tarif vient du **lieu** choisi, pas de la zone : la grille réelle
+   * mélange les prix au sein d'un même palier. Le coût de zone ne sert plus
+   * que de repli si la localité n'est pas résolue (grille en base plus
+   * récente que le code). Le montant facturé reste recalculé côté serveur.
+   */
   const fee =
+    selectedOption?.price ??
     zones.find((zone) => zone.id === zoneId)?.cost ??
-    (zoneId ? (getDeliveryZoneById(zoneId)?.price ?? 0) : 0);
+    0;
 
   const handleLocalityChange = (value: string) => {
     setLocalityValue(value);

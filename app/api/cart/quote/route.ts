@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import {
   resolveDeliveryDisplayName,
 } from "@/lib/delivery-zones";
+import { resolveDeliveryAreaPrice } from "@/lib/server/delivery-area-repository";
 import { getZoneById } from "@/lib/server/delivery-config-repository";
 import { priceOrderItems } from "@/lib/server/order-pricing";
 
@@ -71,12 +72,31 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-    deliveryFee = zone.cost;
-    zoneName = resolveDeliveryDisplayName(
-      zone.id,
-      null,
-      parsed.data.locality ?? null,
-    );
+
+    /**
+     * Le tarif est celui du **lieu**, pas celui de la zone : « Hors Cotonou »
+     * va de 2 000 à 4 000 F, et plusieurs paliers mélangent les prix.
+     *
+     * Un quartier annoncé mais introuvable est refusé plutôt que facturé au
+     * tarif de la zone : mieux vaut une vente qui s'arrête qu'une livraison
+     * facturée 2 000 F pour un trajet à 4 000 F.
+     */
+    const locality = parsed.data.locality?.trim() || null;
+    if (locality) {
+      const areaPrice = await resolveDeliveryAreaPrice(zone.id, locality);
+      if (areaPrice === undefined) {
+        return NextResponse.json(
+          { error: "Ce quartier n'est plus desservi. Choisissez-en un autre." },
+          { status: 409 },
+        );
+      }
+      deliveryFee = areaPrice;
+    } else {
+      // Aucun quartier précisé : tarif du palier, comme avant.
+      deliveryFee = zone.cost;
+    }
+
+    zoneName = resolveDeliveryDisplayName(zone.id, null, locality);
   }
 
   return NextResponse.json({

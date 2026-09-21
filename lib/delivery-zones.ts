@@ -1,147 +1,176 @@
-import type { DeliveryZone } from "@/types/order";
+import { formatPrice } from "@/lib/format";
+import type { DeliveryAreaOption, DeliveryZone } from "@/types/order";
 
 /**
- * Grille tarifaire officielle — affiches ops `/public/images/ops/livraison/zone-*.webp`
- * Prix en FCFA (entiers). Ordre croissant pour le checkout.
+ * Grille tarifaire officielle de livraison.
+ *
+ * **Le prix est porté par le LIEU, pas par la zone.** Une zone n'est qu'un
+ * palier, rangé par prix (« Destinations A » … « Destinations E »), plus un
+ * fourre-tout « Hors Cotonou » dont les lieux vont de 2 000 à 4 000 F. C'est la
+ * seule façon de dire la grille réelle : plusieurs zones mélangent les tarifs,
+ * et un quartier qui change de prix ne doit pas obliger à en déplacer d'autres.
+ *
+ * Ce fichier est la **source d'amorçage**. Une fois la grille en base
+ * (`DeliveryArea`, via `scripts/sync-delivery-areas.mjs`), c'est la base qui
+ * fait foi pour la facturation — comme les variantes produit. Le serveur ne
+ * facture jamais un montant envoyé par le client.
  */
+
+/** Un palier : tous ses lieux partagent le même tarif. */
+function tier(id: string, code: string, name: string, price: number, names: string[]): DeliveryZone {
+  return {
+    id,
+    code,
+    name,
+    areas: names.map((area) => ({ name: area, price })),
+  };
+}
+
 export const deliveryZones: DeliveryZone[] = [
+  tier("zone-e", "E", "Destinations E", 500, [
+    "Fidjrossè centre",
+    "Calvaire",
+    "Akogbato",
+    "Fidjrossè JNP",
+    "Sème City",
+    "Erevan Aéroport",
+  ]),
+
+  tier("zone-d", "D", "Destinations D", 700, [
+    "Agla",
+    "Cadjèhoun",
+    "Fidjrossè Cabane des Pêcheurs",
+    "Haie Vive",
+    "Direction Générale MTN",
+  ]),
+
+  tier("zone-c", "C", "Destinations C", 800, [
+    "St Michel",
+    "Aïdjèdo",
+    "Ste Cécile",
+    "Vedokô",
+    "Toyota",
+    "Sikèkodji",
+    "Étoile",
+    "Agontikon",
+    "Zongo",
+    "Jéricho",
+    "Hindé",
+    "Djidjè",
+    "Maromilitaire",
+    "Stade GMK",
+    "Coris Banque Maromilitaire",
+    "Aïbatin",
+    "Barrière",
+    "Gbégamey",
+    "Houeyiho",
+    "St Jean",
+    "Vodjè",
+    "Aupiais",
+    "Place du Souvenir",
+  ]),
+
+  tier("zone-b", "B", "Destinations B", 1000, [
+    "Segbèya",
+    "Lomnava",
+    "Sènadé",
+    "Sobebra",
+    "Habitat",
+    "Quartier Jack",
+    "Yenawa",
+    "Sacré Cœur",
+    "Midonbô",
+    "Dedokpo",
+    "Godomin",
+    "Cimetière Pk14",
+    "Adogléta",
+    "Agbatô",
+    "Agbôdjèdo",
+    "Place Lénine",
+    "Vossa",
+    "Togoudo",
+    "Itta",
+    "Campus Abomey-Calavi",
+    "Fidjrossè Club des Rois",
+    "Ganhi",
+    "Tokpa",
+    "St Rita",
+    "Menontin",
+    "Adjègoulè",
+    "Missèbo",
+    "Jonquet",
+    "Fifadji",
+    "Zogbo",
+    "Notre Dame",
+    "Fidjrossè Station Ewell",
+    "Coris Banque Steimetz",
+    "Sourou Léré",
+    "Tanti",
+    "Yagbé",
+    "Avotrou",
+    "Kowègbo",
+    "Donatien",
+    "Pk3",
+    "Minonchou",
+    "Cocotomey",
+    "Zone des Ambassades",
+    "Calavi Bidossessi",
+    "Tankpè",
+    "Ciné Concorde Akpakpa",
+    "Ciné Concorde Cocotomey",
+  ]),
+
+  tier("zone-a", "A", "Destinations A", 1500, [
+    "Finagon",
+    "Le Bélier",
+    "Towlègbé",
+    "Cococodji",
+    "Allègleta",
+    "Kpota",
+    "Arconville",
+    "Bakita",
+    "Aïchedji",
+    "Zoca",
+  ]),
+
   {
-    id: "zone-e",
-    code: "E",
-    name: "Destinations E",
-    price: 500,
+    id: "zone-hors-cotonou",
+    code: "HC",
+    name: "Hors Cotonou",
+    // Chaque lieu porte son tarif : c'est ici que le prix par lieu est
+    // indispensable, la périphérie allant de 2 000 à 4 000 F.
     areas: [
-      "Fidjrossè centre",
-      "Calvaire",
-      "Akogbato",
-      "Fidjrossè JNP",
-      "Sème City",
-      "Erevan Aéroport",
-      "Direction générale MTN",
-    ],
-  },
-  {
-    id: "zone-d",
-    code: "D",
-    name: "Destinations D",
-    price: 700,
-    areas: [
-      "Agla",
-      "Aïbatin",
-      "Barrière",
-      "Cadjèhoun",
-      "Fidjrossè Cabane des Pêcheurs",
-      "Gbégamey",
-      "Haie Vive",
-      "Houeyiho",
-      "St Jean",
-      "Vodjè",
-    ],
-  },
-  {
-    id: "zone-c",
-    code: "C",
-    name: "Destinations C",
-    price: 800,
-    areas: [
-      "Ganhi",
-      "Tokpa",
-      "St Michel",
-      "Aïdjèdo",
-      "Ste Cécile",
-      "Vedokô",
-      "Toyota",
-      "St Rita",
-      "Sikèkodji",
-      "Menontin",
-      "Étoile",
-      "Agontikon",
-      "Adjègoulè",
-      "Missèbo",
-      "Coris Banque",
-      "Zongo",
-      "Jonquet",
-      "Jéricho",
-      "Hindé",
-      "Djidjè",
-      "Fifadji",
-      "Zogbo",
-      "Notre Dame",
-      "Maromilitaire",
-      "Stade GMK",
-      "Fidjrossè Station Ewell",
-    ],
-  },
-  {
-    id: "zone-b",
-    code: "B",
-    name: "Destinations B",
-    price: 1000,
-    areas: [
-      "Segbèya",
-      "Lomnava",
-      "Sènadé",
-      "Sobebra",
-      "Habitat",
-      "Quartier Jack",
-      "Yenawa",
-      "Sacré Cœur",
-      "Midonbô",
-      "Dedokpo",
-      "Godomin",
-      "Cimetière Pk14",
-      "Adogléta",
-      "Agbatô",
-      "Agbôdjèdo",
-      "Ciné Concorde",
-      "Place Lénine",
-      "Vossa",
-      "Togoudo",
-      "Itta",
-      "Campus Abomey-Calavi",
-      "Fidjrossè Club des Rois",
-    ],
-  },
-  {
-    id: "zone-a",
-    code: "A",
-    name: "Destinations A",
-    price: 1500,
-    areas: [
-      "Sourou Léré",
-      "Tanti",
-      "Yagbé",
-      "Avotrou",
-      "Yenawa",
-      "Finagon",
-      "Le Bélier",
-      "Kowègbo",
-      "Towlègbé",
-      "Donatien",
-      "Pk3",
-      "Minonchou",
-      "Cocotomey",
-      "Zone des Ambassades",
-      "Cococodji",
-      "Calavi Bidossessi",
-      "Allègleta",
-      "Tankpè",
-      "Kpota",
-      "Arconville",
-      "Bakita",
-      "Séminaire",
-      "Aïchedji",
-      "Zopa",
+      { name: "Séminaire", price: 2000 },
+      { name: "Zopa", price: 2000 },
+      { name: "Agassa Godomey", price: 2000 },
+      { name: "Kansounkpa", price: 2000 },
+      { name: "Erevan Calavi", price: 2000 },
+      { name: "Akassato", price: 2000 },
+      { name: "Ouèdo", price: 2000 },
+      { name: "Hevié", price: 2000 },
+      { name: "PK10", price: 2000 },
+      { name: "PK18", price: 2000 },
+      { name: "Pavé Kérékou nouveau marché", price: 2000 },
+      { name: "Zoudja", price: 2000 },
+      { name: "Ouéga", price: 2000 },
+      { name: "Tori", price: 2500 },
+      { name: "Sèmè-Podji", price: 2500 },
+      { name: "Djèffa", price: 2500 },
+      { name: "Adjagbo", price: 2500 },
+      { name: "Hevié chez Arès", price: 2500 },
+      { name: "Kpovié", price: 2500 },
+      { name: "Porto-Novo", price: 3000 },
+      { name: "Ouidah", price: 4000 },
+      { name: "Allada", price: 4000 },
     ],
   },
 ];
 
-export type DeliveryLocalityOption = {
+export type DeliveryLocalityOption = DeliveryAreaOption & {
   zoneId: string;
   zoneCode: string;
   zoneName: string;
   area: string;
-  price: number;
   /** Valeur unique select : zoneId::area */
   value: string;
 };
@@ -149,13 +178,13 @@ export type DeliveryLocalityOption = {
 /** Liste plate des localités (affiche) pour le sélecteur checkout. */
 export function getDeliveryLocalityOptions(): DeliveryLocalityOption[] {
   return deliveryZones.flatMap((zone) =>
-    zone.areas.map((area) => ({
+    zone.areas.map((entry) => ({
+      ...entry,
       zoneId: zone.id,
       zoneCode: zone.code,
       zoneName: zone.name,
-      area,
-      price: zone.price,
-      value: `${zone.id}::${area}`,
+      area: entry.name,
+      value: `${zone.id}::${entry.name}`,
     })),
   );
 }
@@ -175,6 +204,32 @@ export function getDeliveryZoneById(id: string): DeliveryZone | undefined {
   return deliveryZones.find((zone) => zone.id === id);
 }
 
+/** Tarif d'un lieu — `undefined` si le couple zone/lieu n'existe pas. */
+export function getAreaPrice(
+  zoneId: string,
+  area: string,
+): number | undefined {
+  return getDeliveryZoneById(zoneId)?.areas.find(
+    (entry) => entry.name.toLowerCase() === area.trim().toLowerCase(),
+  )?.price;
+}
+
+/**
+ * Libellé tarifaire d'une zone — « 800 F », ou « de 2 000 à 4 000 F » quand
+ * ses lieux ne partagent pas le même prix (cas de « Hors Cotonou »).
+ */
+export function getZonePriceLabel(zoneId: string): string {
+  const zone = getDeliveryZoneById(zoneId);
+  if (!zone || zone.areas.length === 0) return "";
+
+  const prices = [...new Set(zone.areas.map((a) => a.price))].sort((a, b) => a - b);
+  const min = prices[0]!;
+  const max = prices[prices.length - 1]!;
+
+  if (min === max) return formatPrice(min);
+  return `de ${formatPrice(min)} à ${formatPrice(max)}`;
+}
+
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -186,9 +241,9 @@ const BULK_LABELS = new Set<string>();
 const EMBEDDED_PATTERNS: Array<{ area: string; re: RegExp }> = [];
 
 for (const zone of deliveryZones) {
-  BULK_LABELS.add(zone.areas.join(", ").toLowerCase());
+  BULK_LABELS.add(zone.areas.map((a) => a.name).join(", ").toLowerCase());
   const byZone = new Map<string, string>();
-  for (const area of zone.areas) {
+  for (const { name: area } of zone.areas) {
     const key = area.toLowerCase();
     LOCALITY_BY_LOWER.set(key, area);
     byZone.set(key, area);
@@ -203,9 +258,10 @@ for (const zone of deliveryZones) {
   LOCALITY_BY_ZONE.set(zone.id, byZone);
 }
 
-const GENERIC_ZONE_RE = /^(zone|destinations)\s+[a-e]$/i;
+/** « Destinations C », « Hors Cotonou » : des paliers, pas des quartiers. */
+const GENERIC_ZONE_RE = /^(zone|destinations)\s+[a-e]$|^hors cotonou$/i;
 
-/** Valide un quartier contre la grille officielle d’une zone. */
+/** Valide un quartier contre la grille officielle d'une zone. */
 export function resolveLocalityName(
   zoneId: string,
   candidate: string | null | undefined,
@@ -215,7 +271,7 @@ export function resolveLocalityName(
   return LOCALITY_BY_ZONE.get(zoneId)?.get(trimmed.toLowerCase()) ?? null;
 }
 
-/** Liste de quartiers collée (erreur d’affichage) — à ignorer. */
+/** Liste de quartiers collée (erreur d'affichage) — à ignorer. */
 export function isBulkAreasLabel(name: string | null | undefined): boolean {
   if (!name?.trim()) return false;
   const t = name.trim();
@@ -255,7 +311,7 @@ export function findKnownLocality(
 }
 
 /**
- * Un seul quartier pour l’affichage / stockage — jamais « Zone E »
+ * Un seul quartier pour l'affichage / stockage — jamais « Zone E »
  * ni la liste complète des destinations.
  */
 export function resolveDeliveryDisplayName(

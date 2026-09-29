@@ -200,7 +200,10 @@ export async function confirmServerOrderPayment(
     return await prisma.$transaction(async (tx) => {
       const existing = await tx.order.findUnique({
         where: { id: orderId },
-        include: { items: true, driver: { select: { name: true } } },
+        include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
       });
 
       if (!existing) return undefined;
@@ -214,7 +217,10 @@ export async function confirmServerOrderPayment(
         const expired = await tx.order.update({
           where: { id: orderId },
           data: { status: toPrismaOrderStatus("annulee") },
-          include: { items: true, driver: { select: { name: true } } },
+          include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
         });
         return fromPrismaOrder(expired);
       }
@@ -229,7 +235,10 @@ export async function confirmServerOrderPayment(
           status: toPrismaOrderStatus("paiement_confirme"),
           ...(paymentReference ? { paymentReference } : {}),
         },
-        include: { items: true, driver: { select: { name: true } } },
+        include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
       });
 
       return fromPrismaOrder(row);
@@ -248,7 +257,10 @@ export async function getServerOrder(
   const prisma = getPrisma();
   const row = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
   return row ? fromPrismaOrder(row) : undefined;
 }
@@ -324,7 +336,10 @@ export async function getServerOrdersForAdmin(
   await expireAllPendingOrders();
   const rows = await prisma.order.findMany({
     where: { createdAt: { gte: since } },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
     orderBy: { createdAt: "desc" },
     take: limit,
   });
@@ -550,7 +565,10 @@ export async function updateServerOrderStatus(
           ? { driverDeliveredAt: extra.driverDeliveredAt }
           : {}),
       },
-      include: { items: true, driver: { select: { name: true } } },
+      include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
     });
     return fromPrismaOrder(row);
   } catch {
@@ -580,7 +598,10 @@ export async function assignOrderDriver(
   const row = await prisma.order.update({
     where: { id: orderId },
     data: { driverId },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
   return fromPrismaOrder(row);
 }
@@ -691,7 +712,10 @@ export async function driverStartDelivery(
   const prisma = getPrisma();
   const row = await prisma.order.findFirst({
     where: { id: orderId, driverId },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   if (!row) {
@@ -712,7 +736,10 @@ export async function driverStartDelivery(
       status: "EN_LIVRAISON",
       driverStartedAt: now,
     },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   return fromPrismaOrder(updated);
@@ -731,7 +758,10 @@ export async function driverMarkUnreachable(
   const prisma = getPrisma();
   const row = await prisma.order.findFirst({
     where: { id: orderId, driverId },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   if (!row) {
@@ -741,7 +771,10 @@ export async function driverMarkUnreachable(
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: { clientMessage: markUnreachable(row.clientMessage) },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   return fromPrismaOrder(updated);
@@ -754,7 +787,10 @@ export async function driverMarkDelivered(
   const prisma = getPrisma();
   const row = await prisma.order.findFirst({
     where: { id: orderId, driverId },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   if (!row) {
@@ -777,7 +813,10 @@ export async function driverMarkDelivered(
       status: "LIVREE",
       driverDeliveredAt: now,
     },
-    include: { items: true, driver: { select: { name: true } } },
+    include: {
+        items: { include: { options: true } },
+        driver: { select: { name: true } },
+      },
   });
 
   return fromPrismaOrder(updated);

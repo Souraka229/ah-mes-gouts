@@ -25,9 +25,15 @@ import {
   NOUNOURS_SIZES,
   getNounoursTypeFromSlug,
 } from "@/lib/constants/nounours-sizes";
+import { ProductOptionsPicker } from "@/components/shop/product-options-picker";
 import type { ProductRecommendation } from "@/lib/product-options/types";
 import type { RoseCompositionOption } from "@/lib/product-options/compositions";
+import type {
+  MessageCategoryTree,
+  ProductOptionGroupRecord,
+} from "@/lib/product-options/options";
 import { cn } from "@/lib/utils";
+import type { CartSupplement } from "@/types/cart";
 import type { Product } from "@/types/product";
 
 type ProductPurchasePanelProps = {
@@ -38,6 +44,10 @@ type ProductPurchasePanelProps = {
   recommendation?: ProductRecommendation | null;
   /** Le mot manuscrit n'a pas de sens sur une pièce du menu du jour. */
   allowMessage?: boolean;
+  /** Options & compléments rattachés à ce produit, lus en base. */
+  optionGroups?: ProductOptionGroupRecord[];
+  /** Cartes / occasions proposées, lues en base. */
+  messageCategories?: MessageCategoryTree[];
 };
 
 export function ProductPurchasePanel({
@@ -45,6 +55,8 @@ export function ProductPurchasePanel({
   roseCompositions,
   recommendation,
   allowMessage = false,
+  optionGroups = [],
+  messageCategories = [],
 }: ProductPurchasePanelProps) {
   const addItem = useCartStore((state) => state.addItem);
   const setIsGift = useCheckoutStore((state) => state.setIsGift);
@@ -55,6 +67,11 @@ export function ProductPurchasePanel({
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [selectedExtraSlugs, setSelectedExtraSlugs] = useState<string[]>([]);
   const [message, setMessage] = useState("");
+  /**
+   * Compléments choisis sur cette fiche. Ils voyagent avec la ligne de panier et
+   * partent au serveur sous forme d'identifiants — jamais de prix.
+   */
+  const [supplements, setSupplements] = useState<CartSupplement[]>([]);
 
   /**
    * Variantes servies par la base : c'est la voie normale. Une taille
@@ -106,7 +123,13 @@ export function ProductPurchasePanel({
     0,
   );
 
-  const unitPrice = baseUnitPrice;
+  /** Estimation locale : le serveur refacture tout depuis la base. */
+  const optionsTotal = supplements.reduce(
+    (sum, supplement) => sum + supplement.price * (supplement.quantity ?? 1),
+    0,
+  );
+
+  const unitPrice = baseUnitPrice + optionsTotal;
   const totalPrice = unitPrice * quantity + extrasTotal;
   const nounoursType = isLegacyNounours
     ? getNounoursTypeFromSlug(product.slug)
@@ -138,7 +161,7 @@ export function ProductPurchasePanel({
       name: displayName,
       imageUrl: product.imageUrl,
       baseUnitPrice,
-      supplements: [],
+      supplements,
       quantity,
       // Seul un **code de choix** part au serveur : jamais un montant. Le
       // serveur résout le prix dans sa propre table.
@@ -225,6 +248,14 @@ export function ProductPurchasePanel({
           recommendation={recommendation}
           selectedSlugs={selectedExtraSlugs}
           onToggle={toggleExtra}
+        />
+      )}
+
+      {optionGroups.length > 0 && (
+        <ProductOptionsPicker
+          groups={optionGroups}
+          messageCategories={messageCategories}
+          onChange={setSupplements}
         />
       )}
 

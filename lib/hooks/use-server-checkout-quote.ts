@@ -20,14 +20,30 @@ export function useServerCheckoutQuote(): void {
   const setError = useCheckoutQuoteStore((state) => state.setError);
   const reset = useCheckoutQuoteStore((state) => state.reset);
 
+  /**
+   * Empreinte des lignes, pour ne redemander un devis que quand quelque chose
+   * de facturable a bougé.
+   *
+   * La variante et le **message** en font partie : changer de taille ou
+   * corriger le texte d'une carte change le prix, et un devis périmé afficherait
+   * un montant faux. C'était l'angle mort de la version précédente, qui
+   * n'incluait pas `variantCode`.
+   */
   const itemsKey = useMemo(
     () =>
       items
         .map(
           (item) =>
-            `${item.slug}:${item.quantity}:${item.supplements
-              .map((supplement) => supplement.name)
-              .join(",")}`,
+            `${item.slug}:${item.quantity}:${item.variantCode ?? item.sizeCm ?? ""}:` +
+            item.supplements
+              .map(
+                (supplement) =>
+                  `${supplement.id}×${supplement.quantity ?? 1}` +
+                  `:${supplement.message ?? ""}` +
+                  `:${supplement.occasionCategorySlug ?? ""}` +
+                  `:${supplement.customOccasion ?? ""}`,
+              )
+              .join(","),
         )
         .join("|"),
     [items],
@@ -63,7 +79,26 @@ export function useServerCheckoutQuote(): void {
               slug: item.slug,
               name: item.name,
               quantity: item.quantity,
-              supplements: item.supplements.map((supplement) => supplement.name),
+              /**
+               * Les options partent par **identifiant**, jamais par nom ni par
+               * prix : le serveur relit le tarif dans sa propre table. L'ancien
+               * champ `supplements` par nom n'est plus envoyé — le serveur
+               * résout les identifiants historiques (« chantilly ») par slug,
+               * donc les paniers déjà ouverts continuent de fonctionner.
+               */
+              options: item.supplements.map((supplement) => ({
+                optionId: supplement.id,
+                ...(supplement.quantity !== undefined
+                  ? { quantity: supplement.quantity }
+                  : {}),
+                ...(supplement.message ? { message: supplement.message } : {}),
+                ...(supplement.occasionCategorySlug
+                  ? { occasionCategorySlug: supplement.occasionCategorySlug }
+                  : {}),
+                ...(supplement.customOccasion
+                  ? { customOccasion: supplement.customOccasion }
+                  : {}),
+              })),
               // Le serveur résout le prix de la variante dans sa propre table :
               // sans ce code, une fiche à tailles est refusée (« Choisissez une
               // option ») et le devis échoue.

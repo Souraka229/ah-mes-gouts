@@ -1,10 +1,12 @@
 "use client";
 
-import { Copy, Loader2, Plus, Save } from "lucide-react";
+import { AlertTriangle, Copy, Loader2, Plus, RefreshCw, Save } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { SLOT_DURATION_OPTIONS } from "@/lib/delivery/constants";
 import type {
   DeliveryConfig,
@@ -153,6 +155,16 @@ function ScheduleBlock({
 export function DeliverySettingsPage() {
   const [config, setConfig] = useState<DeliveryConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * Dernière panne de chargement de la configuration.
+   *
+   * Distingue « aucune zone configurée » de « on n'a pas pu savoir » : sans
+   * cela, une panne affichait un écran injoignable et l'admin pouvait croire
+   * que ses tarifs avaient disparu.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingCostId, setEditingCostId] = useState<string | null>(null);
   const [draftCost, setDraftCost] = useState("");
@@ -161,22 +173,31 @@ export function DeliverySettingsPage() {
   const [expandedZoneId, setExpandedZoneId] = useState<string | null>(null);
   const [areas, setAreas] = useState<DeliveryAreaRow[]>([]);
   const [areasLoading, setAreasLoading] = useState(false);
+  /** Panne de chargement des lieux — distincte d'une zone sans lieu. */
+  const [areasError, setAreasError] = useState<AppError | null>(null);
   const [draftAreaPrices, setDraftAreaPrices] = useState<Record<string, string>>(
     {},
   );
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const response = await fetch("/api/admin/delivery", { cache: "no-store" });
-      if (!response.ok) throw new Error("Accès refusé ou erreur serveur");
-      const data = (await response.json()) as DeliveryConfig;
-      setConfig(data);
-    } catch {
-      setMessage("Impossible de charger la configuration.");
-    } finally {
-      setLoading(false);
+    // La route doit renvoyer la configuration : un corps vide est une anomalie,
+    // pas une boutique sans zone de livraison.
+    const result = await safeFetch<DeliveryConfig>("/api/admin/delivery", {
+      requireJson: true,
+    });
+
+    if (result.ok) {
+      setConfig(result.data);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // On n'efface JAMAIS une configuration déjà affichée : on garde la
+      // dernière version connue et on signale que l'affichage peut être périmé.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -186,21 +207,19 @@ export function DeliverySettingsPage() {
   const saveConfig = async (next: DeliveryConfig) => {
     setSaving(true);
     setMessage(null);
-    try {
-      const response = await fetch("/api/admin/delivery", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
-      });
-      if (!response.ok) throw new Error("Échec de sauvegarde");
-      const saved = (await response.json()) as DeliveryConfig;
-      setConfig(saved);
-      setMessage("Modifications enregistrées — visibles immédiatement côté client.");
-    } catch {
-      setMessage("Erreur lors de l'enregistrement.");
-    } finally {
+    const result = await safeFetch<DeliveryConfig>("/api/admin/delivery", {
+      method: "PUT",
+      json: next,
+      requireJson: true,
+    });
+    if (!result.ok) {
+      setMessage(result.error.message);
       setSaving(false);
+      return;
     }
+    setConfig(result.data);
+    setMessage("Modifications enregistrées — visibles immédiatement côté client.");
+    setSaving(false);
   };
 
   const updateZone = (zoneId: string, patch: Partial<DeliveryZoneConfig>) => {
@@ -212,6 +231,35 @@ export function DeliverySettingsPage() {
     setConfig(next);
     void saveConfig(next);
   };
+
+  /**
+   * Charge les lieux d'une zone et leurs tarifs.
+   *
+   * Extrait de `toggleZoneAreas` pour que le bouton « Réessayer » puisse
+   * relancer exactement le même appel sans replier la zone.
+   */
+  const loadAreas = useCallback(async (zoneId: string) => {
+    setAreasLoading(true);
+    const result = await safeFetch<{ areas: DeliveryAreaRow[] }>(
+      `/api/admin/delivery/areas?zoneId=${encodeURIComponent(zoneId)}`,
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      const incoming = result.data?.areas ?? [];
+      setAreas(incoming);
+      setDraftAreaPrices(
+        Object.fromEntries(incoming.map((a) => [a.id, String(a.price)])),
+      );
+      setAreasError(null);
+    } else {
+      // On ne vide JAMAIS la liste : « Aucun lieu dans cette zone » serait un
+      // mensonge, et l'admin croirait ses quartiers effacés.
+      setAreasError(result.error);
+    }
+
+    setAreasLoading(false);
+  }, []);
 
   /**
    * Déplie les lieux d'une zone et leur tarif.
@@ -227,71 +275,57 @@ export function DeliverySettingsPage() {
         return;
       }
       setExpandedZoneId(zoneId);
-      setAreasLoading(true);
-      try {
-        const response = await fetch(
-          `/api/admin/delivery/areas?zoneId=${encodeURIComponent(zoneId)}`,
-          { cache: "no-store" },
-        );
-        if (!response.ok) throw new Error();
-        const data = (await response.json()) as { areas: DeliveryAreaRow[] };
-        setAreas(data.areas);
-        setDraftAreaPrices(
-          Object.fromEntries(data.areas.map((a) => [a.id, String(a.price)])),
-        );
-      } catch {
-        setAreas([]);
-        setMessage("Impossible de charger les lieux de cette zone.");
-      } finally {
-        setAreasLoading(false);
-      }
+      await loadAreas(zoneId);
     },
-    [expandedZoneId],
+    [expandedZoneId, loadAreas],
   );
 
   const patchArea = async (
     area: DeliveryAreaRow,
     patch: { price?: number; isActive?: boolean },
   ) => {
-    try {
-      const response = await fetch("/api/admin/delivery/areas", {
+    const result = await safeFetch<{ area: DeliveryAreaRow }>(
+      "/api/admin/delivery/areas",
+      {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ update: { id: area.id, ...patch } }),
-      });
-      if (!response.ok) throw new Error();
-      const data = (await response.json()) as { area: DeliveryAreaRow };
-      setAreas((prev) =>
-        prev.map((a) => (a.id === area.id ? data.area : a)),
-      );
-      setDraftAreaPrices((prev) => ({
-        ...prev,
-        [data.area.id]: String(data.area.price),
-      }));
-      setMessage(
-        patch.price !== undefined
-          ? `${data.area.name} → ${data.area.price.toLocaleString("fr-FR")} F`
-          : `${data.area.name} ${data.area.isActive ? "activé" : "désactivé"}.`,
-      );
-    } catch {
-      setMessage("Modification impossible.");
+        json: { update: { id: area.id, ...patch } },
+        requireJson: true,
+      },
+    );
+    if (!result.ok) {
+      setMessage(result.error.message);
+      return;
     }
+    const data = result.data;
+    setAreas((prev) =>
+      prev.map((a) => (a.id === area.id ? data.area : a)),
+    );
+    setDraftAreaPrices((prev) => ({
+      ...prev,
+      [data.area.id]: String(data.area.price),
+    }));
+    setMessage(
+      patch.price !== undefined
+        ? `${data.area.name} → ${data.area.price.toLocaleString("fr-FR")} F`
+        : `${data.area.name} ${data.area.isActive ? "activé" : "désactivé"}.`,
+    );
   };
 
   const addZone = async () => {
     if (!config) return;
-    const response = await fetch("/api/admin/delivery", {
+    const result = await safeFetch<DeliveryConfig>("/api/admin/delivery", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      json: {
         addZone: { name: "Nouvelle zone", cost: 500 },
-      }),
+      },
+      requireJson: true,
     });
-    if (response.ok) {
-      const saved = (await response.json()) as DeliveryConfig;
-      setConfig(saved);
-      setMessage("Zone ajoutée.");
+    if (!result.ok) {
+      setMessage(result.error.message);
+      return;
     }
+    setConfig(result.data);
+    setMessage("Zone ajoutée.");
   };
 
   const updateSchedule = (updated: DeliveryScheduleConfig) => {
@@ -332,7 +366,7 @@ export function DeliverySettingsPage() {
     [config?.zones],
   );
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center font-body text-muted-foreground">
         <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
@@ -342,10 +376,35 @@ export function DeliverySettingsPage() {
   }
 
   if (!config) {
+    /* Premier chargement en échec : l'écran ne doit jamais laisser croire à une
+       configuration vide (donc « 0 F » partout) — on ne sait pas ce qui est en
+       base, et rien n'a été modifié. */
     return (
-      <p className="font-body text-destructive">
-        Configuration indisponible. Vérifiez l&apos;accès admin.
-      </p>
+      <div
+        role="alert"
+        className="mx-auto flex max-w-2xl flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="size-5 text-destructive" aria-hidden />
+          <h1 className="font-display text-base font-semibold text-destructive">
+            Impossible de charger la configuration
+          </h1>
+        </div>
+        <p className="font-body text-sm text-muted-foreground">
+          {loadError?.message ?? "Configuration indisponible."} Les tarifs et
+          créneaux enregistrés ne sont pas perdus : seul l&apos;affichage a
+          échoué.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          className="cursor-pointer gap-2"
+          onClick={() => void load()}
+        >
+          <RefreshCw className="size-4" aria-hidden />
+          Réessayer
+        </Button>
+      </div>
     );
   }
 
@@ -364,6 +423,30 @@ export function DeliverySettingsPage() {
         <p className="rounded-xl border border-secondary bg-secondary/20 px-4 py-3 font-body text-sm text-text">
           {message}
         </p>
+      )}
+
+      {/* Panne survenue alors que la configuration était déjà à l'écran : on
+          garde l'affichage et on prévient, plutôt que de montrer des tarifs
+          périmés comme s'ils étaient à jour. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
       )}
 
       <section className="rounded-2xl border border-border bg-card p-6">
@@ -480,6 +563,31 @@ export function DeliverySettingsPage() {
                           <Loader2 className="size-4 animate-spin" aria-hidden />
                           Chargement des lieux…
                         </span>
+                      ) : areasError ? (
+                        /* Les lieux n'ont pas pu être lus : on l'annonce au lieu
+                           d'afficher « Aucun lieu dans cette zone ». */
+                        <div
+                          role="alert"
+                          className="flex flex-wrap items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3"
+                        >
+                          <AlertTriangle
+                            className="size-4 shrink-0 text-destructive"
+                            aria-hidden
+                          />
+                          <p className="font-body text-sm text-destructive">
+                            {areasError.message}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="cursor-pointer gap-2"
+                            onClick={() => void loadAreas(zone.id)}
+                          >
+                            <RefreshCw className="size-4" aria-hidden />
+                            Réessayer
+                          </Button>
+                        </div>
                       ) : areas.length === 0 ? (
                         <p className="text-muted-foreground">
                           Aucun lieu dans cette zone.

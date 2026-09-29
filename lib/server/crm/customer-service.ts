@@ -2,7 +2,7 @@ import { createHash, randomInt, timingSafeEqual } from "crypto";
 
 import type { CustomerActivityType, Prisma } from "@prisma/client";
 
-import { normalizeBeninPhone } from "@/lib/crm/phone";
+import { normalizeBeninPhone, phoneSearchVariants } from "@/lib/crm/phone";
 import { getPrisma } from "@/lib/prisma";
 
 const OTP_TTL_MS = 10 * 60_000;
@@ -60,7 +60,10 @@ export async function upsertCustomerFromPhone(input: {
   if (!phone) throw new Error("Numéro de téléphone invalide");
 
   const prisma = getPrisma();
-  const existing = await prisma.customer.findUnique({ where: { phone } });
+  // Les deux écritures historiques (`229…` et `+229…`) désignent la même fiche.
+  const existing = await prisma.customer.findFirst({
+    where: { phone: { in: phoneSearchVariants(input.phone) } },
+  });
 
   if (existing) {
     return prisma.customer.update({
@@ -154,11 +157,14 @@ export async function attachOrderToCustomer(input: {
     if (!phone) return null;
 
     const prisma = getPrisma();
-    let customer = await prisma.customer.findUnique({ where: { phone } });
+    let customer = await prisma.customer.findFirst({
+      where: { phone: { in: phoneSearchVariants(input.phone) } },
+    });
 
     if (!customer) {
       customer = await prisma.customer.create({
         data: {
+          // Écrit toujours la forme canonique, même si l'ancienne traîne encore.
           phone,
           firstName: input.firstName.trim(),
           lastName: input.lastName.trim(),

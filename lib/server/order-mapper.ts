@@ -1,12 +1,14 @@
 import type {
   Order,
   OrderItem,
+  OrderItemOption,
   OrderStatus as PrismaOrderStatus,
   PaymentMethod as PrismaPaymentMethod,
   ReceptionMode as PrismaReceptionMode,
 } from "@prisma/client";
 
 import type {
+  OrderItemOptionSnapshot,
   OrderStatus,
   PaymentMethod,
   ReceptionMode,
@@ -90,9 +92,32 @@ export function fromPrismaPaymentMethod(
 }
 
 type OrderWithItems = Order & {
-  items: OrderItem[];
+  /** `options` est optionnel : toutes les requêtes ne le sélectionnent pas. */
+  items: (OrderItem & { options?: OrderItemOption[] })[];
   driver?: { name: string } | null;
 };
+
+/**
+ * Snapshot d'option, de la base vers le type applicatif.
+ *
+ * Tout est recopié : libellé, prix unitaire, règle de facturation, message et
+ * occasion. C'est ce qui garantit qu'une commande de mars reste lisible et
+ * facturée à l'identique même si le catalogue a changé depuis.
+ */
+function optionFromPrisma(row: OrderItemOption): OrderItemOptionSnapshot {
+  return {
+    optionId: row.optionId,
+    groupName: row.groupNameSnapshot,
+    optionName: row.optionNameSnapshot,
+    pricingType: row.pricingType === "per_unit" ? "per_unit" : "fixed",
+    unitPrice: row.unitPriceSnapshot,
+    quantity: row.quantity,
+    totalPrice: row.totalPrice,
+    customMessage: row.customMessage,
+    messageCategory: row.messageCategorySnapshot,
+    customOccasion: row.customOccasion,
+  };
+}
 
 export function toPrismaOrderCreateInput(order: SavedOrder) {
   const fulfillmentType = order.fulfillmentType ?? order.mode;
@@ -142,6 +167,27 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
         // est désactivée, ou disparaît du catalogue.
         variantId: item.variantId ?? null,
         variantLabel: item.variantLabel ?? null,
+        // Snapshot des compléments : même contrat que la variante. On écrit
+        // `optionId` sans contrainte pour la traçabilité, mais tout ce qui est
+        // facturé et affiché est figé ici.
+        ...(item.options && item.options.length > 0
+          ? {
+              options: {
+                create: item.options.map((option) => ({
+                  optionId: option.optionId ?? null,
+                  groupNameSnapshot: option.groupName,
+                  optionNameSnapshot: option.optionName,
+                  pricingType: option.pricingType,
+                  unitPriceSnapshot: option.unitPrice,
+                  quantity: option.quantity,
+                  totalPrice: option.totalPrice,
+                  customMessage: option.customMessage ?? null,
+                  messageCategorySnapshot: option.messageCategory ?? null,
+                  customOccasion: option.customOccasion ?? null,
+                })),
+              },
+            }
+          : {}),
       })),
     },
   };
@@ -200,6 +246,11 @@ export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
       slug: item.slug ?? undefined,
       variantId: item.variantId ?? undefined,
       variantLabel: item.variantLabel ?? undefined,
+      // Absent sur les commandes antérieures au système d'options : on n'ajoute
+      // pas de tableau vide, pour que `undefined` dise « aucune option ».
+      ...(item.options && item.options.length > 0
+        ? { options: item.options.map(optionFromPrisma) }
+        : {}),
     })),
     subtotal: row.subtotal,
     total: row.total,

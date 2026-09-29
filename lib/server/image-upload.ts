@@ -3,15 +3,10 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "fs";
 import path from "path";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { ALLOWED_UPLOAD_TYPES, validateUploadFile } from "@/lib/uploads";
 
 const BUCKET = "cms-images";
-const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
+const ALLOWED_TYPES = new Set<string>(ALLOWED_UPLOAD_TYPES);
 
 export type UploadResult = {
   url: string;
@@ -39,11 +34,14 @@ async function uploadLocal(file: File): Promise<UploadResult> {
 }
 
 export async function uploadSiteImage(file: File): Promise<UploadResult> {
+  // Même validation que côté navigateur, pour qu'un appel direct à l'API ne
+  // puisse pas contourner le plafond.
+  const invalid = validateUploadFile(file);
+  if (invalid) {
+    throw new Error(invalid);
+  }
   if (!ALLOWED_TYPES.has(file.type)) {
     throw new Error("Type de fichier non autorisé (JPEG, PNG, WebP, GIF)");
-  }
-  if (file.size > MAX_BYTES) {
-    throw new Error("Fichier trop volumineux (max 5 Mo)");
   }
 
   const supabase = getSupabaseServerClient();

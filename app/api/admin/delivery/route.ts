@@ -20,7 +20,7 @@ function unauthorized() {
   return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   if (!(await isAdminAuthorizedAsync())) return unauthorized();
 
   const config = await getDeliveryConfig();

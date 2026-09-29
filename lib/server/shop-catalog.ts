@@ -99,6 +99,19 @@ export async function getIndexableShopProducts(): Promise<Product[]> {
   return attachVariants(catalog.filter(isPubliclyVisible).filter(isProductAvailable));
 }
 
+/**
+ * Visuel d'un produit mis en avant sur la vitrine.
+ *
+ * Rend **l'image du produit lui-même**, ou une chaîne vide — jamais un repli.
+ * C'est ici que le bug « carte-cadeau » se manifestait : un repli générique
+ * faisait afficher la photo d'un autre produit. Une fiche sans visuel doit
+ * montrer un aplat, pas le gâteau du voisin.
+ */
+export function menuShowcaseImage(product: Pick<Product, "imageUrl">): string {
+  const url = product.imageUrl;
+  return typeof url === "string" && url.trim().length > 0 ? url : "";
+}
+
 export async function getMenuDuJourShowcaseForLanding(): Promise<
   MenuShowcaseItem[]
 > {
@@ -113,7 +126,7 @@ export async function getMenuDuJourShowcaseForLanding(): Promise<
       product.keyword?.trim() ||
       (product.isNew ? "Nouveau" : product.isPopular ? "Populaire" : "Du jour"),
     price: getProductPrice(product),
-    image: product.imageUrl,
+    image: menuShowcaseImage(product),
     slug: product.slug,
     product,
   }));

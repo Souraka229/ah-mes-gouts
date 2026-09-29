@@ -2,9 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bell, BellOff, Loader2, Plus, RefreshCw, Volume2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  BellOff,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Volume2,
+} from "lucide-react";
 import { toast } from "sonner";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import {
   getShopDateKey,
   getTomorrowShopDateKey,
@@ -71,6 +81,16 @@ export function AdminOrdersPage() {
   const [orders, setOrders] = useState<SavedOrder[]>([]);
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [loading, setLoading] = useState(true);
+  /**
+   * Dernière panne de chargement.
+   *
+   * Distingue « la file est vraiment vide » de « on n'a pas pu savoir ».
+   * Avant, toute panne vidait la liste et l'écran annonçait « rien à
+   * avancer » : en cuisine, cela veut dire rater des commandes.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const activeTab = parseTab(searchParams.get("tab"));
   const [pendingDriver, setPendingDriver] = useState<Record<string, string>>(
     {},
@@ -116,17 +136,26 @@ export function AdminOrdersPage() {
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
       if (!options?.silent) setLoading(true);
-      try {
-        const response = await fetch("/api/admin/orders", { cache: "no-store" });
-        if (!response.ok) throw new Error("Erreur");
-        const data = (await response.json()) as { orders: SavedOrder[] };
-        announceNewOrders(data.orders);
-        setOrders(data.orders);
-      } catch {
-        if (!options?.silent) setOrders([]);
-      } finally {
-        if (!options?.silent) setLoading(false);
+      const result = await safeFetch<{ orders: SavedOrder[] }>(
+        "/api/admin/orders",
+        // La route doit renvoyer une liste : un corps vide est une anomalie,
+        // pas une file vide.
+        { requireJson: true },
+      );
+
+      if (result.ok) {
+        const incoming = result.data?.orders ?? [];
+        announceNewOrders(incoming);
+        setOrders(incoming);
+        setLoadError(null);
+        setHasLoaded(true);
+      } else {
+        // On ne vide JAMAIS la liste : on garde la dernière version connue et
+        // on signale explicitement que l'affichage peut être périmé.
+        setLoadError(result.error);
       }
+
+      if (!options?.silent) setLoading(false);
     },
     [announceNewOrders],
   );
@@ -145,12 +174,15 @@ export function AdminOrdersPage() {
   }, [notifications.enabled, load]);
 
   useEffect(() => {
-    void fetch("/api/admin/drivers", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { drivers?: DriverOption[] } | null) => {
-        if (data?.drivers) setDrivers(data.drivers.filter((d) => d.isActive));
-      })
-      .catch(() => null);
+    void safeFetch<{ drivers?: DriverOption[] }>("/api/admin/drivers").then(
+      (result) => {
+        // Best-effort : sans livreurs, l'assignation est simplement indisponible.
+        // On ne bloque pas le Kanban pour autant.
+        if (result.ok && result.data?.drivers) {
+          setDrivers(result.data.drivers.filter((d) => d.isActive));
+        }
+      },
+    );
   }, []);
 
   useOrderRealtime({
@@ -263,13 +295,12 @@ export function AdminOrdersPage() {
 
   const updateStatus = useCallback(
     async (orderId: string, status: OrderStatus, previous: OrderStatus) => {
-      const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      const result = await safeFetch(`/api/admin/orders/${orderId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        json: { status },
       });
-      if (!res.ok) {
-        toast.error("Impossible de changer le statut");
+      if (!result.ok) {
+        toast.error(result.error.message);
         return;
       }
       setOrders((prev) =>
@@ -294,17 +325,21 @@ export function AdminOrdersPage() {
       driverId: string | null,
       previous: string | null,
     ) => {
-      const res = await fetch(`/api/admin/orders/${orderId}/driver`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driverId }),
-      });
-      if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        toast.error(data.error ?? "Assignation impossible");
+      const result = await safeFetch<{ order: SavedOrder }>(
+        `/api/admin/orders/${orderId}/driver`,
+        { method: "PATCH", json: { driverId }, requireJson: true },
+      );
+      if (!result.ok) {
+        // Avant : un corps d'erreur non-JSON faisait échouer le `await .json()`
+        // et l'admin ne voyait aucun message — le clic semblait sans effet.
+        toast.error(result.error.message);
         return;
       }
-      const data = (await res.json()) as { order: SavedOrder };
+      if (!result.data?.order) {
+        toast.error("Assignation impossible");
+        return;
+      }
+      const data = result.data;
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? data.order : o)),
       );
@@ -358,14 +393,11 @@ export function AdminOrdersPage() {
     ) {
       return;
     }
-    const res = await fetch(`/api/admin/orders/${orderId}`, {
+    const result = await safeFetch(`/api/admin/orders/${orderId}`, {
       method: "DELETE",
     });
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      toast.error(data?.error ?? "Suppression impossible");
+    if (!result.ok) {
+      toast.error(result.error.message);
       return;
     }
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
@@ -547,10 +579,60 @@ export function AdminOrdersPage() {
         ))}
       </div>
 
-      {loading ? (
+      {/* Panne survenue alors qu'on avait déjà des données : on garde l'affichage
+          et on prévient, plutôt que de tout effacer. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {loading && !hasLoaded ? (
         <div className="flex items-center gap-2 font-body text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden />
           Chargement…
+        </div>
+      ) : loadError && !hasLoaded ? (
+        /* Premier chargement en échec : l'écran ne doit JAMAIS annoncer une
+           file vide — on ne sait pas si elle l'est. */
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h2 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger les commandes
+            </h2>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Les commandes ne sont pas perdues : elles
+            restent enregistrées, seul l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
         </div>
       ) : tabOrders.length === 0 ? (
         <AdminEmptyState

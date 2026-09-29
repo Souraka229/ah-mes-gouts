@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
+import { Button } from "@/components/ui/button";
 import type { BoutiqueSettings } from "@/types/boutique";
 
 const FIELDS: {
@@ -37,11 +40,26 @@ const FIELDS: {
 export function AdminBoutiqueSettingsPage() {
   const [settings, setSettings] = useState<BoutiqueSettings | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Panne de chargement — distincte d'un formulaire jamais rempli. */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/site-settings", { cache: "no-store" });
-    const data = (await res.json()) as { settings: BoutiqueSettings };
-    setSettings(data.settings);
+    const result = await safeFetch<{ settings: BoutiqueSettings }>(
+      "/api/admin/site-settings",
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      setSettings(result.data?.settings ?? null);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // On garde les coordonnées déjà affichées : une panne réseau ne les
+      // efface pas, et un formulaire vidé serait enregistré tel quel.
+      setLoadError(result.error);
+    }
   }, []);
 
   useEffect(() => {
@@ -52,24 +70,51 @@ export function AdminBoutiqueSettingsPage() {
     if (!settings) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/site-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-      const data = (await res.json()) as {
-        settings?: BoutiqueSettings;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error);
-      if (data.settings) setSettings(data.settings);
+      const result = await safeFetch<{ settings?: BoutiqueSettings }>(
+        "/api/admin/site-settings",
+        { method: "PATCH", json: settings },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      if (result.data?.settings) setSettings(result.data.settings);
       toast.success("Infos boutique enregistrées");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur");
     } finally {
       setSaving(false);
     }
   };
+
+  // Premier chargement en échec : afficher un formulaire vide ferait
+  // enregistrer des coordonnées effacées. On propose de reprendre.
+  if (loadError && !hasLoaded) {
+    return (
+      <div
+        role="alert"
+        className="mx-auto flex max-w-2xl flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+      >
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="size-5 text-destructive" aria-hidden />
+          <h2 className="font-display text-base font-semibold text-destructive">
+            Impossible de charger les infos boutique
+          </h2>
+        </div>
+        <p className="font-body text-sm text-muted-foreground">
+          {loadError.message} Vos informations ne sont pas perdues : seul
+          l&apos;affichage a échoué.
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          className="cursor-pointer gap-2"
+          onClick={() => void load()}
+        >
+          <RefreshCw className="size-4" aria-hidden />
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
 
   if (!settings) {
     return (
@@ -89,6 +134,29 @@ export function AdminBoutiqueSettingsPage() {
           Nom, contact et horaires affichés à vos clients.
         </p>
       </div>
+
+      {/* Panne survenue alors que les infos étaient déjà affichées : on garde
+          les valeurs connues et on prévient, plutôt que de les vider. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-4 rounded-2xl border border-border bg-white p-6">
         {FIELDS.map((field) => (

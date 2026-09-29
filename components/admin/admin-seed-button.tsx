@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { Button } from "@/components/ui/button";
 
 export function AdminSeedButton() {
@@ -15,13 +16,18 @@ export function AdminSeedButton() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/admin/seed", { method: "POST" });
-      const data = (await res.json()) as { count?: number; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Erreur");
-      setMessage(`${data.count ?? 0} commandes de démo chargées.`);
+      // `requireJson` : sans le compte renvoyé, annoncer « 0 commandes
+      // chargées » serait faux — mieux vaut dire que la réponse est anormale.
+      const result = await safeFetch<{ count?: number }>("/api/admin/seed", {
+        method: "POST",
+        requireJson: true,
+      });
+      if (!result.ok) {
+        setMessage(result.error.message);
+        return;
+      }
+      setMessage(`${result.data?.count ?? 0} commandes de démo chargées.`);
       router.refresh();
-    } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Échec du rechargement");
     } finally {
       setLoading(false);
     }

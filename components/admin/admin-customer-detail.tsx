@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   Clock3,
   Loader2,
   Package,
+  RefreshCw,
   Smartphone,
 } from "lucide-react";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
+import { Button } from "@/components/ui/button";
 import { formatOrderItem } from "@/lib/admin/order-board";
 import { formatPrice } from "@/lib/format";
 import type { AdminCustomerDetail } from "@/types/crm";
@@ -44,36 +49,45 @@ function formatDate(iso: string | null): string {
 export function AdminCustomerDetailPage({ customerId }: { customerId: string }) {
   const [customer, setCustomer] = useState<AdminCustomerDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  /** Panne de chargement — distincte d'un client réellement introuvable. */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/admin/customers/${customerId}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(data?.error ?? "Client introuvable");
-      }
-      const data = (await res.json()) as { customer: AdminCustomerDetail };
-      setCustomer(data.customer);
-    } catch (err) {
-      setCustomer(null);
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
+    const result = await safeFetch<{ customer: AdminCustomerDetail }>(
+      `/api/admin/customers/${customerId}`,
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      setCustomer(result.data?.customer ?? null);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // Une panne ne prouve pas que le client a disparu : on garde la fiche
+      // affichée et on signale l'incident.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, [customerId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  if (loading) {
+  // Le composant est réutilisé quand on passe d'une fiche client à une autre :
+  // sans cette remise à zéro, la fiche précédente resterait affichée sous la
+  // nouvelle URL, et une panne la figerait là.
+  useEffect(() => {
+    setCustomer(null);
+    setLoadError(null);
+    setHasLoaded(false);
+  }, [customerId]);
+
+  if (loading && !hasLoaded) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 font-body text-muted-foreground">
         <Loader2 className="size-5 animate-spin" aria-hidden />
@@ -82,7 +96,7 @@ export function AdminCustomerDetailPage({ customerId }: { customerId: string }) 
     );
   }
 
-  if (error || !customer) {
+  if (!customer) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Link
@@ -92,9 +106,37 @@ export function AdminCustomerDetailPage({ customerId }: { customerId: string }) 
           <ArrowLeft className="size-4" aria-hidden />
           Clients
         </Link>
-        <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 font-body text-sm text-destructive">
-          {error ?? "Client introuvable"}
-        </p>
+        {loadError && !hasLoaded ? (
+          /* Premier chargement en échec : « client introuvable » accuserait à
+             tort le carnet alors qu'on n'a rien pu lire. */
+          <div
+            role="alert"
+            className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-destructive" aria-hidden />
+              <h2 className="font-display text-base font-semibold text-destructive">
+                Impossible de charger la fiche client
+              </h2>
+            </div>
+            <p className="font-body text-sm text-muted-foreground">
+              {loadError.message}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="cursor-pointer gap-2"
+              onClick={() => void load()}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Réessayer
+            </Button>
+          </div>
+        ) : (
+          <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 font-body text-sm text-destructive">
+            Client introuvable
+          </p>
+        )}
       </div>
     );
   }
@@ -126,6 +168,29 @@ export function AdminCustomerDetailPage({ customerId }: { customerId: string }) 
           </a>
         </header>
       </div>
+
+      {/* Panne survenue alors que la fiche était déjà affichée : on garde les
+          données connues et on prévient, plutôt que de tout effacer. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Dépensé" value={formatPrice(customer.totalSpent)} />

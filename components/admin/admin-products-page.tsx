@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
   IceCreamCone,
   ImagePlus,
   Loader2,
   Plus,
+  RefreshCw,
   Trash2,
   Upload,
   X,
@@ -14,6 +16,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { ProductVariantsPanel } from "@/components/admin/product-variants-panel";
@@ -21,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/format";
+import { validateUploadFile } from "@/lib/uploads";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +62,9 @@ type AdminTab = (typeof ADMIN_TABS)[number];
 export function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Panne de chargement — distincte d'un catalogue réellement vide. */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -79,38 +87,54 @@ export function AdminProductsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/admin/products", { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as { products: AdminProduct[] };
-      setProducts(data.products);
-    } catch {
-      setProducts([]);
-    } finally {
-      setLoading(false);
+    const result = await safeFetch<{ products: AdminProduct[] }>(
+      "/api/admin/products",
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      setProducts(result.data?.products ?? []);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // Une panne ne doit jamais s'afficher « catalogue vide » : on conserve
+      // la dernière liste connue et on signale l'incident.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  /**
+   * Applique une modification à une fiche.
+   *
+   * Retourne `true` seulement si le serveur a confirmé. Les appelants qui
+   * enchaînent une action (nettoyage d'un fichier orphelin) ont besoin de
+   * savoir si l'écriture a réellement eu lieu.
+   */
   const patchProduct = async (
     id: string,
     body: Record<string, unknown>,
     label: string,
-    undo?: () => Promise<void>,
-  ) => {
-    const res = await fetch(`/api/admin/products/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      toast.error("Modification impossible");
-      return;
+    undo?: () => Promise<unknown>,
+  ): Promise<boolean> => {
+    const result = await safeFetch<{ product: AdminProduct }>(
+      `/api/admin/products/${id}`,
+      { method: "PATCH", json: body, requireJson: true },
+    );
+    if (!result.ok) {
+      toast.error(result.error.message);
+      return false;
     }
-    const data = (await res.json()) as { product: AdminProduct };
+    const data = result.data;
+    if (!data?.product) {
+      toast.error("Modification impossible");
+      return false;
+    }
     setProducts((prev) =>
       prev.map((p) => (p.id === id ? data.product : p)),
     );
@@ -120,6 +144,7 @@ export function AdminProductsPage() {
         : undefined,
       duration: 5000,
     });
+    return true;
   };
 
   const toggleAvailable = (product: AdminProduct) => {
@@ -154,17 +179,40 @@ export function AdminProductsPage() {
   };
 
   const uploadImage = async (file: File) => {
+    // Refus avant envoi : inutile de téléverser 6 Mo pour se les voir refuser
+    // par la plateforme, sans message exploitable.
+    const invalid = validateUploadFile(file);
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
+
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-      setForm((f) => ({ ...f, imageUrl: data.url! }));
+      const result = await safeFetch<{ url?: string }>("/api/admin/upload", {
+        method: "POST",
+        body: fd,
+        requireJson: true,
+        // Un envoi de fichier est plus lent qu'une requête JSON ordinaire.
+        timeoutMs: 60_000,
+      });
+
+      if (!result.ok) {
+        // C'est ici que se produisait « Unexpected end of JSON input » : un
+        // fichier au-dessus de la limite de la plateforme recevait une page
+        // HTML, que `res.json()` ne pouvait pas parser.
+        toast.error(result.error.message);
+        return;
+      }
+      if (!result.data?.url) {
+        toast.error("L'image n'a pas pu être enregistrée");
+        return;
+      }
+
+      setForm((f) => ({ ...f, imageUrl: result.data!.url! }));
       toast.success("Image ajoutée");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload échoué");
     } finally {
       setUploading(false);
     }
@@ -191,18 +239,21 @@ export function AdminProductsPage() {
       return;
     }
 
-    try {
-      const res = await fetch("/api/admin/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Suppression échouée");
-      toast.success("Photo supprimée");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Suppression échouée");
+    const result = await safeFetch("/api/admin/upload", {
+      method: "DELETE",
+      json: { url },
+    });
+
+    if (!result.ok) {
+      // La fiche a déjà été détachée : on le dit, sinon l'admin croit à une
+      // suppression complète alors que le fichier est toujours stocké.
+      toast.error(
+        `${result.error.message} La photo reste détachée de la fiche.`,
+      );
+      return;
     }
+
+    toast.success("Photo supprimée");
   };
 
   /**
@@ -213,28 +264,53 @@ export function AdminProductsPage() {
    * l'affichage optimiste, le toast et le retour arrière en cas d'échec.
    */
   const changeProductImage = async (product: AdminProduct, file: File) => {
+    const invalid = validateUploadFile(file);
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
+
     setUploading(true);
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) throw new Error(data.error ?? "Envoi échoué");
+      const upload = await safeFetch<{ url?: string }>("/api/admin/upload", {
+        method: "POST",
+        body: fd,
+        requireJson: true,
+        timeoutMs: 60_000,
+      });
 
-      const url = data.url;
+      if (!upload.ok) {
+        toast.error(upload.error.message);
+        return;
+      }
+      const url = upload.data?.url;
+      if (!url) {
+        toast.error("L'image n'a pas pu être enregistrée");
+        return;
+      }
+
       const previous = {
         imageUrl: product.imageUrl,
         imageUrls: product.imageUrls ?? [],
       };
 
-      await patchProduct(
+      const saved = await patchProduct(
         product.id,
         { imageUrl: url, imageUrls: [url] },
         `Photo de ${product.name} mise à jour`,
         () => patchProduct(product.id, previous, "Photo rétablie"),
       );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Envoi échoué");
+
+      // Le fichier est monté mais la fiche n'a pas été écrite : sans ce
+      // nettoyage il resterait dans le stockage sans que rien ne le référence.
+      if (!saved) {
+        await safeFetch("/api/admin/upload", {
+          method: "DELETE",
+          json: { url },
+        });
+      }
     } finally {
       setUploading(false);
     }
@@ -257,11 +333,7 @@ export function AdminProductsPage() {
       url.startsWith("/images/uploads/") || url.includes("/cms-images/");
 
     if (isUpload) {
-      await fetch("/api/admin/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      }).catch(() => undefined);
+      await safeFetch("/api/admin/upload", { method: "DELETE", json: { url } });
     }
 
     await patchProduct(
@@ -284,29 +356,38 @@ export function AdminProductsPage() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          price: Math.round(price),
-          category: form.category,
-          stock: stocklessCategory ? 9999 : 10,
-          imageUrl: form.imageUrl || undefined,
-          imageUrls: form.imageUrl ? [form.imageUrl] : undefined,
-        }),
-      });
-      const data = (await res.json()) as {
-        product?: AdminProduct;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Création impossible");
-      setProducts((prev) => [data.product!, ...prev]);
+      const result = await safeFetch<{ product?: AdminProduct }>(
+        "/api/admin/products",
+        {
+          method: "POST",
+          requireJson: true,
+          json: {
+            name: form.name.trim(),
+            price: Math.round(price),
+            category: form.category,
+            stock: stocklessCategory ? 9999 : 10,
+            imageUrl: form.imageUrl || undefined,
+            imageUrls: form.imageUrl ? [form.imageUrl] : undefined,
+          },
+        },
+      );
+
+      if (!result.ok) {
+        // Un échec ne doit jamais laisser croire à une création : on ne
+        // referme pas le formulaire et on ne vide pas la saisie.
+        toast.error(result.error.message);
+        return;
+      }
+      const product = result.data?.product;
+      if (!product) {
+        toast.error("Le produit n'a pas été confirmé par le serveur");
+        return;
+      }
+
+      setProducts((prev) => [product, ...prev]);
       setForm(emptyForm);
       setShowForm(false);
-      toast.success(`${data.product!.name} ajouté`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Création impossible");
+      toast.success(`${product.name} ajouté`);
     } finally {
       setSaving(false);
     }
@@ -315,25 +396,21 @@ export function AdminProductsPage() {
   const importGift = async () => {
     setImporting(true);
     try {
-      const res = await fetch("/api/admin/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ importGift: true }),
-      });
-      const data = (await res.json()) as {
-        created?: number;
-        skipped?: number;
-        products?: AdminProduct[];
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Import impossible");
+      const result = await safeFetch<{ created?: number; skipped?: number }>(
+        "/api/admin/products",
+        { method: "POST", requireJson: true, json: { importGift: true } },
+      );
+
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+
       toast.success(
-        `${data.created ?? 0} produits importés` +
-          (data.skipped ? ` · ${data.skipped} déjà présents` : ""),
+        `${result.data?.created ?? 0} produits importés` +
+          (result.data?.skipped ? ` · ${result.data.skipped} déjà présents` : ""),
       );
       await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Import impossible");
     } finally {
       setImporting(false);
     }
@@ -526,10 +603,59 @@ export function AdminProductsPage() {
         ))}
       </div>
 
-      {loading ? (
+      {/* Panne alors qu'on a déjà des produits : on garde l'affichage et on
+          prévient, plutôt que d'annoncer un catalogue vide. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {loading && !hasLoaded ? (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
           Chargement…
+        </div>
+      ) : loadError && !hasLoaded ? (
+        /* Premier chargement en échec : « Catalogue vide » serait un mensonge. */
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h2 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger le catalogue
+            </h2>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Les produits ne sont pas perdus : seul
+            l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
         </div>
       ) : filteredProducts.length === 0 ? (
         <AdminEmptyState

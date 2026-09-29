@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Wand2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { formatPrice } from "@/lib/format";
 import { templatesForCategory } from "@/lib/product-options/variant-templates";
 import type { ProductVariantView } from "@/types/product";
@@ -59,6 +68,17 @@ export function ProductVariantsPanel({
 }: ProductVariantsPanelProps) {
   const [variants, setVariants] = useState<ProductVariantView[]>([]);
   const [loading, setLoading] = useState(false);
+  /**
+   * Dernière panne de chargement.
+   *
+   * Distingue « ce produit n'a vraiment aucun palier » de « on n'a pas pu
+   * savoir ». Avant, toute panne vidait la liste et l'écran annonçait « Aucun
+   * palier » : l'admin croyait que la fiche était vendue au prix nu, alors que
+   * ses tailles existaient peut-être toujours en base.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [labelDraft, setLabelDraft] = useState("");
@@ -69,22 +89,28 @@ export function ProductVariantsPanel({
   const load = useCallback(async () => {
     if (!productId) return;
     setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/products/${productId}/variants`, {
-        cache: "no-store",
-      });
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as { variants: ProductVariantView[] };
-      setVariants(data.variants);
+    // La route doit renvoyer une liste : un corps vide est une anomalie, pas
+    // un produit sans palier.
+    const result = await safeFetch<{ variants: ProductVariantView[] }>(
+      `/api/admin/products/${productId}/variants`,
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      const incoming = result.data?.variants ?? [];
+      setVariants(incoming);
       setPriceDrafts(
-        Object.fromEntries(data.variants.map((v) => [v.id, String(v.price)])),
+        Object.fromEntries(incoming.map((v) => [v.id, String(v.price)])),
       );
-    } catch {
-      setVariants([]);
-      toast.error("Tailles illisibles");
-    } finally {
-      setLoading(false);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // On ne vide JAMAIS la liste : on garde les paliers déjà connus et on
+      // signale explicitement que l'affichage peut être périmé.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, [productId]);
 
   useEffect(() => {
@@ -119,25 +145,26 @@ export function ProductVariantsPanel({
 
     setBusy("new");
     try {
-      const res = await fetch(`/api/admin/products/${productId}/variants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          // Le code est l'identifiant que le panier envoie : à défaut, le libellé.
-          code: (draft.code.trim() || draft.label.trim()).toLowerCase(),
-          label: draft.label.trim(),
-          price: Math.round(price),
-          sortOrder: variants.length,
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Création impossible");
+      const result = await safeFetch(
+        `/api/admin/products/${productId}/variants`,
+        {
+          method: "POST",
+          json: {
+            // Le code est l'identifiant que le panier envoie : à défaut, le libellé.
+            code: (draft.code.trim() || draft.label.trim()).toLowerCase(),
+            label: draft.label.trim(),
+            price: Math.round(price),
+            sortOrder: variants.length,
+          },
+          requireJson: true,
+        },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
       }
       setDraft(EMPTY_DRAFT);
       await afterWrite("Taille ajoutée");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Création impossible");
     } finally {
       setBusy(null);
     }
@@ -154,22 +181,22 @@ export function ProductVariantsPanel({
 
     setBusy(variant.id);
     try {
-      const res = await fetch(
+      const result = await safeFetch(
         `/api/admin/products/${productId}/variants/${variant.id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ price: Math.round(next) }),
+          json: { price: Math.round(next) },
+          requireJson: true,
         },
       );
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Modification impossible");
+      if (!result.ok) {
+        toast.error(result.error.message);
+        // Le prix affiché revient à la valeur réellement en base : sinon le
+        // champ montrerait un montant que le serveur n'a jamais accepté.
+        setPriceDrafts((prev) => ({ ...prev, [variant.id]: String(variant.price) }));
+        return;
       }
       await afterWrite(`${variant.label} → ${formatPrice(Math.round(next))}`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Modification impossible");
-      setPriceDrafts((prev) => ({ ...prev, [variant.id]: String(variant.price) }));
     } finally {
       setBusy(null);
     }
@@ -178,22 +205,23 @@ export function ProductVariantsPanel({
   const toggleActive = async (variant: ProductVariantView) => {
     setBusy(variant.id);
     try {
-      const res = await fetch(
+      const result = await safeFetch(
         `/api/admin/products/${productId}/variants/${variant.id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isActive: !variant.isActive }),
+          json: { isActive: !variant.isActive },
+          requireJson: true,
         },
       );
-      if (!res.ok) throw new Error();
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
       await afterWrite(
         variant.isActive
           ? `${variant.label} retirée du choix`
           : `${variant.label} proposée à nouveau`,
       );
-    } catch {
-      toast.error("Modification impossible");
     } finally {
       setBusy(null);
     }
@@ -212,17 +240,17 @@ export function ProductVariantsPanel({
 
     setBusy(variant.id);
     try {
-      const res = await fetch(
+      // Une suppression refusée (palier référencé par une commande) arrive en
+      // 409 : le message du serveur explique quoi faire, on l'affiche tel quel.
+      const result = await safeFetch(
         `/api/admin/products/${productId}/variants/${variant.id}`,
-        { method: "DELETE" },
+        { method: "DELETE", requireJson: true },
       );
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Suppression impossible");
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
       await afterWrite(`${variant.label} supprimée`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Suppression impossible",
-      );
     } finally {
       setBusy(null);
     }
@@ -237,28 +265,29 @@ export function ProductVariantsPanel({
       // On renvoie le stock existant : le modèle ne le connaît pas, et l'écraser
       // par `null` ferait retomber la variante sur le stock du produit.
       const stockByCode = new Map(variants.map((v) => [v.code, v.stockRemaining]));
-      const res = await fetch(`/api/admin/products/${productId}/variants`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variantLabel: template.variantLabel,
-          variants: template.entries.map((entry, index) => ({
-            code: entry.code,
-            label: entry.label,
-            price: entry.price,
-            sortOrder: index,
-            stockRemaining: stockByCode.get(entry.code.toLowerCase()) ?? null,
-          })),
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error ?? "Modèle non appliqué");
+      const result = await safeFetch(
+        `/api/admin/products/${productId}/variants`,
+        {
+          method: "PUT",
+          json: {
+            variantLabel: template.variantLabel,
+            variants: template.entries.map((entry, index) => ({
+              code: entry.code,
+              label: entry.label,
+              price: entry.price,
+              sortOrder: index,
+              stockRemaining: stockByCode.get(entry.code.toLowerCase()) ?? null,
+            })),
+          },
+          requireJson: true,
+        },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
       }
       setLabelDraft(template.variantLabel);
       await afterWrite(`${template.name} appliqué`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Modèle non appliqué");
     } finally {
       setBusy(null);
     }
@@ -269,15 +298,16 @@ export function ProductVariantsPanel({
     if (next === (product?.variantLabel ?? "")) return;
     setBusy("label");
     try {
-      const res = await fetch(`/api/admin/products/${productId}`, {
+      const result = await safeFetch(`/api/admin/products/${productId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantLabel: next || null }),
+        json: { variantLabel: next || null },
+        requireJson: true,
       });
-      if (!res.ok) throw new Error();
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
       await afterWrite("Libellé du sélecteur enregistré");
-    } catch {
-      toast.error("Modification impossible");
     } finally {
       setBusy(null);
     }
@@ -354,15 +384,77 @@ export function ProductVariantsPanel({
               <p className="font-body text-sm font-semibold text-text">
                 Paliers proposés
               </p>
-              <span className="font-body text-xs text-muted-foreground">
-                {variants.length} au total
-              </span>
+              {/* Le compteur n'apparaît qu'après un premier succès : afficher
+                  « 0 au total » après une panne ferait croire à un produit
+                  vendu sans choix. */}
+              {hasLoaded && (
+                <span className="font-body text-xs text-muted-foreground">
+                  {variants.length} au total
+                </span>
+              )}
             </div>
 
-            {loading ? (
+            {/* Panne survenue alors qu'on avait déjà des paliers : on garde la
+                liste affichée et on prévient, plutôt que de laisser croire
+                qu'ils ont tous été supprimés. */}
+            {loadError && hasLoaded && (
+              <div
+                role="status"
+                className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+              >
+                <AlertTriangle
+                  className="size-4 shrink-0 text-destructive"
+                  aria-hidden
+                />
+                <p className="font-body text-sm text-destructive">
+                  {loadError.message} L&apos;affichage peut être périmé.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => void load()}
+                >
+                  Réessayer
+                </Button>
+              </div>
+            )}
+
+            {loading && !hasLoaded ? (
               <div className="mt-4 flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" aria-hidden />
                 Chargement…
+              </div>
+            ) : loadError && !hasLoaded ? (
+              /* Premier chargement en échec : on ne sait pas si des paliers
+                 existent — « Aucun palier » serait un mensonge. */
+              <div
+                role="alert"
+                className="mt-4 flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle
+                    className="size-5 text-destructive"
+                    aria-hidden
+                  />
+                  <h3 className="font-display text-base font-semibold text-destructive">
+                    Impossible de charger les paliers
+                  </h3>
+                </div>
+                <p className="font-body text-sm text-muted-foreground">
+                  {loadError.message} Les tailles ne sont pas perdues : elles
+                  restent enregistrées, seul l&apos;affichage a échoué.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="cursor-pointer gap-2"
+                  onClick={() => void load()}
+                >
+                  <RefreshCw className="size-4" aria-hidden />
+                  Réessayer
+                </Button>
               </div>
             ) : variants.length === 0 ? (
               <p className="mt-3 rounded-xl border border-dashed border-border px-4 py-6 text-center font-body text-sm text-muted-foreground">

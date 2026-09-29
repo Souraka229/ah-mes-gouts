@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   CheckCircle2,
   Loader2,
   MapPin,
@@ -9,12 +10,15 @@ import {
   Package,
   Phone,
   PhoneOff,
+  RefreshCw,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { PwaInstallButton } from "@/components/pwa/PwaInstallButton";
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { getMapsSearchUrl } from "@/lib/driver/portal-links";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { formatPrice } from "@/lib/format";
@@ -59,6 +63,15 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
   const [data, setData] = useState<DriverPortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [invalid, setInvalid] = useState(false);
+  /**
+   * Dernière panne de chargement.
+   *
+   * Distingue « aucune livraison » de « on n'a pas pu savoir » : un livreur
+   * devant une liste vide croit sa tournée terminée.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const inFlight = useRef(false);
   const orderIdsRef = useRef<Set<string>>(new Set());
@@ -67,21 +80,36 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const res = await fetch(`/api/livreur/${accessToken}/orders`, {
-        cache: "no-store",
-      });
-      if (!res.ok) {
+      const result = await safeFetch<DriverPortalData>(
+        `/api/livreur/${accessToken}/orders`,
+        // La tournée doit être renvoyée : un corps vide est une anomalie, pas
+        // une journée sans livraison.
+        { requireJson: true },
+      );
+
+      if (result.ok) {
+        setData(result.data);
+        orderIdsRef.current = new Set(
+          result.data?.orders?.map((order) => order.id) ?? [],
+        );
+        setInvalid(false);
+        setLoadError(null);
+        setHasLoaded(true);
+        return;
+      }
+
+      // Seul un refus explicite du serveur signifie « lien invalide ». Une
+      // panne réseau ne doit jamais afficher ce message : le lien est peut-être
+      // parfaitement valide.
+      if (result.error.status === 404 || result.error.status === 403) {
         setInvalid(true);
         setData(null);
         orderIdsRef.current = new Set();
         return;
       }
-      const json = (await res.json()) as DriverPortalData;
-      setData(json);
-      orderIdsRef.current = new Set(json.orders.map((order) => order.id));
-      setInvalid(false);
-    } catch {
-      toast.error("Connexion impossible");
+
+      // Panne passagère : on garde la dernière tournée connue à l'écran.
+      setLoadError(result.error);
     } finally {
       inFlight.current = false;
       setLoading(false);
@@ -131,20 +159,21 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
     if (order.status !== "prete") return;
     setBusyId(order.id);
     try {
-      const res = await fetch(
+      const result = await safeFetch<{ order?: DriverOrderView }>(
         `/api/livreur/${accessToken}/orders/${order.id}/start`,
-        { method: "POST" },
+        { method: "POST", requireJson: true },
       );
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Action impossible");
+      if (!result.ok) {
+        toast.error(result.error.message);
+        // L'affichage peut être périmé : on relit la tournée.
+        void load();
+        return;
+      }
       patchOrder(order.id, {
         status: "en_livraison",
         driverStartedAt: new Date().toISOString(),
       });
       toast.success("En cours de livraison");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur");
-      void load();
     } finally {
       setBusyId(null);
     }
@@ -153,17 +182,17 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
   const markUnreachable = async (order: DriverOrderView) => {
     setBusyId(order.id);
     try {
-      const res = await fetch(
+      const result = await safeFetch<{ order?: DriverOrderView }>(
         `/api/livreur/${accessToken}/orders/${order.id}/unreachable`,
-        { method: "POST" },
+        { method: "POST", requireJson: true },
       );
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Action impossible");
+      if (!result.ok) {
+        toast.error(result.error.message);
+        void load();
+        return;
+      }
       patchOrder(order.id, { unreachableAt: new Date().toISOString() });
       toast.success("Signalé — le back office va rappeler la cliente");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur");
-      void load();
     } finally {
       setBusyId(null);
     }
@@ -172,12 +201,15 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
   const markDelivered = async (order: DriverOrderView) => {
     setBusyId(order.id);
     try {
-      const res = await fetch(
+      const result = await safeFetch<{ order?: DriverOrderView }>(
         `/api/livreur/${accessToken}/orders/${order.id}/deliver`,
-        { method: "POST" },
+        { method: "POST", requireJson: true },
       );
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Action impossible");
+      if (!result.ok) {
+        toast.error(result.error.message);
+        void load();
+        return;
+      }
       setData((prev) => {
         if (!prev) return prev;
         return {
@@ -186,9 +218,6 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
         };
       });
       toast.success("Livraison terminée");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erreur");
-      void load();
     } finally {
       setBusyId(null);
     }
@@ -203,7 +232,54 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
     );
   }
 
-  if (invalid || !data) {
+  if (invalid) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <Truck className="mx-auto size-14 text-muted-foreground/40" />
+        <h1 className="mt-4 font-display text-2xl font-semibold text-primary">
+          Lien invalide
+        </h1>
+        <p className="mt-2 font-body text-base text-muted-foreground">
+          Demandez un nouveau lien à votre responsable.
+        </p>
+      </div>
+    );
+  }
+
+  // Premier chargement en échec : on ne sait pas si la tournée est vide. On
+  // l'annonce clairement au lieu d'afficher « aucune livraison ».
+  if (loadError && !hasLoaded) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16">
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h1 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger vos livraisons
+            </h1>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Vos livraisons ne sont pas perdues : seul
+            l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <Truck className="mx-auto size-14 text-muted-foreground/40" />
@@ -242,6 +318,29 @@ export function DriverPortal({ accessToken }: DriverPortalProps) {
           className="mt-4 border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white"
         />
       </header>
+
+      {/* Rafraîchissement raté alors qu'on a déjà une tournée : on garde
+          l'affichage et on prévient, plutôt que de tout effacer. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
 
       {data.orders.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">

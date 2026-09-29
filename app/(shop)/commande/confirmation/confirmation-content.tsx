@@ -7,6 +7,7 @@ import { CheckCircle2, Clock3, Gift, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { buttonVariants } from "@/components/ui/button";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { formatPrice } from "@/lib/format";
 import { buildTrackingUrl } from "@/lib/order-storage";
@@ -31,32 +32,31 @@ export default function ConfirmationContent() {
     const load = async () => {
       setLoading(true);
       setError(null);
-      try {
-        const response = await fetch(buildTrackingUrl(orderId), {
-          cache: "no-store",
+
+      const result = await safeFetch<PublicTrackingOrder | { error?: string }>(
+        buildTrackingUrl(orderId),
+        {
+          // Un corps vide n'est pas une commande : sans lui, l'écran ne peut
+          // rien affirmer sur le paiement.
+          requireJson: true,
           signal: controller.signal,
-        });
-        const data = (await response.json()) as
-          | PublicTrackingOrder
-          | { error?: string };
-        if (!response.ok || !("status" in data)) {
-          throw new Error(
-            "error" in data && data.error
-              ? data.error
-              : "Commande introuvable.",
-          );
-        }
+        },
+      );
+
+      // Départ de page : la réponse ne concerne plus personne.
+      if (controller.signal.aborted) return;
+
+      const data = result.ok ? result.data : null;
+      if (data && typeof data === "object" && "status" in data) {
         setOrder(data);
-      } catch (loadError) {
-        if (controller.signal.aborted) return;
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Impossible de vérifier la commande.",
-        );
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        setLoading(false);
+        return;
       }
+
+      // Un 404 serveur dit « introuvable » ; toute autre panne affiche le
+      // message prêt à l'emploi de `safeFetch`, jamais une erreur technique.
+      setError(result.ok ? "Commande introuvable." : result.error.message);
+      setLoading(false);
     };
 
     void load();

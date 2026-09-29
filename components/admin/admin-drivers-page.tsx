@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  AlertTriangle,
   Check,
   Copy,
   Loader2,
@@ -13,6 +14,8 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { Button } from "@/components/ui/button";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import {
@@ -46,6 +49,10 @@ function formatLastOrder(value: string | null): string {
 export function AdminDriversPage() {
   const [drivers, setDrivers] = useState<DriverRow[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Panne de chargement — distincte d'une équipe réellement vide. */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sans lui, un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,17 +61,22 @@ export function AdminDriversPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await fetch("/api/admin/drivers", { cache: "no-store" });
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as { drivers: DriverRow[] };
-      setDrivers(data.drivers);
-    } catch {
-      setDrivers([]);
-      toast.error("Impossible de charger les livreurs");
-    } finally {
-      setLoading(false);
+    const result = await safeFetch<{ drivers: DriverRow[] }>(
+      "/api/admin/drivers",
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      setDrivers(result.data?.drivers ?? []);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // Une panne ne doit jamais s'afficher « aucun livreur » : on conserve la
+      // dernière liste connue et on signale l'incident.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -89,6 +101,13 @@ export function AdminDriversPage() {
     const url = portalUrl(driver.accessToken);
     const message = buildDriverWelcomeMessage(driver.name, url);
     const waUrl = buildWhatsAppShareUrl(driver.phone, message);
+    if (!waUrl) {
+      // Plutôt qu'ouvrir un wa.me que WhatsApp ne saura pas router.
+      toast.error(
+        "Numéro WhatsApp inexploitable. Corrigez le numéro du livreur (ex. 01 97 00 00 00).",
+      );
+      return;
+    }
     window.open(waUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -100,23 +119,27 @@ export function AdminDriversPage() {
     }
     setCreating(true);
     try {
-      const res = await fetch("/api/admin/drivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
-      });
-      const data = (await res.json()) as {
-        driver?: DriverRow;
-        error?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Erreur");
-      setDrivers((prev) => [data.driver!, ...prev]);
+      const result = await safeFetch<{ driver?: DriverRow }>(
+        "/api/admin/drivers",
+        {
+          method: "POST",
+          json: { name: name.trim(), phone: phone.trim() },
+        },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      const driver = result.data?.driver;
+      if (!driver) {
+        toast.error("Le livreur n'a pas pu être créé");
+        return;
+      }
+      setDrivers((prev) => [driver, ...prev]);
       setName("");
       setPhone("");
       toast.success("Livreur créé — envoyez-lui son lien WhatsApp");
-      void copyLink(data.driver!);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Création impossible");
+      void copyLink(driver);
     } finally {
       setCreating(false);
     }
@@ -125,21 +148,23 @@ export function AdminDriversPage() {
   const toggleActive = async (driver: DriverRow) => {
     setBusyId(driver.id);
     const next = !driver.isActive;
-    const res = await fetch(`/api/admin/drivers/${driver.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: next }),
-    });
-    if (!res.ok) {
+    const result = await safeFetch<{ driver: DriverRow }>(
+      `/api/admin/drivers/${driver.id}`,
+      { method: "PATCH", json: { isActive: next } },
+    );
+    if (!result.ok) {
+      toast.error(result.error.message);
+      setBusyId(null);
+      return;
+    }
+    const updated = result.data?.driver;
+    if (!updated) {
       toast.error("Modification impossible");
       setBusyId(null);
       return;
     }
-    const data = (await res.json()) as { driver: DriverRow };
     setDrivers((prev) =>
-      prev.map((d) =>
-        d.id === driver.id ? { ...d, ...data.driver } : d,
-      ),
+      prev.map((d) => (d.id === driver.id ? { ...d, ...updated } : d)),
     );
     toast.success(next ? "Livreur activé" : "Livreur désactivé");
     setBusyId(null);
@@ -154,24 +179,26 @@ export function AdminDriversPage() {
       return;
     }
     setBusyId(driver.id);
-    const res = await fetch(`/api/admin/drivers/${driver.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ regenerateToken: true }),
-    });
-    if (!res.ok) {
+    const result = await safeFetch<{ driver: DriverRow }>(
+      `/api/admin/drivers/${driver.id}`,
+      { method: "PATCH", json: { regenerateToken: true } },
+    );
+    if (!result.ok) {
+      toast.error(result.error.message);
+      setBusyId(null);
+      return;
+    }
+    const updated = result.data?.driver;
+    if (!updated) {
       toast.error("Impossible de régénérer le lien");
       setBusyId(null);
       return;
     }
-    const data = (await res.json()) as { driver: DriverRow };
     setDrivers((prev) =>
-      prev.map((d) =>
-        d.id === driver.id ? { ...d, ...data.driver } : d,
-      ),
+      prev.map((d) => (d.id === driver.id ? { ...d, ...updated } : d)),
     );
     toast.success("Nouveau lien généré — renvoyez-le au livreur");
-    void copyLink(data.driver);
+    void copyLink(updated);
     setBusyId(null);
   };
 
@@ -235,10 +262,60 @@ export function AdminDriversPage() {
         </Button>
       </form>
 
-      {loading ? (
+      {/* Panne survenue alors que la liste était déjà affichée : on garde les
+          livreurs connus et on prévient, plutôt que de tout effacer. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
+      {loading && !hasLoaded ? (
         <div className="flex items-center gap-2 font-body text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
           Chargement…
+        </div>
+      ) : loadError && !hasLoaded ? (
+        /* Premier chargement en échec : « aucun livreur » serait un mensonge —
+           on ne sait pas qui est enregistré. */
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h2 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger les livreurs
+            </h2>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Les livreurs ne sont pas perdus : ils restent
+            enregistrés, seul l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
         </div>
       ) : drivers.length === 0 ? (
         <AdminEmptyState

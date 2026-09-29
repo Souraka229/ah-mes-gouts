@@ -60,6 +60,33 @@ export type ScheduledSlotSelection = {
   slotKey: string;
 };
 
+/**
+ * Snapshot d'un complément choisi, figé à la commande.
+ *
+ * Tout est recopié — libellé, prix unitaire, règle de facturation, message,
+ * occasion. Passer une carte de 1 500 à 2 000 F ne réécrit donc jamais une
+ * commande déjà passée, et désactiver une option ne la fait pas disparaître de
+ * l'historique.
+ */
+export type OrderItemOptionSnapshot = {
+  /** Référence de traçabilité, sans contrainte : l'option peut avoir disparu. */
+  optionId?: string | null;
+  groupName: string;
+  optionName: string;
+  pricingType: "fixed" | "per_unit";
+  /** Prix d'une unité au moment de la commande. */
+  unitPrice: number;
+  quantity: number;
+  /** Ce qui a réellement été facturé pour cette option. */
+  totalPrice: number;
+  /** Texte écrit par la cliente (« Joyeux anniversaire maman… »). */
+  customMessage?: string | null;
+  /** Catégorie d'occasion retenue (« Anniversaire »). */
+  messageCategory?: string | null;
+  /** Occasion libre, quand « Autre » a été choisi. */
+  customOccasion?: string | null;
+};
+
 export type SavedOrder = {
   id: string;
   createdAt: string;
@@ -90,6 +117,11 @@ export type SavedOrder = {
     variantId?: string;
     variantLabel?: string;
     /**
+     * Compléments choisis, figés. Absent sur les commandes antérieures au
+     * système d'options — et sur les lignes qui n'en portent aucun.
+     */
+    options?: OrderItemOptionSnapshot[];
+    /**
      * @deprecated Ancien champ taille nounours. Remplacé par `variantCode`
      * dans le panier et `variantLabel` dans la commande.
      */
@@ -104,6 +136,36 @@ export type SavedOrder = {
   driverName?: string | null;
   driverStartedAt?: string | null;
   driverDeliveredAt?: string | null;
+};
+
+/**
+ * Ce que le navigateur a le droit d'envoyer pour une option : un identifiant de
+ * choix, une quantité, un message, une occasion. **Jamais un prix.**
+ */
+export type OrderItemOptionRequest = {
+  optionId: string;
+  quantity?: number;
+  message?: string;
+  occasionCategorySlug?: string;
+  customOccasion?: string;
+};
+
+/**
+ * Charge utile envoyée à `/api/orders` — volontairement **distincte** de
+ * `SavedOrder`.
+ *
+ * `SavedOrder` décrit ce qui est *persisté* : les options y sont des snapshots
+ * figés (libellé, prix, total). Ce que le navigateur propose n'a rien de tout
+ * cela — il ne connaît que des identifiants. Confondre les deux laissait croire
+ * qu'un client pouvait envoyer un prix ; les séparer rend la règle lisible.
+ */
+export type NewOrderRequestItem = Omit<SavedOrder["items"][number], "options"> & {
+  supplements: string[];
+  options?: OrderItemOptionRequest[];
+};
+
+export type NewOrderRequest = Omit<SavedOrder, "items"> & {
+  items: NewOrderRequestItem[];
 };
 
 /** Réponse API publique de suivi — jamais de fuite expéditeur si cadeau anonyme */

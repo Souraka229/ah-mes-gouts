@@ -1,26 +1,26 @@
 /**
- * Normalise un numéro béninois pour FeexPay : 229 + 10 chiffres (ex. 2290166000000).
+ * Numéro destiné à l'agrégateur de paiement (FeexPay).
  *
- * Le Bénin est passé aux numéros locaux à 10 chiffres (préfixe 01) en 2021,
- * mais beaucoup de numéros (dont le nôtre, ORDER_PHONE) restent affichés à
- * l'ancien format 8 chiffres avec l'indicatif — ex. +229 97 31 07 42. Sans le
- * cas ci-dessous, un client qui tape ce format se voit refuser le paiement
- * avec "numéro invalide" alors que le numéro est parfaitement valide.
+ * FeexPay attend la forme internationale **en chiffres nus**, sans `+` :
+ * `2290166000000`. La charge utile envoyée contient d'ailleurs
+ * `phoneNumber: Number(phoneNumber)` — un `+` en tête y produirait `NaN`.
+ *
+ * La logique de reconnaissance est dans `lib/phone.ts` (source unique) ; ce
+ * module n'est qu'un adaptateur qui retire le `+`.
+ */
+
+import { normalizePhone } from "@/lib/phone";
+
+/**
+ * Forme `229` + 10 chiffres (ex. `2290166000000`), ou `null` si invalide.
+ *
+ * Le Bénin est passé aux numéros à 10 chiffres (préfixe `01`), mais beaucoup
+ * de numéros circulent encore à l'ancien format à 8 chiffres. Les deux sont
+ * acceptés et ramenés à la même forme : sans cela, une cliente saisissant
+ * l'ancien format se voyait refuser le paiement alors que son numéro est
+ * parfaitement valide.
  */
 export function normalizeBeninPhone(raw: string): string | null {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 13 && digits.startsWith("229")) {
-    return digits;
-  }
-  if (digits.length === 10 && digits.startsWith("01")) {
-    return `229${digits}`;
-  }
-  if (digits.length === 8) {
-    return `22901${digits}`;
-  }
-  // 229 + ancien numéro local à 8 chiffres (sans le préfixe 01) = 11 chiffres.
-  if (digits.length === 11 && digits.startsWith("229")) {
-    return `22901${digits.slice(3)}`;
-  }
-  return null;
+  const result = normalizePhone(raw);
+  return result.valid ? result.e164.slice(1) : null;
 }

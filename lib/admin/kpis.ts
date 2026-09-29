@@ -1,5 +1,14 @@
+import {
+  SHOP_TIME_ZONE,
+  getShopDateKey,
+  getShopDayOfWeek,
+  shopDateTimeToUtc,
+} from "@/lib/business-date";
+import { isExhausted, isLowStock } from "@/lib/product-stock-display";
 import type { OrderStatus, SavedOrder } from "@/types/order";
 import type { Product } from "@/types/product";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type AdminAlertTone = "urgent" | "action" | "info";
 
@@ -26,7 +35,13 @@ export type AdminKpis = {
   comparisonLabel: string | null;
   ordersToday: number;
   revenueToday: number;
-  avgTicket: number;
+  /**
+   * Panier moyen, ou `null` s'il n'y a aucune commande active.
+   *
+   * `null` et non `0` : sans commande, le panier moyen est *inconnu*, pas nul.
+   * Afficher « 0 F » laissait croire à des ventes à zéro franc.
+   */
+  avgTicket: number | null;
   nouvelles: number;
   preparation: number;
   pretes: number;
@@ -51,25 +66,35 @@ export type AdminKpis = {
   }[];
 };
 
-function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+/**
+ * Bornes calculées dans le fuseau BOUTIQUE, jamais celui du serveur.
+ *
+ * Sur Vercel le serveur est en UTC, alors que la boutique est à Cotonou
+ * (UTC+1). Un `setHours(0,0,0,0)` découpait donc la journée à 1 h du matin
+ * heure locale : les commandes de fin de soirée tombaient dans la mauvaise
+ * journée, et le libellé de date pouvait afficher la veille.
+ */
+function startOfShopDay(d: Date): Date {
+  return shopDateTimeToUtc(getShopDateKey(d), "00:00");
 }
 
-/** Lundi 00:00 de la semaine de d (ISO — lundi = premier jour). */
-function startOfWeek(d: Date): Date {
-  const x = startOfDay(d);
-  const day = x.getDay(); // 0 = dimanche
+/** Lundi 00:00 (heure boutique) de la semaine de d — lundi = premier jour. */
+function startOfShopWeek(d: Date): Date {
+  const day = getShopDayOfWeek(d); // 0 = dimanche
   const diff = day === 0 ? 6 : day - 1;
-  x.setDate(x.getDate() - diff);
-  return x;
+  return new Date(startOfShopDay(d).getTime() - diff * DAY_MS);
 }
 
-function startOfMonth(d: Date): Date {
-  const x = startOfDay(d);
-  x.setDate(1);
-  return x;
+function startOfShopMonth(d: Date): Date {
+  const key = getShopDateKey(d);
+  return shopDateTimeToUtc(`${key.slice(0, 7)}-01`, "00:00");
+}
+
+function shopMonthStart(d: Date, offsetMonths: number): Date {
+  const [year = 0, month = 1] = getShopDateKey(d).split("-").map(Number);
+  // `Date.UTC` normalise le débordement (mois 0 ou 13 → année précédente/suivante).
+  const shifted = new Date(Date.UTC(year, month - 1 + offsetMonths, 1));
+  return shopDateTimeToUtc(shifted.toISOString().slice(0, 10), "00:00");
 }
 
 function inRange(
@@ -82,35 +107,65 @@ function inRange(
   return t >= start.getTime() && t < end.getTime();
 }
 
-/** Bornes [début, fin[ de la période sélectionnée + [début, fin[ de la période précédente équivalente. */
+/**
+ * Bornes de la période affichée, et de la période de comparaison.
+ *
+ * Deux choix méritent d'être explicités, parce qu'ils changent les chiffres :
+ *
+ * 1. `end` couvre TOUTE la période, pas « jusqu'à maintenant ». Le filtre porte
+ *    sur le créneau (`scheduledSlotStart`) : une commande payée à 10 h pour un
+ *    créneau à 18 h appartient bien à la journée. La borner à `now` la faisait
+ *    disparaître du CA et des compteurs, alors que le Kanban l'affichait — les
+ *    deux écrans se contredisaient.
+ *
+ * 2. `prevEnd` s'arrête à la MÊME portion écoulée que la période courante.
+ *    Comparer une journée en cours à une journée complète rend le delta
+ *    faussement négatif toute la journée, d'autant plus le matin. On répond
+ *    donc à « où en est-on par rapport à hier à la même heure ».
+ */
 function getPeriodRange(
   period: AdminKpiPeriod,
   now: Date,
 ): { start: Date; end: Date; prevStart: Date; prevEnd: Date } {
-  const end = new Date(now.getTime() + 1);
-
   if (period === "week") {
-    const start = startOfWeek(now);
-    const prevStart = new Date(start);
-    prevStart.setDate(prevStart.getDate() - 7);
-    return { start, end, prevStart, prevEnd: start };
+    const start = startOfShopWeek(now);
+    const elapsed = Math.max(0, now.getTime() - start.getTime());
+    const prevStart = new Date(start.getTime() - 7 * DAY_MS);
+    return {
+      start,
+      end: new Date(start.getTime() + 7 * DAY_MS),
+      prevStart,
+      prevEnd: new Date(prevStart.getTime() + elapsed),
+    };
   }
+
   if (period === "month") {
-    const start = startOfMonth(now);
-    const prevStart = new Date(start);
-    prevStart.setMonth(prevStart.getMonth() - 1);
-    return { start, end, prevStart, prevEnd: start };
+    const start = startOfShopMonth(now);
+    const elapsed = Math.max(0, now.getTime() - start.getTime());
+    const prevStart = shopMonthStart(now, -1);
+    return {
+      start,
+      end: shopMonthStart(now, 1),
+      prevStart,
+      prevEnd: new Date(prevStart.getTime() + elapsed),
+    };
   }
+
   if (period === "all") {
     const start = new Date(0);
-    return { start, end, prevStart: new Date(0), prevEnd: new Date(0) };
+    return { start, end: new Date(now.getTime() + 1), prevStart: new Date(0), prevEnd: new Date(0) };
   }
 
   // "today" (défaut)
-  const start = startOfDay(now);
-  const prevStart = new Date(start);
-  prevStart.setDate(prevStart.getDate() - 1);
-  return { start, end, prevStart, prevEnd: start };
+  const start = startOfShopDay(now);
+  const elapsed = Math.max(0, now.getTime() - start.getTime());
+  const prevStart = new Date(start.getTime() - DAY_MS);
+  return {
+    start,
+    end: new Date(start.getTime() + DAY_MS),
+    prevStart,
+    prevEnd: new Date(prevStart.getTime() + elapsed),
+  };
 }
 
 function sumTotals(orders: SavedOrder[]): number {
@@ -237,9 +292,9 @@ export function buildAdminKpis(
     });
   }
 
-  const lowStock = (options.menuProducts ?? []).filter(
-    (p) => p.stockRemaining > 0 && p.stockRemaining <= p.stockMinimum,
-  );
+  // Le stock d'un produit à variantes vit sur ses variantes : tester
+  // `product.stockRemaining` ne signalait jamais un produit épuisé.
+  const lowStock = (options.menuProducts ?? []).filter(isLowStock);
   if (lowStock.length > 0) {
     const names = lowStock
       .slice(0, 2)
@@ -257,9 +312,7 @@ export function buildAdminKpis(
     });
   }
 
-  const exhausted = (options.menuProducts ?? []).filter(
-    (p) => p.stockRemaining <= 0,
-  );
+  const exhausted = (options.menuProducts ?? []).filter(isExhausted);
   if (exhausted.length > 0) {
     alerts.push({
       id: "exhausted",
@@ -274,6 +327,9 @@ export function buildAdminKpis(
     dateLabel:
       period === "today"
         ? now.toLocaleDateString("fr-FR", {
+            // Sans `timeZone`, le serveur (UTC) affiche la veille entre
+            // 23 h et minuit UTC, c'est-à-dire après 00 h à Cotonou.
+            timeZone: SHOP_TIME_ZONE,
             weekday: "long",
             day: "numeric",
             month: "long",
@@ -285,7 +341,7 @@ export function buildAdminKpis(
     avgTicket:
       activeToday.length > 0
         ? Math.round(revenueToday / activeToday.length)
-        : 0,
+        : null,
     nouvelles,
     preparation,
     pretes,

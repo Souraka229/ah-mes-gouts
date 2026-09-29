@@ -1,4 +1,8 @@
-import { normalizeBeninPhone, formatPhoneDisplay } from "@/lib/crm/phone";
+import {
+  formatPhoneDisplay,
+  normalizeBeninPhone,
+  phoneSearchVariants,
+} from "@/lib/crm/phone";
 import { getPrisma } from "@/lib/prisma";
 import { fromPrismaOrder } from "@/lib/server/order-mapper";
 import type {
@@ -67,7 +71,9 @@ export async function syncCustomersFromOrders(): Promise<number> {
     const firstOrderAt = dates.reduce((a, b) => (a < b ? a : b));
     const lastOrderAt = dates.reduce((a, b) => (a > b ? a : b));
 
-    const existing = await prisma.customer.findUnique({ where: { phone } });
+    const existing = await prisma.customer.findFirst({
+      where: { phone: { in: phoneSearchVariants(phone) } },
+    });
     let customerId: string;
 
     if (existing) {
@@ -171,13 +177,35 @@ export async function listAdminCustomers(input: {
   const sort = input.sort ?? "lastOrderAt";
   const q = input.q?.trim();
 
+  /**
+   * Conditions téléphone de la recherche.
+   *
+   * Deux pièges corrigés ici :
+   *  - `contains: ""` (saisie sans chiffre, ex. un nom) matchait TOUTES les
+   *    fiches : chercher « Awa » renvoyait l'intégralité des clientes.
+   *  - on ne cherchait que la saisie brute déchiffrée, donc taper
+   *    `+229 97 31 07 42` ne retrouvait pas `2290197310742` — le `01` du plan
+   *    à 10 chiffres s'intercale et rompt la correspondance.
+   */
+  const phoneDigits = q?.replace(/\D/g, "") ?? "";
+  const phoneConditions: { phone: { contains: string } }[] = [];
+
+  if (phoneDigits.length >= 3) {
+    // Recherche partielle (« 6994 ») : les chiffres nationaux apparaissent
+    // d'affilée dans la forme canonique.
+    phoneConditions.push({ phone: { contains: phoneDigits } });
+  }
+  for (const variant of q ? phoneSearchVariants(q) : []) {
+    phoneConditions.push({ phone: { contains: variant } });
+  }
+
   const customers = await prisma.customer.findMany({
     where: q
       ? {
           OR: [
             { firstName: { contains: q, mode: "insensitive" } },
             { lastName: { contains: q, mode: "insensitive" } },
-            { phone: { contains: q.replace(/\D/g, "") } },
+            ...phoneConditions,
           ],
         }
       : undefined,
@@ -216,7 +244,10 @@ export async function getAdminCustomerDetail(
     include: {
       _count: { select: { devices: true } },
       orders: {
-        include: { items: true, driver: { select: { name: true } } },
+        include: {
+          items: { include: { options: true } },
+          driver: { select: { name: true } },
+        },
         orderBy: { createdAt: "desc" },
         take: 100,
       },

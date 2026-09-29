@@ -107,10 +107,18 @@ export async function POST(request: Request) {
           skipped.push(item.slug);
           continue;
         }
+        // Une catégorie inconnue dans le manifeste retomberait hors de tous les
+        // onglets : on la ramène à une valeur du référentiel.
+        const importCategory = PRODUCT_CATEGORIES.includes(
+          item.category as (typeof PRODUCT_CATEGORIES)[number],
+        )
+          ? item.category
+          : "Entremets";
+
         const product = await createCatalogProduct({
           name: item.name,
           price: item.price,
-          category: item.category || "Entremets",
+          category: importCategory,
           description: item.description,
           keyword: item.keyword,
           imageUrl: item.imageUrl,

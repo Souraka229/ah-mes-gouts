@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { PRODUCT_CATEGORIES } from "@/lib/admin/categories";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import { getAdminDisplayNameAsync } from "@/lib/server/admin-role";
@@ -101,7 +102,20 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (body.name !== undefined) patch.name = body.name;
     if (body.price !== undefined) patch.price = body.price;
     if (body.description !== undefined) patch.description = body.description;
-    if (body.category !== undefined) patch.category = body.category;
+    if (body.category !== undefined) {
+      // Même contrôle qu'à la création : sans lui, un PATCH pouvait écrire
+      // « nounours » ou « NOUNOURS » et créer une catégorie fantôme, invisible
+      // dans les onglets et donc dans la boutique.
+      const category = typeof body.category === "string" ? body.category.trim() : "";
+      if (
+        !PRODUCT_CATEGORIES.includes(
+          category as (typeof PRODUCT_CATEGORIES)[number],
+        )
+      ) {
+        return NextResponse.json({ error: "Catégorie invalide" }, { status: 400 });
+      }
+      patch.category = category;
+    }
     if (body.keyword !== undefined) patch.keyword = body.keyword || undefined;
     if (body.stockMinimum !== undefined) patch.stockMinimum = body.stockMinimum;
     if (body.imageUrl !== undefined) patch.imageUrl = body.imageUrl;

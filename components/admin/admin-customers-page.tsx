@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Search, Users } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw, Search, Users } from "lucide-react";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/format";
 import type {
@@ -34,7 +37,15 @@ export function AdminCustomersPage() {
   const searchParams = useSearchParams();
   const [customers, setCustomers] = useState<AdminCustomerListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * Dernière panne de chargement.
+   *
+   * Distingue « aucun client » de « on n'a pas pu savoir » : une recherche qui
+   * échoue ne doit pas se lire comme un carnet d'adresses vide.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sinon un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [debouncedQ, setDebouncedQ] = useState(query);
   const sort = (searchParams.get("sort") as CustomerSort) || "lastOrderAt";
@@ -46,28 +57,26 @@ export function AdminCustomersPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams();
-      if (debouncedQ) params.set("q", debouncedQ);
-      if (sort) params.set("sort", sort);
-      const res = await fetch(`/api/admin/customers?${params}`, {
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(data?.error ?? "Chargement impossible");
-      }
-      const data = (await res.json()) as { customers: AdminCustomerListItem[] };
-      setCustomers(data.customers);
-    } catch (err) {
-      setCustomers([]);
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
+    const params = new URLSearchParams();
+    if (debouncedQ) params.set("q", debouncedQ);
+    if (sort) params.set("sort", sort);
+
+    const result = await safeFetch<{ customers: AdminCustomerListItem[] }>(
+      `/api/admin/customers?${params}`,
+      { requireJson: true },
+    );
+
+    if (result.ok) {
+      setCustomers(result.data?.customers ?? []);
+      setLoadError(null);
+      setHasLoaded(true);
+    } else {
+      // Une recherche qui échoue ne doit pas vider le carnet : on garde la
+      // dernière liste connue et on signale l'incident.
+      setLoadError(result.error);
     }
+
+    setLoading(false);
   }, [debouncedQ, sort]);
 
   useEffect(() => {
@@ -106,9 +115,11 @@ export function AdminCustomersPage() {
             Clients
           </h1>
           <p className="mt-1 font-body text-sm text-muted-foreground">
-            {loading
+            {loading && !hasLoaded
               ? "Chargement…"
-              : `${customers.length} client${customers.length > 1 ? "s" : ""} · ${formatPrice(totalSpentAll)} cumulés`}
+              : loadError && !hasLoaded
+                ? "Chargement impossible"
+                : `${customers.length} client${customers.length > 1 ? "s" : ""} · ${formatPrice(totalSpentAll)} cumulés`}
           </p>
         </div>
       </header>
@@ -150,19 +161,60 @@ export function AdminCustomersPage() {
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 font-body text-sm text-destructive">
-          {error}
-          {error.includes("Customer") || error.includes("does not exist")
-            ? " — lance `npx prisma migrate deploy` puis `npx prisma generate`."
-            : null}
-        </p>
+      {/* Panne survenue alors qu'une liste était déjà affichée : on garde les
+          clients connus et on prévient, plutôt que d'annoncer un carnet vide. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
       )}
 
-      {loading ? (
+      {loading && !hasLoaded ? (
         <div className="flex items-center gap-2 font-body text-muted-foreground">
           <Loader2 className="size-5 animate-spin" aria-hidden />
           Chargement…
+        </div>
+      ) : loadError && !hasLoaded ? (
+        /* Premier chargement en échec : « aucun client » serait un mensonge —
+           on ne sait pas ce que contient le carnet. */
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h2 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger les clients
+            </h2>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Les clients ne sont pas perdus : ils restent
+            enregistrés, seul l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => void load()}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
         </div>
       ) : customers.length === 0 ? (
         <AdminEmptyState

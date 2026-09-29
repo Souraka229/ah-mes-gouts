@@ -8,6 +8,7 @@ import {
   IceCreamCone,
   Info,
   ScrollText,
+  Sparkles,
   Truck,
   Users,
 } from "lucide-react";
@@ -38,6 +39,11 @@ const SETTINGS_NAV = [
     icon: Bell,
   },
   { href: "/admin/produits", label: "Catalogue produits", icon: IceCreamCone },
+  {
+    href: "/admin/parametres/options",
+    label: "Options & compléments",
+    icon: Sparkles,
+  },
 ];
 
 export default function ParametresLayout({

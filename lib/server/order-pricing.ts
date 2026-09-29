@@ -9,11 +9,21 @@ import {
   getActiveVariantsByProductIds,
 } from "@/lib/server/variant-repository";
 import {
+  getActiveOptionGroupsByProductIds,
+  getMessageCategories,
+} from "@/lib/server/option-repository";
+import {
+  resolveProductOptions,
+  sumOptionTotals,
+  type RawOptionSelection,
+  type ResolvedOptionSelection,
+} from "@/lib/product-options/options";
+import {
   getFullCatalog,
   getShopProductsFromActiveMenu,
 } from "@/lib/server/shop-catalog";
 import { getPrisma } from "@/lib/prisma";
-import { supplementOptions } from "@/lib/supplements";
+import { getLegacySupplementPriceByName } from "@/lib/supplements";
 import type { SavedOrder } from "@/types/order";
 
 export type PricingIssue = { name: string; message: string };
@@ -43,6 +53,11 @@ export type RawOrderItem = {
   name: string;
   quantity: number;
   supplements: string[];
+  /**
+   * Compléments choisis. Le client n'envoie qu'un **identifiant d'option**, une
+   * quantité et — le cas échéant — un message et une occasion. Jamais un prix.
+   */
+  options?: RawOptionSelection[];
   /** Code de variante — « 150 », « petit », « 6 ». */
   variantCode?: string;
   /**
@@ -52,11 +67,6 @@ export type RawOrderItem = {
    */
   sizeCm?: number;
 };
-
-/** Prix des suppléments, source de vérité serveur (jamais le client). */
-const supplementPriceByName = new Map(
-  supplementOptions.map((option) => [option.name, option.price]),
-);
 
 /**
  * Code de variante demandé par le client.
@@ -108,6 +118,16 @@ export async function priceOrderItems(
   const activeVariants = await getActiveVariantsByProductIds(
     catalog.map((product) => product.id),
   );
+
+  /**
+   * Options et catégories de messages, en deux requêtes pour tout le catalogue.
+   * Une panne rend des cartes vides : les lignes qui attendaient une option
+   * obligatoire seront alors refusées plus bas, ce qui est le bon comportement.
+   */
+  const [optionGroups, messageCategories] = await Promise.all([
+    getActiveOptionGroupsByProductIds(catalog.map((product) => product.id)),
+    getMessageCategories(),
+  ]);
 
   const slugs = rawItems
     .map((item) => item.slug)
@@ -285,24 +305,73 @@ export async function priceOrderItems(
       itemName = `${product.name} — ${size.cm} cm`;
     }
 
-    let supplementsPrice = 0;
-    let supplementInvalid = false;
+    /**
+     * ─── Options & compléments ─────────────────────────────────────────────
+     *
+     * Les paniers ouverts **avant** le système d'options envoient encore
+     * `supplements: string[]` (des noms). On les traduit en identifiants quand
+     * le nom correspond à une option en base : le prix vient alors de la base,
+     * plus du code. Les noms introuvables retombent sur la grille historique,
+     * pour ne pas casser une cliente dont le panier dort dans son navigateur.
+     */
+    const links = optionGroups.get(product.id) ?? [];
+    const knownOptions = links.flatMap((link) => link.group.options);
+
+    const selections: RawOptionSelection[] = [...(raw.options ?? [])];
+    const unresolvedNames: string[] = [];
+
     for (const supplementName of raw.supplements) {
-      const price = supplementPriceByName.get(supplementName);
+      const needle = supplementName.trim().toLowerCase();
+      const match = knownOptions.find(
+        (option) => option.name.toLowerCase() === needle,
+      );
+
+      if (!match) {
+        unresolvedNames.push(supplementName);
+        continue;
+      }
+      if (!selections.some((selection) => selection.optionId === match.id)) {
+        selections.push({ optionId: match.id, quantity: 1 });
+      }
+    }
+
+    // Les règles de groupe (minimum obligatoire, maximum) se jugent sur
+    // l'ensemble : on appelle donc toujours la résolution, même sans choix.
+    const optionResolution = resolveProductOptions({
+      links,
+      selections,
+      messageCategories,
+    });
+
+    if (!optionResolution.ok) {
+      for (const issue of optionResolution.issues) {
+        issues.push({ name: product.name, message: issue });
+      }
+      continue;
+    }
+
+    const resolvedOptions: ResolvedOptionSelection[] = [
+      ...optionResolution.selections,
+    ];
+    let optionsPrice = sumOptionTotals(resolvedOptions);
+
+    let legacyInvalid = false;
+    for (const supplementName of unresolvedNames) {
+      const price = getLegacySupplementPriceByName(supplementName);
       if (price === undefined) {
         issues.push({
           name: product.name,
           message: `Supplément indisponible : ${supplementName}.`,
         });
-        supplementInvalid = true;
+        legacyInvalid = true;
         break;
       }
-      supplementsPrice += price;
+      optionsPrice += price;
     }
-    if (supplementInvalid) continue;
+    if (legacyInvalid) continue;
 
     const unitPrice =
-      (variantPrice ?? getProductPrice(product)) + supplementsPrice;
+      (variantPrice ?? getProductPrice(product)) + optionsPrice;
     subtotal += unitPrice * raw.quantity;
 
     items.push({
@@ -313,6 +382,22 @@ export async function priceOrderItems(
       slug: product.slug,
       variantId,
       variantLabel,
+      ...(resolvedOptions.length > 0
+        ? {
+            options: resolvedOptions.map((selection) => ({
+              optionId: selection.optionId,
+              groupName: selection.groupNameSnapshot,
+              optionName: selection.optionNameSnapshot,
+              pricingType: selection.pricingType,
+              unitPrice: selection.unitPrice,
+              quantity: selection.quantity,
+              totalPrice: selection.totalPrice,
+              customMessage: selection.customMessage,
+              messageCategory: selection.messageCategorySnapshot,
+              customOccasion: selection.customOccasion,
+            })),
+          }
+        : {}),
     });
     stockClaims.push({
       slug: product.slug,

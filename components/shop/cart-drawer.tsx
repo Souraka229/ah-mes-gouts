@@ -90,11 +90,34 @@ function CartLineItem({
           </div>
 
           {item.supplements.length > 0 && (
-            <p className="mt-1 font-body text-xs text-muted-foreground">
-              {item.supplements
-                .map((s) => `+ ${s.name} (${formatPrice(s.price)})`)
-                .join(" · ")}
-            </p>
+            <ul className="mt-2 space-y-1.5 border-l border-border pl-3">
+              {item.supplements.map((supplement) => (
+                <li key={supplement.id} className="font-body text-xs">
+                  <span className="text-muted-foreground">
+                    {supplement.groupName ? `${supplement.groupName} — ` : ""}
+                    {supplement.name}
+                    {supplement.quantity && supplement.quantity > 1
+                      ? ` × ${supplement.quantity}`
+                      : ""}
+                  </span>
+                  <span className="ml-1 tabular-nums text-muted-foreground">
+                    {formatPrice(supplement.price * (supplement.quantity ?? 1))}
+                  </span>
+                  {/* Le mot écrit par la cliente : c'est ce que l'atelier doit
+                      recopier, il ne doit pas rester caché derrière un total. */}
+                  {supplement.message && (
+                    <span className="mt-0.5 block text-muted-foreground italic">
+                      « {supplement.message} »
+                    </span>
+                  )}
+                  {supplement.customOccasion && (
+                    <span className="mt-0.5 block text-muted-foreground">
+                      Occasion : {supplement.customOccasion}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
 
           <div className="mt-3 flex items-center justify-between gap-3">

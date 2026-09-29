@@ -2,6 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
+import {
+  hasProductImage,
+  ProductImagePlaceholder,
+} from "@/components/shop/product-image-placeholder";
 import { formatPrice } from "@/lib/format";
 import { isNextDayOrderingOpen } from "@/lib/business-date";
 import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
@@ -66,15 +70,28 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
                 className="shadow-soft group flex h-full cursor-pointer flex-col overflow-hidden rounded-3xl bg-white transition-[transform,box-shadow] duration-500 hover:-translate-y-2 hover:shadow-lift focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary motion-reduce:hover:translate-y-0"
               >
                 <div className="relative aspect-4/5 overflow-hidden bg-photo-bg">
-                  <Image
-                    src={item.image}
-                    alt={`${item.name} — entremets artisanal`}
-                    fill
-                    sizes="(min-width: 1024px) 24vw, (min-width: 640px) 46vw, 92vw"
-                    quality={85}
-                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:group-hover:scale-100"
-                    priority={index < 2}
-                  />
+                  {/*
+                    Garde indispensable : sans elle, une fiche du menu sans image
+                    passait `src=""` à next/image. Et surtout — la règle de la
+                    maison — on n'affiche JAMAIS la photo d'un autre produit :
+                    un visuel manquant donne un aplat, pas une erreur de casting.
+                  */}
+                  {hasProductImage(item.image) ? (
+                    <Image
+                      src={item.image}
+                      alt={`${item.name} — entremets artisanal`}
+                      fill
+                      sizes="(min-width: 1024px) 24vw, (min-width: 640px) 46vw, 92vw"
+                      quality={85}
+                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06] motion-reduce:group-hover:scale-100"
+                      priority={index < 2}
+                    />
+                  ) : (
+                    <ProductImagePlaceholder
+                      alt={item.name}
+                      className="absolute inset-0"
+                    />
+                  )}
                   <span className="glass absolute top-4 left-4 rounded-full px-3 py-1.5 font-body text-[10px] font-bold uppercase tracking-[0.12em] text-secondary">
                     {item.keyword}
                   </span>

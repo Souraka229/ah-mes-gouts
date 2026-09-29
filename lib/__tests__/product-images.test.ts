@@ -13,6 +13,7 @@ import {
   getUpsellImageUrl,
   UPSELL_PRODUCT_IMAGES,
 } from "@/lib/upsell-images";
+import { menuShowcaseImage } from "@/lib/server/shop-catalog";
 
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 
@@ -86,5 +87,26 @@ describe("visuels produits", () => {
 
   it("la galerie est plafonnée", () => {
     expect(PRODUCT_GALLERY_MAX).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("vitrine du menu du jour", () => {
+  it("sert l'image du produit lui-même", () => {
+    expect(menuShowcaseImage({ imageUrl: "/images/produits/tiramisu.webp" })).toBe(
+      "/images/produits/tiramisu.webp",
+    );
+  });
+
+  it("ne se rabat JAMAIS sur le visuel d'un autre produit", () => {
+    // Le bug d'origine : une fiche sans image recevait le visuel générique de
+    // la maison — donc la photo d'un autre produit sur la vitrine. Vide vaut
+    // mieux qu'un mensonge : l'interface affiche un aplat.
+    for (const empty of ["", "   ", null, undefined]) {
+      expect(menuShowcaseImage({ imageUrl: empty as string })).toBe("");
+    }
+  });
+
+  it("n'invente pas de visuel pour une fiche inconnue", () => {
+    expect(menuShowcaseImage({ imageUrl: "" })).not.toBe(DEFAULT_PRODUCT_IMAGE);
   });
 });

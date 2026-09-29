@@ -16,6 +16,7 @@ import {
   generateTrackingToken,
 } from "@/lib/server/order-id";
 import { priceOrderItems } from "@/lib/server/order-pricing";
+import { optionSelectionsSchema } from "@/lib/product-options/schema";
 import {
   getServerOrder,
   saveServerOrderWithSlotReservation,
@@ -40,7 +41,13 @@ const orderItemsSchema = z
     z.object({
       name: z.string().min(1),
       quantity: z.number().int().positive().max(99),
+      /**
+       * @deprecated Noms des suppléments d'avant les options. Toujours accepté
+       * le temps que les paniers ouverts se vident.
+       */
       supplements: z.array(z.string()).default([]),
+      /** Compléments choisis — identifiant, quantité, message, occasion. */
+      options: optionSelectionsSchema,
       slug: z.string().optional(),
       /**
        * Code de la variante choisie (taille, format…). Le serveur le résout

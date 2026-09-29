@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import {
   Sheet,
   SheetContent,
@@ -15,9 +16,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { formatPrice } from "@/lib/format";
 import {
   PAYMENT_METHOD_LABELS,
   RECEPTION_MODE_LABELS,
+  type OrderItemOptionSnapshot,
   type PaymentMethod,
   type ReceptionMode,
   type SavedOrder,
@@ -39,6 +42,12 @@ type ItemRow = {
   slug?: string;
   variantId?: string;
   supplements?: string[];
+  /**
+   * Compléments choisis, **en lecture seule**. Ils ne se corrigent pas ici :
+   * ce sont des snapshots figés à la commande, avec leur prix. L'atelier doit
+   * pouvoir lire le mot de la cliente, pas le réécrire.
+   */
+  options?: OrderItemOptionSnapshot[];
 };
 
 type FormState = {
@@ -94,6 +103,7 @@ function formFromOrder(order: SavedOrder): FormState {
           slug: i.slug,
           variantId: i.variantId,
           supplements: i.supplements,
+          options: i.options,
         }))
       : [{ ...EMPTY_ITEM }],
   };
@@ -185,49 +195,51 @@ export function AdminOrderFormSheet({
       message: form.message.trim(),
     };
 
-    try {
-      const response = isEdit
-        ? await fetch(`/api/admin/orders/${order!.id}`, {
+    // Les deux routes renvoient `{ order }` : un corps vide serait une anomalie,
+    // pas une commande enregistrée.
+    const result = isEdit
+      ? await safeFetch<{ order?: SavedOrder }>(
+          `/api/admin/orders/${order!.id}`,
+          {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+            json: {
               client,
               deliveryFee: form.mode === "delivery" ? form.deliveryFee : 0,
               items: cleanItems,
-            }),
-          })
-        : await fetch("/api/admin/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client,
-              mode: form.mode,
-              deliveryFee: form.mode === "delivery" ? form.deliveryFee : 0,
-              paymentMethod: form.paymentMethod,
-              markPaid: form.markPaid,
-              items: cleanItems,
-            }),
-          });
+            },
+            requireJson: true,
+          },
+        )
+      : await safeFetch<{ order?: SavedOrder }>("/api/admin/orders", {
+          method: "POST",
+          json: {
+            client,
+            mode: form.mode,
+            deliveryFee: form.mode === "delivery" ? form.deliveryFee : 0,
+            paymentMethod: form.paymentMethod,
+            markPaid: form.markPaid,
+            items: cleanItems,
+          },
+          requireJson: true,
+        });
 
-      const payload = (await response.json().catch(() => null)) as {
-        order?: SavedOrder;
-        error?: string;
-      } | null;
-
-      if (!response.ok || !payload?.order) {
-        toast.error(payload?.error || "Échec de l'enregistrement.");
-        setSaving(false);
-        return;
-      }
-
-      toast.success(isEdit ? "Commande modifiée." : "Commande créée.");
-      onSaved(payload.order);
-      onOpenChange(false);
-    } catch {
-      toast.error("Connexion impossible. Réessayez.");
-    } finally {
+    if (!result.ok) {
+      toast.error(result.error.message);
       setSaving(false);
+      return;
     }
+
+    const saved = result.data?.order;
+    if (!saved) {
+      toast.error("Échec de l'enregistrement.");
+      setSaving(false);
+      return;
+    }
+
+    toast.success(isEdit ? "Commande modifiée." : "Commande créée.");
+    onSaved(saved);
+    onOpenChange(false);
+    setSaving(false);
   };
 
   return (
@@ -402,6 +414,43 @@ export function AdminOrderFormSheet({
                 key={index}
                 className="flex flex-wrap items-end gap-2 rounded-xl border border-border/70 p-2"
               >
+                {item.options && item.options.length > 0 && (
+                  <ul className="basis-full space-y-1 rounded-lg bg-muted/50 p-2">
+                    {item.options.map((option, optionIndex) => (
+                      <li
+                        key={`${option.optionName}-${optionIndex}`}
+                        className="font-body text-xs"
+                      >
+                        <span className="font-medium text-text">
+                          {option.groupName ? `${option.groupName} — ` : ""}
+                          {option.optionName}
+                        </span>
+                        {option.quantity > 1 && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            × {option.quantity}
+                          </span>
+                        )}
+                        <span className="ml-1 tabular-nums text-muted-foreground">
+                          {formatPrice(option.totalPrice)}
+                        </span>
+                        {option.messageCategory && (
+                          <span className="block text-muted-foreground">
+                            Occasion : {option.messageCategory}
+                            {option.customOccasion
+                              ? ` (${option.customOccasion})`
+                              : ""}
+                          </span>
+                        )}
+                        {option.customMessage && (
+                          <span className="mt-0.5 block rounded border-l-2 border-primary/40 pl-2 text-text italic">
+                            « {option.customMessage} »
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <div className="min-w-40 flex-1 space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">Nom</Label>

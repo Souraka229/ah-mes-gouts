@@ -10,7 +10,13 @@ import {
 
 const getCachedMenuPayload = unstable_cache(
   async () => {
-    await activateDueMenus();
+    // L'activation est un effet de bord : si elle échoue, la boutique doit
+    // quand même afficher le menu en cours. C'est le cron qui doit alerter.
+    try {
+      await activateDueMenus();
+    } catch {
+      // Déjà journalisé par `activateDueMenus`.
+    }
 
     const [activeMenu, nextMenu, products] = await Promise.all([
       getActiveMenu(),

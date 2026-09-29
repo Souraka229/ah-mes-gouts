@@ -301,12 +301,16 @@ export function OrderBoardCard({
               label="Appeler"
               icon={Phone}
             />
-            <ActionChip
-              href={whatsAppUrl}
-              label="WhatsApp"
-              icon={MessageCircle}
-              external
-            />
+            {/* Masqué si le numéro n'est pas normalisable : un lien wa.me
+                invalide ne mène nulle part et fait douter de toute la fiche. */}
+            {whatsAppUrl && (
+              <ActionChip
+                href={whatsAppUrl}
+                label="WhatsApp"
+                icon={MessageCircle}
+                external
+              />
+            )}
             <ActionChip
               href={mapsUrl}
               label="Adresse"

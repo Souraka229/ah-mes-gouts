@@ -119,7 +119,9 @@ export async function AdminDashboard({
           )}
         >
           <p className="font-body text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase">
-            {masterIsAttention ? "À traiter maintenant" : "CA du jour"}
+            {masterIsAttention
+              ? "À traiter maintenant"
+              : `CA · ${KPI_PERIOD_LABELS[period]}`}
           </p>
           {masterIsAttention ? (
             <>
@@ -159,13 +161,19 @@ export async function AdminDashboard({
           />
           <MiniKpi
             label="Panier moyen"
-            value={formatPrice(kpis.avgTicket)}
-            hint="Actives"
+            value={kpis.avgTicket === null ? "—" : formatPrice(kpis.avgTicket)}
+            hint={kpis.avgTicket === null ? "Aucune commande active" : "Actives"}
           />
           <MiniKpi
             label="Visiteurs"
-            value={String(visits.todayUnique)}
-            hint={`${visits.todayViews} vues · ${kpis.boutiqueShare}% boutique`}
+            // « 0 » ne doit s'afficher que si l'on SAIT qu'il n'y a eu aucune
+            // visite. Une mesure en panne se dit « indisponible ».
+            value={visits.ok ? String(visits.todayUnique) : "—"}
+            hint={
+              visits.ok
+                ? `${visits.todayViews} vues · ${kpis.boutiqueShare}% boutique`
+                : "Mesure indisponible"
+            }
           />
           <MiniKpi
             label="Terminées"

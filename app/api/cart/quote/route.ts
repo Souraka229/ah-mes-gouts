@@ -8,6 +8,7 @@ import {
 import { resolveDeliveryAreaPrice } from "@/lib/server/delivery-area-repository";
 import { getZoneById } from "@/lib/server/delivery-config-repository";
 import { priceOrderItems } from "@/lib/server/order-pricing";
+import { optionSelectionsSchema } from "@/lib/product-options/schema";
 
 const quoteSchema = z.object({
   mode: z.enum(["delivery", "pickup", "dinein"]).nullable(),
@@ -19,7 +20,13 @@ const quoteSchema = z.object({
         slug: z.string().trim().min(1),
         name: z.string().trim().min(1),
         quantity: z.number().int().positive().max(99),
+        /**
+         * @deprecated Noms des suppléments d'avant les options. Toujours accepté
+         * le temps que les paniers ouverts se vident.
+         */
         supplements: z.array(z.string()).default([]),
+        /** Compléments choisis — identifiant, quantité, message, occasion. */
+        options: optionSelectionsSchema,
         /**
          * Code de la variante choisie. Sans lui, une fiche à tailles est
          * refusée par la facturation (« Choisissez une option ») : ce champ est

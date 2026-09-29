@@ -1,6 +1,16 @@
-/** Normalise un numéro pour wa.me (chiffres uniquement, sans +). */
-export function phoneToWhatsAppDigits(phone: string): string {
-  return phone.replace(/\D/g, "");
+import { getWhatsAppNumber } from "@/lib/phone";
+
+/**
+ * Normalise un numéro pour wa.me (chiffres uniquement, sans `+`).
+ *
+ * Retourne `null` si le numéro n'est pas exploitable. Un simple
+ * `replace(/\D/g, "")` produisait des liens morts : un numéro saisi
+ * `+229 97 00 00 00` donne `22997000000`, auquel il manque le `01` du plan à
+ * dix chiffres — WhatsApp ne sait pas le router. Mieux vaut ne pas afficher de
+ * bouton que d'en afficher un qui ne marche pas.
+ */
+export function phoneToWhatsAppDigits(phone: string): string | null {
+  return getWhatsAppNumber(phone);
 }
 
 function driverFirstName(name: string): string {
@@ -26,10 +36,19 @@ export function buildDriverWelcomeMessage(
   );
 }
 
-export function buildWhatsAppShareUrl(phone: string, message: string): string {
+/**
+ * Lien WhatsApp, ou `null` si le numéro n'est pas normalisable.
+ *
+ * L'appelant masque alors le bouton : un lien `wa.me` invalide est plus
+ * déroutant qu'une absence de bouton.
+ */
+export function buildWhatsAppShareUrl(
+  phone: string,
+  message: string,
+): string | null {
   const digits = phoneToWhatsAppDigits(phone);
-  const text = encodeURIComponent(message);
-  return `https://wa.me/${digits}?text=${text}`;
+  if (!digits) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 export function getMapsSearchUrl(

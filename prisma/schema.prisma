@@ -333,6 +333,10 @@ model OrderItem {
   /// et le prix sont figés ici, la commande reste lisible pour toujours.
   variantId    String?
   variantLabel String?
+
+  /// Compléments et personnalisations choisis — snapshot complet, même règle
+  /// que la variante : aucun prix n'est relu du catalogue après coup.
+  options OrderItemOption[]
 }
 
 enum MenuStatus {
@@ -373,7 +377,8 @@ model Product {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  variants ProductVariant[]
+  variants     ProductVariant[]
+  optionGroups ProductOptionGroup[]
 }
 
 /// Variante d'un produit — tailles de nounours, formats de bouquet, nombre de
@@ -401,6 +406,175 @@ model ProductVariant {
 
   @@unique([productId, code])
   @@index([productId, isActive, sortOrder])
+}
+
+/// Groupe d'options — « Messages », « Champagne sans alcool », « Topper »…
+///
+/// À ne pas confondre avec `ProductVariant` :
+///   * une **variante** est une déclinaison du produit (taille, format) ; son
+///     prix **remplace** le prix de base et le client en choisit toujours une ;
+///   * une **option** est un complément ; son prix **s'ajoute** au prix de base.
+///
+/// Un groupe est défini **une fois** puis rattaché à autant de produits que
+/// voulu via `ProductOptionGroup`. Ajouter « Bougie anniversaire » dans six mois
+/// ne demande donc aucune modification de code.
+model OptionGroup {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  description   String   @default("")
+  /// `single` (bouton radio) ou `multiple` (cases à cocher).
+  selectionType String   @default("single")
+  /// Bornes par défaut du groupe. Un produit peut les surcharger.
+  minSelections Int      @default(0)
+  maxSelections Int      @default(1)
+  isRequired    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  options  Option[]
+  products ProductOptionGroup[]
+
+  @@index([isActive, sortOrder])
+}
+
+/// Option — un choix concret dans un groupe, avec son prix.
+///
+/// `pricingType` décide de la facturation :
+///   * `fixed`    → le prix est dû une fois, quelle que soit la quantité ;
+///   * `per_unit` → le prix est dû **par unité** choisie (topper à 50 F).
+///
+/// Le prix de cette table est la **seule** source de vérité : le client n'envoie
+/// qu'un identifiant, jamais un montant.
+model Option {
+  id          String      @id @default(cuid())
+  groupId     String
+  group       OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  slug        String
+  name        String
+  description String      @default("")
+  price       Int
+  /// `fixed` | `per_unit`.
+  pricingType String      @default("fixed")
+  /// Unité affichée pour `per_unit` : « unité », « rose », « personne ».
+  unitLabel   String?
+  /// Sous-famille d'affichage à l'intérieur d'un groupe.
+  ///
+  /// Sert à ranger « Vin / Spiritueux » en « Champagne sans alcool » et
+  /// « Champagne avec alcool » sans créer un groupe par sous-famille — le
+  /// client voit des titres, le modèle reste plat.
+  subgroupLabel String?
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  /// Stock propre à l'option. `null` = pas de suivi de stock.
+  stockRemaining Int?
+  /// Quantité maximale sélectionnable pour cette option (topper : 10).
+  maxQuantity Int         @default(1)
+
+  // ─── Personnalisation portée par l'option ───────────────────────────────
+  /// `none` | `optional` | `required` — le client doit-il écrire un message ?
+  messageMode        String  @default("none")
+  messageMinLength   Int?
+  messageMaxLength   Int?
+  messagePlaceholder String?
+  /// `none` | `optional` | `required` — le client doit-il choisir une occasion ?
+  occasionMode        String  @default("none")
+  /// Autorise « Autre » avec saisie libre de l'occasion.
+  allowCustomOccasion Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, slug])
+  @@index([groupId, isActive, sortOrder])
+}
+
+/// Rattachement d'un groupe à un produit, avec surcharges par produit.
+///
+/// `minSelections` / `maxSelections` à `null` = on applique la borne du groupe.
+/// C'est ce qui permet d'autoriser dix toppers sur un entremets et un seul
+/// ailleurs, sans dupliquer le groupe.
+model ProductOptionGroup {
+  id            String      @id @default(cuid())
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  groupId       String
+  group         OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  minSelections Int?
+  maxSelections Int?
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  @@unique([productId, groupId])
+  @@index([productId, sortOrder])
+}
+
+/// Catégorie de message — Anniversaire, Amour, Fête des Mères…
+///
+/// **Système distinct des catégories de produits** (`Product.category`) : celles-ci
+/// classent le catalogue, celles-là qualifient l'occasion d'un message. Les
+/// mélanger rendrait les deux ingérables.
+///
+/// `allowsCustomText` ouvre la saisie libre (« Autre : Baptême »).
+model MessageCategory {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  allowsCustomText Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+
+  /// Catégorie parente — un seul niveau, volontairement.
+  ///
+  /// « Fête spéciale » est une catégorie extensible : l'admin y ajoute Noël,
+  /// Saint-Valentin, Nouvel An, Ramadan… sans qu'aucune de ces valeurs ne soit
+  /// écrite dans le code. Les enfants ne sont proposés qu'après le choix du
+  /// parent, ce qui évite d'allonger la liste principale.
+  parentId String?
+  parent   MessageCategory?  @relation("MessageCategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children MessageCategory[] @relation("MessageCategoryTree")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([parentId, sortOrder])
+}
+
+/// Snapshot d'une option choisie sur une ligne de commande.
+///
+/// Même contrat que `OrderItem.variantId` : `optionId` est conservé **sans clé
+/// étrangère** pour la traçabilité, mais tout ce qui est facturé et affiché est
+/// figé ici. Changer le prix d'une carte de 1 500 à 2 000 F ne réécrit donc
+/// jamais une commande déjà passée.
+model OrderItemOption {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  /// Référence de traçabilité — volontairement sans contrainte.
+  optionId           String?
+  groupNameSnapshot  String
+  optionNameSnapshot String
+  /// `fixed` | `per_unit` — fige aussi la **règle** appliquée ce jour-là.
+  pricingType        String  @default("fixed")
+  unitPriceSnapshot  Int
+  quantity           Int     @default(1)
+  totalPrice         Int
+
+  /// Texte réellement écrit par la cliente.
+  customMessage           String?
+  /// Libellé de la catégorie au moment de la commande (« Anniversaire »).
+  messageCategorySnapshot String?
+  /// Occasion libre, quand « Autre » a été choisi.
+  customOccasion          String?
+
+  createdAt DateTime @default(now())
+
+  @@index([orderItemId])
 }
 
 model Menu {

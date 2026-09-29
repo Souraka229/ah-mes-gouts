@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useCheckoutTotal } from "@/components/shop/checkout/checkout-summary";
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { useCartStore } from "@/lib/cart-store";
 import { getLineUnitPrice } from "@/lib/cart-utils";
@@ -19,9 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import {
   PAYMENT_METHOD_LABELS,
+  type NewOrderRequest,
   type PaymentMethod,
-  type SavedOrder,
-  type ScheduledSlotSelection,
 } from "@/types/order";
 
 const paymentMethods: {
@@ -73,37 +74,77 @@ type PersistedOrder = {
   total: number;
 };
 
+/** Créneau de repli que le serveur propose quand celui choisi s'est rempli. */
+type NextSlot = {
+  start: string;
+  end: string;
+  slotKey: string;
+  label?: string;
+};
+
+/** L'erreur d'enregistrement, enrichie du créneau de repli éventuel. */
+type OrderPersistError = AppError & { nextSlot?: NextSlot };
+
+/**
+ * Lit `nextSlot` dans le corps d'erreur de la route commandes.
+ *
+ * Un conflit de créneau (409) renvoie `{ error: "SLOT_FULL", nextSlot }`.
+ * `error.message` ne transporte que « SLOT_FULL » : sans ce détail, l'appelant
+ * renverrait la cliente choisir un créneau au lieu de basculer en douceur.
+ * On valide la forme plutôt que de faire confiance au contenu.
+ */
+function readNextSlot(body: unknown): NextSlot | null {
+  if (!body || typeof body !== "object") return null;
+  const candidate = (body as { nextSlot?: unknown }).nextSlot;
+  if (!candidate || typeof candidate !== "object") return null;
+
+  const { start, end, slotKey, label } = candidate as Record<string, unknown>;
+  if (
+    typeof start !== "string" ||
+    typeof end !== "string" ||
+    typeof slotKey !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    start,
+    end,
+    slotKey,
+    ...(typeof label === "string" ? { label } : {}),
+  };
+}
+
+/**
+ * Enregistre la commande côté serveur.
+ *
+ * Rejette toujours une `AppError` : le tunnel de paiement garde sa boucle de
+ * réessai (`try/catch`) et son repli sur le créneau suivant, seule la lecture
+ * de la réponse change.
+ */
 async function persistOrderOnServer(
-  order: SavedOrder,
+  order: NewOrderRequest,
   idempotencyKey: string,
 ): Promise<PersistedOrder> {
   const deviceKey = getOrCreateDeviceKey();
-  const response = await fetch("/api/orders", {
+  const result = await safeFetch<PersistedOrder>("/api/orders", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey,
       ...(deviceKey ? { "x-amg-device-key": deviceKey } : {}),
     },
-    body: JSON.stringify(order),
+    json: order,
+    // Le serveur renvoie toujours l'identifiant : un corps vide signalerait une
+    // panne, jamais une commande enregistrée.
+    requireJson: true,
   });
 
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as {
-      error?: string;
-      nextSlot?: ScheduledSlotSelection & { label?: string; start: string; end: string; slotKey: string };
-    } | null;
+  if (result.ok) return result.data;
 
-    const err = new Error(payload?.error ?? "Échec de synchronisation serveur") as Error & {
-      nextSlot?: { start: string; end: string; slotKey: string; label?: string };
-    };
-    if (payload?.nextSlot) {
-      err.nextSlot = payload.nextSlot;
-    }
-    throw err;
-  }
-
-  return (await response.json()) as PersistedOrder;
+  const failure = result.error as OrderPersistError;
+  const nextSlot = readNextSlot(result.body);
+  if (nextSlot) failure.nextSlot = nextSlot;
+  throw failure;
 }
 
 export function StepPayment() {
@@ -138,14 +179,15 @@ export function StepPayment() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/payments/config")
-      .then((res) => res.json())
-      .then((data: { provider?: string }) => {
-        if (!cancelled) setDemoPayments(data.provider === "mock");
-      })
-      .catch(() => {
-        /* ignore */
-      });
+    // Best-effort : sans configuration lisible, on masque simplement le
+    // bandeau « mode démo » — on ne bloque pas le paiement pour autant.
+    void safeFetch<{ provider?: string }>("/api/payments/config").then(
+      (result) => {
+        if (!cancelled && result.ok) {
+          setDemoPayments(result.data?.provider === "mock");
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -189,36 +231,32 @@ export function StepPayment() {
         return;
       }
 
-      try {
-        // `orderId` n'est plus transmis : la commande est déduite serveur de
-        // la tentative liée à cette référence.
-        const response = await fetch(
-          `/api/payments/initiate?reference=${encodeURIComponent(reference)}`,
-          {
-            headers: deviceKey ? { "x-amg-device-key": deviceKey } : {},
-          },
-        );
-        const payload = (await response.json()) as {
-          status?: string;
-          error?: string;
-        };
+      // `orderId` n'est plus transmis : la commande est déduite serveur de la
+      // tentative liée à cette référence.
+      const result = await safeFetch<{ status?: string; error?: string }>(
+        `/api/payments/initiate?reference=${encodeURIComponent(reference)}`,
+        {
+          headers: deviceKey ? { "x-amg-device-key": deviceKey } : {},
+        },
+      );
 
-        if (payload.status === "SUCCESS") {
+      // Panne réseau ou statut momentanément indisponible : on ne conclut rien
+      // et on retente au tick suivant — c'est le serveur qui tranche.
+      if (result.ok) {
+        if (result.data?.status === "SUCCESS") {
           finishSuccess(orderId);
           return;
         }
-        if (payload.status === "FAILED") {
+        if (result.data?.status === "FAILED") {
           stopPolling();
           setUiState("error");
           setErrorMessage(
-            payload.error ||
+            result.data.error ||
               "Paiement refusé ou annulé. Réessayez ou changez de méthode.",
           );
           payingRef.current = false;
           return;
         }
-      } catch {
-        /* réseau instable — on continue */
       }
 
       const delay = delays[Math.min(attempts - 1, delays.length - 1)]!;
@@ -240,32 +278,33 @@ export function StepPayment() {
       return;
     }
 
-    let stockIssues: { name: string; message: string }[] = [];
-    try {
-      const stockResponse = await fetch("/api/cart/validate-stock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cartItems.map((item) => ({
-            slug: item.slug,
-            name: item.name,
-            quantity: item.quantity,
-          })),
-        }),
-      });
-      if (stockResponse.ok) {
-        const payload = (await stockResponse.json()) as {
-          issues: { name: string; message: string }[];
-        };
-        stockIssues = payload.issues;
-      }
-    } catch {
+    const stockResult = await safeFetch<{
+      issues?: { name: string; message: string }[];
+    }>("/api/cart/validate-stock", {
+      method: "POST",
+      json: {
+        items: cartItems.map((item) => ({
+          slug: item.slug,
+          name: item.name,
+          quantity: item.quantity,
+        })),
+      },
+      // La route doit renvoyer la liste des problèmes : un corps vide est une
+      // panne, pas un panier valide.
+      requireJson: true,
+    });
+
+    // Une vérification impossible n'autorise JAMAIS le paiement : sans réponse
+    // du serveur, on ne sait pas si le stock est là.
+    if (!stockResult.ok) {
       setUiState("error");
       setErrorMessage(
         "Impossible de vérifier le stock. Vérifiez votre connexion et réessayez.",
       );
       return;
     }
+
+    const stockIssues = stockResult.data?.issues ?? [];
 
     if (stockIssues.length > 0) {
       setUiState("error");
@@ -299,7 +338,7 @@ export function StepPayment() {
 
     const buildOrder = (
       slot: NonNullable<typeof scheduledSlot>,
-    ): SavedOrder => ({
+    ): NewOrderRequest => ({
       // Ignorés par le serveur, qui génère les siens. Conservés uniquement
       // pour satisfaire le type avant persistance.
       id: "",
@@ -332,7 +371,27 @@ export function StepPayment() {
         // Affiché et conservé localement ; le serveur recalcule tout depuis le
         // catalogue et n'utilise jamais ce montant.
         unitPrice: getLineUnitPrice(item),
-        supplements: item.supplements.map((s) => s.name),
+        /**
+         * Champ historique, laissé vide : les anciens paniers envoyaient des
+         * **noms** de suppléments, ce qui perdait le prix. Tout passe désormais
+         * par `options`, par identifiant. Le serveur accepte encore l'ancien
+         * champ pour les paniers qui dorment dans un navigateur.
+         */
+        supplements: [],
+        /**
+         * Les compléments partent par **identifiant**, avec la quantité, le
+         * message et l'occasion. Aucun prix : le serveur relit le tarif en base
+         * et c'est lui qui facture.
+         */
+        options: item.supplements.map((s) => ({
+          optionId: s.id,
+          ...(s.quantity !== undefined ? { quantity: s.quantity } : {}),
+          ...(s.message ? { message: s.message } : {}),
+          ...(s.occasionCategorySlug
+            ? { occasionCategorySlug: s.occasionCategorySlug }
+            : {}),
+          ...(s.customOccasion ? { customOccasion: s.customOccasion } : {}),
+        })),
         slug: item.slug,
         // Le serveur résout le prix de la variante dans sa propre table : sans
         // ce code, un nounours 150 cm serait facturé au prix d'entrée. C'est un
@@ -366,6 +425,31 @@ export function StepPayment() {
           subtotal: saved.subtotal,
           deliveryFee: saved.deliveryFee,
           total: saved.total,
+          /**
+           * Copie locale, pour l'affichage immédiat. On reprend les libellés et
+           * les prix que la cliente vient de voir ; le serveur, lui, a facturé
+           * les siens et reste la référence.
+           */
+          items: order.items.map((item, index) => {
+            const { options, ...rest } = item;
+            const cartItem = cartItems[index];
+            if (!options?.length || !cartItem) return rest;
+
+            return {
+              ...rest,
+              options: cartItem.supplements.map((supplement) => ({
+                optionId: supplement.id,
+                groupName: supplement.groupName ?? "",
+                optionName: supplement.name,
+                pricingType: supplement.pricingType ?? "fixed",
+                unitPrice: supplement.price,
+                quantity: supplement.quantity ?? 1,
+                totalPrice: supplement.price * (supplement.quantity ?? 1),
+                customMessage: supplement.message ?? null,
+                customOccasion: supplement.customOccasion ?? null,
+              })),
+            };
+          }),
         });
         persisted = true;
       } catch (error) {
@@ -429,40 +513,37 @@ export function StepPayment() {
     }
 
     const deviceKey = getOrCreateDeviceKey();
-    let paymentResponse: Response;
-    try {
-      paymentResponse = await fetch("/api/payments/initiate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(deviceKey ? { "x-amg-device-key": deviceKey } : {}),
-        },
-        body: JSON.stringify({
-          orderId,
-          method: paymentMethod,
-        }),
-      });
-    } catch {
-      setUiState("error");
-      setErrorMessage("Connexion interrompue pendant le paiement.");
-      payingRef.current = false;
-      return;
-    }
-
-    const paymentPayload = (await paymentResponse.json().catch(() => null)) as {
+    const paymentResult = await safeFetch<{
       status?: string;
       error?: string;
       message?: string;
       reference?: string;
       paymentUrl?: string;
       orderId?: string;
-    } | null;
+    }>("/api/payments/initiate", {
+      method: "POST",
+      headers: {
+        ...(deviceKey ? { "x-amg-device-key": deviceKey } : {}),
+      },
+      json: {
+        orderId,
+        method: paymentMethod,
+      },
+      // Une réponse vide ne peut pas être lue comme un paiement lancé.
+      requireJson: true,
+    });
 
-    if (!paymentResponse.ok || !paymentPayload) {
+    if (!paymentResult.ok) {
       setUiState("error");
-      setErrorMessage(
-        paymentPayload?.error || "Le paiement n'a pas pu être lancé.",
-      );
+      setErrorMessage(paymentResult.error.message);
+      payingRef.current = false;
+      return;
+    }
+
+    const paymentPayload = paymentResult.data ?? null;
+    if (!paymentPayload) {
+      setUiState("error");
+      setErrorMessage("Le paiement n'a pas pu être lancé.");
       payingRef.current = false;
       return;
     }

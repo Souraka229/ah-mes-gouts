@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { normalizeBeninPhone } from "@/lib/crm/phone";
+import { normalizeBeninPhone, phoneSearchVariants } from "@/lib/crm/phone";
 import { getPrisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { DEVICE_COOKIE } from "@/lib/server/device-cookie";
@@ -53,8 +53,10 @@ export async function POST(request: Request) {
   const prisma = getPrisma();
 
   try {
-    const customer = await prisma.customer.findUnique({
-      where: { phone },
+    const customer = await prisma.customer.findFirst({
+      // La base a connu `229…` puis `+229…` : on cherche les deux formes,
+      // sinon une cliente enregistrée avant la migration devient inconnue.
+      where: { phone: { in: phoneSearchVariants(parsed.data.phone) } },
       select: { id: true, firstName: true, ordersCount: true },
     });
 

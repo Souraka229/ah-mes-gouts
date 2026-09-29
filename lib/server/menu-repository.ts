@@ -405,8 +405,13 @@ export async function activateDueMenus(): Promise<ScheduledMenu[]> {
     }
 
     return activated;
-  } catch {
-    return [];
+  } catch (error) {
+    // On NE renvoie PAS un tableau vide : cela faisait répondre au cron
+    // `ok: true, activatedCount: 0`, c'est-à-dire « tout va bien » alors que
+    // rien n'avait pu être activé — et son chemin d'erreur ne servait jamais.
+    // L'appelant décide : le cron doit échouer, la boutique doit dégrader.
+    console.error("[menus] activation échouée", error);
+    throw error;
   }
 }
 
@@ -414,7 +419,8 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
   try {
     await activateDueMenus();
   } catch {
-    // ignore — fallback mock / catalogue
+    // La boutique doit continuer à servir le menu en cours même si
+    // l'activation programmée a échoué.
   }
   const catalog = await getAdminCatalog();
   const active = await getActiveMenu();

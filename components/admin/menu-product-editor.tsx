@@ -7,12 +7,14 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import {
   PRODUCT_GALLERY_MAX,
   normalizeProductImages,
   setGallerySlot,
 } from "@/lib/product-images";
 import { formatPrice } from "@/lib/format";
+import { validateUploadFile } from "@/lib/uploads";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
 
@@ -45,14 +47,39 @@ export function MenuProductEditor({
   const slots = Array.from({ length: PRODUCT_GALLERY_MAX }, (_, i) => images[i] ?? "");
 
   const uploadImage = async (file: File, slotIndex: number) => {
+    // Refus avant envoi : inutile de téléverser 6 Mo pour se les voir refuser
+    // par la plateforme, avec un message inexploitable.
+    const invalid = validateUploadFile(file);
+    if (invalid) {
+      toast.error(invalid);
+      return;
+    }
+
     setUploadingSlot(slotIndex);
     try {
       const form = new FormData();
       form.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-      const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Upload échoué");
-      const nextUrls = setGallerySlot(images, slotIndex, data.url!);
+      const result = await safeFetch<{ url?: string }>("/api/admin/upload", {
+        method: "POST",
+        body: form,
+        requireJson: true,
+        // Un envoi de fichier est plus lent qu'une requête JSON ordinaire.
+        timeoutMs: 60_000,
+      });
+
+      if (!result.ok) {
+        // Un fichier refusé par la plateforme (413) reçoit une page HTML :
+        // `res.json()` levait alors « Unexpected end of JSON input ».
+        toast.error(result.error.message);
+        return;
+      }
+      const url = result.data?.url;
+      if (!url) {
+        toast.error("L'image n'a pas pu être enregistrée");
+        return;
+      }
+
+      const nextUrls = setGallerySlot(images, slotIndex, url);
       const normalized = normalizeProductImages({ imageUrls: nextUrls });
       onChange({
         imageUrls: normalized.imageUrls,
@@ -60,8 +87,6 @@ export function MenuProductEditor({
         dirty: true,
       });
       toast.success("Image téléversée");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Upload échoué");
     } finally {
       setUploadingSlot(null);
     }

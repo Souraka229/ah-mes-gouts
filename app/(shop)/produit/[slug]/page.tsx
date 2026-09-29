@@ -27,6 +27,14 @@ import { isRoseProduct } from "@/lib/constants/rose-compositions";
 import { getRoseCompositionOptions } from "@/lib/product-options/compositions";
 import { getProductRecommendations } from "@/lib/product-options/recommendations";
 import { canCarryMessage } from "@/lib/product-options/types";
+import {
+  buildMessageCategoryTree,
+  groupCarriesMessage,
+} from "@/lib/product-options/options";
+import {
+  getActiveOptionGroupsForProduct,
+  getMessageCategories,
+} from "@/lib/server/option-repository";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -73,9 +81,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const [similar, catalog] = await Promise.all([
+  const [similar, catalog, optionGroups, messageCategories] = await Promise.all([
     getSimilarShopProducts(slug),
     getFullCatalog(),
+    getActiveOptionGroupsForProduct(product.id),
+    getMessageCategories(),
   ]);
   const gallery = getProductGalleryUrls(product);
   const available = isProductAvailable(product);
@@ -92,7 +102,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   // qu'on sait ce que la cliente a choisi.
   const recommendation =
     getProductRecommendations({ product, catalog })[0] ?? null;
-  const allowMessage = canCarryMessage(product);
+  /**
+   * Le mot cadeau au niveau commande n'apparaît que s'il n'y a pas déjà une
+   * option pour l'écrire. Sinon la fiche montrerait deux champs de texte, et la
+   * cliente ne saurait pas lequel remplit quoi.
+   */
+  const allowMessage =
+    canCarryMessage(product) &&
+    !optionGroups.some((link) => groupCarriesMessage(link.group));
 
   const breadcrumbs = [
     { name: "Accueil", path: "/" },
@@ -151,6 +168,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 roseCompositions={roseCompositions}
                 recommendation={recommendation}
                 allowMessage={allowMessage}
+                optionGroups={optionGroups}
+                messageCategories={buildMessageCategoryTree(messageCategories)}
               />
             </div>
           </div>

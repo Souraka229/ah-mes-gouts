@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Share2 } from "lucide-react";
+import { AlertTriangle, RefreshCw, Share2 } from "lucide-react";
 
 import { GiftSurpriseCard } from "@/components/shop/checkout/gift-surprise-card";
 import { OrderStepper } from "@/components/shop/checkout/order-stepper";
 import { Button, buttonVariants } from "@/components/ui/button";
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
 import { useOrderRealtime } from "@/lib/hooks/use-order-realtime";
 import { buildTrackingUrl, getOrderById } from "@/lib/order-storage";
@@ -27,6 +29,16 @@ export function OrderTrackingView({ orderId }: TrackingPageProps) {
   const [order, setOrder] = useState<PublicTrackingOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  /**
+   * Panne de lecture du suivi.
+   *
+   * Distingue « cette commande n'existe pas » de « on n'a pas pu la lire » :
+   * annoncer « introuvable » sur une coupure réseau ferait croire à une
+   * commande perdue.
+   */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Incrémenté par « Réessayer » pour relancer l'effet de chargement. */
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,21 +46,29 @@ export function OrderTrackingView({ orderId }: TrackingPageProps) {
     async function loadOrder() {
       setLoading(true);
       setNotFound(false);
+      setLoadError(null);
 
-      try {
-        const response = await fetch(buildTrackingUrl(orderId));
-        if (response.ok) {
-          const data = (await response.json()) as PublicTrackingOrder;
-          if (!cancelled) setOrder(data);
-          return;
-        }
-      } catch {
-        // Fallback localStorage (commandes avant sync serveur)
+      const result = await safeFetch<PublicTrackingOrder>(
+        buildTrackingUrl(orderId),
+        // Le suivi doit être renvoyé : un corps vide n'est pas une commande.
+        { requireJson: true },
+      );
+
+      if (result.ok) {
+        if (!cancelled) setOrder(result.data);
+        return;
       }
 
+      // Repli localStorage (commandes enregistrées avant la synchro serveur,
+      // ou consultation hors-ligne de sa propre commande).
       const local = getOrderById(orderId);
       if (!local) {
-        if (!cancelled) setNotFound(true);
+        if (!cancelled) {
+          // Un vrai 404 veut dire « introuvable ». Toute autre panne laisse la
+          // question ouverte : on propose de réessayer.
+          if (result.error.code === "NOT_FOUND") setNotFound(true);
+          else setLoadError(result.error);
+        }
         return;
       }
 
@@ -92,7 +112,7 @@ export function OrderTrackingView({ orderId }: TrackingPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, reloadToken]);
 
   useOrderRealtime({
     orderId,
@@ -120,6 +140,39 @@ export function OrderTrackingView({ orderId }: TrackingPageProps) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center font-body text-muted-foreground">
         Chargement du suivi...
+      </div>
+    );
+  }
+
+  // Lecture impossible et aucune copie locale : on ne prétend pas que la
+  // commande n'existe pas, on propose de réessayer.
+  if (loadError && !order) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20">
+        <div
+          role="alert"
+          className="flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" aria-hidden />
+            <h1 className="font-display text-base font-semibold text-destructive">
+              Impossible de charger le suivi
+            </h1>
+          </div>
+          <p className="font-body text-sm text-muted-foreground">
+            {loadError.message} Votre commande n&apos;est pas perdue : seul
+            l&apos;affichage a échoué.
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            className="cursor-pointer gap-2"
+            onClick={() => setReloadToken((token) => token + 1)}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            Réessayer
+          </Button>
+        </div>
       </div>
     );
   }

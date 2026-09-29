@@ -7,15 +7,19 @@ import {
 } from "@/lib/business-date";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   Calendar,
   ChevronLeft,
   ChevronRight,
   Copy,
   Loader2,
   Plus,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
+import type { AppError } from "@/lib/api/errors";
+import { safeFetch } from "@/lib/api/safe-fetch";
 import {
   MenuProductEditor,
   type MenuProductDraft,
@@ -75,6 +79,10 @@ export function AdminMenusPage() {
   const [menus, setMenus] = useState<ScheduledMenu[]>([]);
   const [catalog, setCatalog] = useState<MenuProductDraft[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Panne de chargement — distincte d'un planning réellement vide. */
+  const [loadError, setLoadError] = useState<AppError | null>(null);
+  /** Au moins un chargement réussi : sans lui, un échec initial n'est pas « vide ». */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [viewMonth, setViewMonth] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -87,27 +95,41 @@ export function AdminMenusPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    try {
-      const [menusRes, productsRes] = await Promise.all([
-        fetch("/api/admin/menus", { cache: "no-store" }),
-        fetch("/api/admin/products", { cache: "no-store" }),
-      ]);
-      if (menusRes.ok) {
-        const data = (await menusRes.json()) as { menus: ScheduledMenu[] };
-        setMenus(data.menus);
-      }
-      if (productsRes.ok) {
-        const data = (await productsRes.json()) as {
-          products: MenuProductDraft[];
-        };
-        const filtered = (data.products ?? []).filter(
-          (p) => p.slug !== "carte-cadeau" && p.slug !== "nounours",
-        );
-        setCatalog(filtered);
-      }
-    } finally {
-      setLoading(false);
+    // Les deux appels partent ensemble : la grille vient des menus, le
+    // formulaire du catalogue. Une panne sur l'un ne doit pas effacer ce que
+    // l'autre a ramené.
+    const [menusResult, productsResult] = await Promise.all([
+      safeFetch<{ menus: ScheduledMenu[] }>("/api/admin/menus", {
+        requireJson: true,
+      }),
+      safeFetch<{ products: MenuProductDraft[] }>("/api/admin/products", {
+        requireJson: true,
+      }),
+    ]);
+
+    if (menusResult.ok) {
+      setMenus(menusResult.data?.menus ?? []);
+      setHasLoaded(true);
     }
+    if (productsResult.ok) {
+      setCatalog(
+        (productsResult.data?.products ?? []).filter(
+          (p) => p.slug !== "carte-cadeau" && p.slug !== "nounours",
+        ),
+      );
+    }
+
+    // La grille est la donnée maîtresse : sans elle, « aucun menu programmé »
+    // serait un mensonge. Un catalogue manquant, lui, n'empêche pas
+    // d'afficher le planning — on le signale sans vider l'écran.
+    setLoadError(
+      !menusResult.ok
+        ? menusResult.error
+        : !productsResult.ok
+          ? productsResult.error
+          : null,
+    );
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -236,10 +258,9 @@ export function AdminMenusPage() {
       .filter((p): p is MenuProductDraft => Boolean(p?.dirty));
 
     for (const product of dirty) {
-      const res = await fetch(`/api/admin/products/${product.id}`, {
+      const result = await safeFetch(`/api/admin/products/${product.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        json: {
           name: product.name,
           price: product.price,
           description: product.description,
@@ -250,10 +271,12 @@ export function AdminMenusPage() {
           imageUrls: product.imageUrls,
           isPromotion: product.isPromotion,
           promotionPrice: product.promotionPrice ?? null,
-        }),
+        },
       });
-      if (!res.ok) {
-        throw new Error(`Échec mise à jour : ${product.name}`);
+      if (!result.ok) {
+        // On interrompt tout : publier le menu avec des produits restés à
+        // l'ancien prix ferait vendre au mauvais tarif.
+        throw new Error(result.error.message);
       }
     }
   };
@@ -294,40 +317,40 @@ export function AdminMenusPage() {
       await saveDirtyProducts();
 
       if (editing) {
-        const res = await fetch(`/api/admin/menus/${editing.id}`, {
+        const result = await safeFetch(`/api/admin/menus/${editing.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          json: {
             date: menuDateIso,
             activateAt,
             productIds: selectedIds,
             displayOrder,
             dailyStock,
             forceActiveEdit: forceActive || editing.status === "active",
-          }),
+          },
         });
-        if (res.status === 409) {
+        // 409 = le serveur signale un menu déjà actif : on demande confirmation
+        // avant de repasser la requête en forçant.
+        if (!result.ok && result.status === 409) {
           const ok = window.confirm(
             "Ce menu est actif. Confirmer la modification ?",
           );
           if (ok) return saveMenu(true, true);
           return;
         }
-        if (!res.ok) throw new Error();
+        if (!result.ok) throw new Error(result.error.message);
         toast.success("Menu et produits mis à jour");
       } else {
-        const res = await fetch("/api/admin/menus", {
+        const result = await safeFetch("/api/admin/menus", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+          json: {
             date: menuDateIso,
             activateAt,
             productIds: selectedIds,
             displayOrder,
             dailyStock,
-          }),
+          },
         });
-        if (!res.ok) throw new Error();
+        if (!result.ok) throw new Error(result.error.message);
         toast.success("Menu programmé");
       }
       setFormOpen(false);
@@ -343,20 +366,19 @@ export function AdminMenusPage() {
 
   const duplicateMenu = async (menu: ScheduledMenu) => {
     const tomorrow = addDays(new Date(menu.date), 1);
-    const res = await fetch("/api/admin/menus", {
+    const result = await safeFetch("/api/admin/menus", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      json: {
         duplicateFromId: menu.id,
         date: tomorrow.toISOString(),
-      }),
+      },
     });
-    if (res.ok) {
-      toast.success("Menu dupliqué pour le lendemain");
-      await load();
-    } else {
-      toast.error("Duplication impossible");
+    if (!result.ok) {
+      toast.error(result.error.message);
+      return;
     }
+    toast.success("Menu dupliqué pour le lendemain");
+    await load();
   };
 
   const statusColor = (status: MenuStatus) => {
@@ -369,8 +391,10 @@ export function AdminMenusPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       {/* État réel côté boutique. Un menu « publié » dont la date est passée
           n'affiche plus aucun produit aux clientes : le back-office doit dire
-          ce que la cliente voit, pas ce qui a été saisi. */}
-      {!loading && (
+          ce que la cliente voit, pas ce qui a été saisi.
+          Affiché seulement après un premier chargement réussi : sans données,
+          « aucun menu publié » serait une affirmation en l'air. */}
+      {hasLoaded && (
         <div
           className={
             todayMenu
@@ -418,6 +442,29 @@ export function AdminMenusPage() {
         </Button>
       </header>
 
+      {/* Panne survenue alors que le planning était déjà affiché : on garde les
+          menus connus et on prévient, plutôt que de tout effacer. */}
+      {loadError && hasLoaded && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3"
+        >
+          <AlertTriangle className="size-4 shrink-0 text-destructive" aria-hidden />
+          <p className="font-body text-sm text-destructive">
+            {loadError.message} L&apos;affichage peut être périmé.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={() => void load()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+
       <section className="rounded-2xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -457,10 +504,37 @@ export function AdminMenusPage() {
           </button>
         </div>
 
-        {loading ? (
+        {loading && !hasLoaded ? (
           <div className="mt-8 flex items-center gap-2 text-muted-foreground">
             <Loader2 className="size-5 animate-spin" />
             Chargement…
+          </div>
+        ) : loadError && !hasLoaded ? (
+          /* Premier chargement en échec : « aucun menu programmé » serait un
+             mensonge — on ne sait pas ce que contient le planning. */
+          <div
+            role="alert"
+            className="mt-8 flex flex-col items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-destructive" aria-hidden />
+              <h2 className="font-display text-base font-semibold text-destructive">
+                Impossible de charger les menus
+              </h2>
+            </div>
+            <p className="font-body text-sm text-muted-foreground">
+              {loadError.message} Les menus ne sont pas perdus : ils restent
+              enregistrés, seul l&apos;affichage a échoué.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="cursor-pointer gap-2"
+              onClick={() => void load()}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              Réessayer
+            </Button>
           </div>
         ) : (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -635,7 +709,7 @@ export function AdminMenusPage() {
         </div>
       )}
 
-      {menus.length === 0 && !loading && (
+      {menus.length === 0 && !loading && !loadError && (
         <AdminEmptyState
           variant="menus"
           title="Aucun menu programmé"

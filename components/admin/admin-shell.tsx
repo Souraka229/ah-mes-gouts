@@ -12,6 +12,7 @@ import {
   Menu,
   Package,
   Settings,
+  Sparkles,
   Truck,
   UserRound,
   Users,
@@ -40,6 +41,12 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/parametres/livraison",
     label: "Livraison",
     icon: Truck,
+  },
+  {
+    href: "/admin/parametres/options",
+    label: "Options & compléments",
+    icon: Sparkles,
+    secondary: true,
   },
   { href: "/admin/livreurs", label: "Livreurs", icon: UserRound, secondary: true },
   {

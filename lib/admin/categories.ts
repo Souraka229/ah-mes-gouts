@@ -14,6 +14,13 @@ export const PRODUCT_CATEGORIES = [
   "Carte",
   "Cadeaux",
   "Boissons",
+  /**
+   * Vins et spiritueux — vendus en bouteille, à emporter ou en complément.
+   *
+   * Libellé exact voulu par la maison : « Vin / Spiritueux ». Ni
+   * « Vin / Champagne », ni « Vins & Spiritueux ».
+   */
+  "Vin / Spiritueux",
 ] as const;
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
@@ -33,6 +40,12 @@ export const UNLIMITED_STOCK_CATEGORIES: ProductCategory[] = [
   "Sur commande",
   "Carte",
   "Cadeaux",
+  /**
+   * Les bouteilles s'achètent et se réapprovisionnent, elles ne se préparent
+   * pas le jour même : les faire dépendre du menu du jour les rendrait
+   * invendables dès qu'aucun menu n'est actif.
+   */
+  "Vin / Spiritueux",
 ];
 
 export function isUnlimitedStockCategory(category: string): boolean {
@@ -57,6 +70,7 @@ export const UPSELL_CATEGORIES: ProductCategory[] = [
 export function inferCategoryFromSlug(slug: string): ProductCategory {
   const s = slug.toLowerCase();
   if (s.includes("nounours")) return "Nounours";
+  if (s.startsWith("vin-") || s.includes("champagne")) return "Vin / Spiritueux";
   if (s.includes("carte") || s.includes("cadeau")) return "Carte";
   if (s.startsWith("bouquet")) return "Cadeaux";
   return "Entremets";

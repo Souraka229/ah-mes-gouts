@@ -25,7 +25,13 @@ import {
 } from "@/types/product";
 import type { Product } from "@/types/product";
 
-type CatalogueTab = "menu" | "fleurs" | "nounours" | "carte" | "all";
+type CatalogueTab =
+  | "menu"
+  | "fleurs"
+  | "nounours"
+  | "vin"
+  | "carte"
+  | "all";
 
 type CatalogueViewProps = {
   menuProducts?: Product[];
@@ -103,6 +109,14 @@ export function CatalogueView({
     [fullCatalog],
   );
 
+  const vinCatalog = useMemo(
+    () =>
+      fullCatalog.filter(
+        (p) => getProductCategory(p) === "Vin / Spiritueux",
+      ),
+    [fullCatalog],
+  );
+
   const carteCatalog = useMemo(
     () =>
       fullCatalog.filter((p) => {
@@ -122,6 +136,11 @@ export function CatalogueView({
     [nounoursCatalog, activeFilters],
   );
 
+  const filteredVin = useMemo(
+    () => filterProducts(vinCatalog, activeFilters),
+    [vinCatalog, activeFilters],
+  );
+
   const filteredCarte = useMemo(
     () => filterProducts(carteCatalog, activeFilters),
     [carteCatalog, activeFilters],
@@ -134,9 +153,11 @@ export function CatalogueView({
         ? filteredFleurs.length
         : activeTab === "nounours"
           ? filteredNounours.length
-          : activeTab === "carte"
-            ? filteredCarte.length
-            : filteredAll.length;
+          : activeTab === "vin"
+            ? filteredVin.length
+            : activeTab === "carte"
+              ? filteredCarte.length
+              : filteredAll.length;
 
   const filterPanelProps = {
     filters,
@@ -225,6 +246,7 @@ export function CatalogueView({
             ["menu", "Menu du jour"],
             ["fleurs", "Fleurs"],
             ["nounours", "Nounours"],
+            ["vin", "Vin / Spiritueux"],
             ["carte", "Sur commande"],
             ["all", "Toute la carte"],
           ] as const
@@ -314,6 +336,23 @@ export function CatalogueView({
                 </p>
               </div>
               {renderProductGrid(filteredNounours)}
+            </section>
+          )}
+
+          {activeTab === "vin" && (
+            <section id="vin-spiritueux" aria-labelledby="vin-title">
+              <div className="mb-8 border-b border-border pb-6">
+                <h2
+                  id="vin-title"
+                  className="font-display text-3xl font-bold text-primary sm:text-4xl"
+                >
+                  Vin / Spiritueux
+                </h2>
+                <p className="mt-2 font-body text-sm text-muted-foreground">
+                  Bouteilles à emporter ou à joindre à votre création.
+                </p>
+              </div>
+              {renderProductGrid(filteredVin)}
             </section>
           )}
 

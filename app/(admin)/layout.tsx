@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/pwa/admin-icon.svg",
-    apple: "/pwa/admin-icon.svg",
+    // iOS ne lit pas les apple-touch-icon en SVG : il lui faut un PNG.
+    apple: "/pwa/admin-icon-apple-touch-icon.png",
   },
   robots: { index: false, follow: false },
 };

@@ -25,7 +25,8 @@ export async function generateMetadata({
     },
     icons: {
       icon: "/pwa/driver-icon.svg",
-      apple: "/pwa/driver-icon.svg",
+      // iOS ne lit pas les apple-touch-icon en SVG : il lui faut un PNG.
+      apple: "/pwa/driver-icon-apple-touch-icon.png",
     },
     robots: { index: false, follow: false },
   };

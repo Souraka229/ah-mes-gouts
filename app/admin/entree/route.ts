@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         `Trop de tentatives sur le lien magique admin. Bloqué ${retryAfterSec}s.`,
       ),
     );
-    return NextResponse.redirect(new URL("/?admin=rate-limited", request.url));
+    return NextResponse.redirect(new URL("/admin/connexion?raison=trop-de-tentatives", request.url));
   }
 
   const token = request.nextUrl.searchParams.get("token")?.trim();
@@ -52,14 +52,14 @@ export async function GET(request: NextRequest) {
   );
 
   if (!token) {
-    return NextResponse.redirect(new URL("/?admin=token-missing", request.url));
+    return NextResponse.redirect(new URL("/admin/connexion?raison=lien-manquant", request.url));
   }
 
   const entry = findAdminTokenEntry(token);
   if (!entry) {
     notifyOps(alertSecurity("Token admin invalide présenté sur /admin/entree."),
     );
-    return NextResponse.redirect(new URL("/?admin=token-invalid", request.url));
+    return NextResponse.redirect(new URL("/admin/connexion?raison=lien-invalide", request.url));
   }
 
   let jwt: string;
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     // de retomber sur l'ancien cookie non signé.
     console.error("[admin/entree] session non émise:", error);
     return NextResponse.redirect(
-      new URL("/?admin=session-indisponible", request.url),
+      new URL("/admin/connexion?raison=session-indisponible", request.url),
     );
   }
 

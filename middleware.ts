@@ -22,6 +22,29 @@ import {
  */
 const ADMIN_HOST = process.env.NEXT_PUBLIC_ADMIN_HOST?.trim() ?? "";
 
+/**
+ * Chemins servis tels quels, sur n'importe quel hôte et sans session.
+ *
+ * Les assets qui rendent une application installable ne vivent pas sous
+ * `/admin` : sans cette exemption, l'hôte admin renvoie le manifeste et les
+ * icônes vers `/admin`, et l'application n'est plus installable là où on
+ * l'installe justement. `admin-sw.js` comptait aussi : il commence par
+ * `/admin` sans être une page du back-office.
+ */
+const PWA_ASSET_PATHS = [
+  "/manifest.webmanifest",
+  "/manifest-admin.webmanifest",
+  "/shop-sw.js",
+  "/admin-sw.js",
+  "/driver-sw.js",
+  "/icon.png",
+  "/apple-icon.png",
+];
+
+function isPwaAsset(pathname: string): boolean {
+  return pathname.startsWith("/pwa/") || PWA_ASSET_PATHS.includes(pathname);
+}
+
 /** Pages réservées au rôle administrateur (les employés n'y accèdent pas). */
 const ADMIN_ONLY_PREFIXES = [
   "/admin/parametres/boutique",
@@ -64,7 +87,15 @@ export async function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0] ?? "";
   const adminHostConfigured = ADMIN_HOST.length > 0;
   const isAdminHost = adminHostConfigured && host === ADMIN_HOST;
-  const isAdminPath = pathname.startsWith("/admin");
+  // `/admin` et `/admin/...`, pas `/admin-sw.js` : `startsWith("/admin")`
+  // attrapait le service worker, qui n'est pas une page du back-office.
+  const isAdminPath = pathname === "/admin" || pathname.startsWith("/admin/");
+
+  // Avant toute redirection par hôte : sinon l'hôte admin renvoie le
+  // manifeste et les icônes vers `/admin` et la PWA n'est plus installable.
+  if (isPwaAsset(pathname)) {
+    return NextResponse.next();
+  }
 
   if (adminHostConfigured) {
     // Le domaine public sert la boutique, pas le back-office : on renvoie
@@ -86,14 +117,20 @@ export async function middleware(request: NextRequest) {
     return withDeviceCookie(request);
   }
 
-  // Point d'échange du lien magique : doit rester joignable sans session.
-  if (pathname === "/admin/entree") {
+  // Point d'échange du lien magique, et page d'atterrissage des sessions
+  // absentes : les deux doivent rester joignables sans session.
+  if (pathname === "/admin/entree" || pathname === "/admin/connexion") {
     return NextResponse.next();
   }
 
   const context = await getAdminContextFromRequest(request);
   if (!context) {
-    return NextResponse.redirect(new URL("/?admin=locked", request.url));
+    // `/?admin=locked` est une page de la boutique. Sur l'hôte admin, le
+    // middleware la renvoyait vers `/admin`, qui renvoyait ici : boucle
+    // infinie, et un admin déconnecté n'avait plus aucune porte d'entrée.
+    return NextResponse.redirect(
+      new URL("/admin/connexion?raison=session", request.url),
+    );
   }
 
   if (

@@ -13,12 +13,16 @@ export const PRODUCT_CATEGORIES = [
   "Chocolats",
   "Carte",
   "Cadeaux",
-  "Boissons",
   /**
-   * Vins et spiritueux — vendus en bouteille, à emporter ou en complément.
+   * Vins, spiritueux **et champagnes** — vendus en bouteille, à emporter ou en
+   * complément.
    *
    * Libellé exact voulu par la maison : « Vin / Spiritueux ». Ni
    * « Vin / Champagne », ni « Vins & Spiritueux ».
+   *
+   * Les champagnes y sont rattachés : « Boissons » et « Boissons & Extras »
+   * découpaient la même famille en trois, et « Boissons & Extras » n'existait
+   * que dans les données, jamais dans le code.
    */
   "Vin / Spiritueux",
 ] as const;

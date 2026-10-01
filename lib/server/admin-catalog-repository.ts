@@ -1,8 +1,6 @@
 import { randomUUID } from "crypto";
 import { revalidateTag } from "next/cache";
 
-import { inferCategoryFromSlug } from "@/lib/admin/categories";
-import { products as seedProducts } from "@/lib/mock-data";
 import { normalizeProductImages, GIFT_CATALOG_OVERRIDE } from "@/lib/product-images";
 import { getPrisma } from "@/lib/prisma";
 import { getVariantsByProductIds } from "@/lib/server/variant-repository";
@@ -43,24 +41,6 @@ export function normalizeVisibility(value: string | null | undefined): ProductVi
     ? (value as ProductVisibilityValue)
     : "published";
 }
-
-function seedCatalog(): AdminCatalogProduct[] {
-
-  return seedProducts.map((product) => ({
-
-    ...product,
-
-    imageUrl: product.imageUrl,
-
-    imageUrls: product.imageUrls ?? [product.imageUrl],
-
-    category: inferCategoryFromSlug(product.slug),
-
-  }));
-
-}
-
-
 
 function toCatalogProduct(row: {
 
@@ -356,10 +336,8 @@ async function withVariants(
 export async function getAdminCatalog(): Promise<AdminCatalogProduct[]> {
   const fromDb = await readCatalogFromDb();
   if (fromDb) return withVariants(applyGiftOverrides(fromDb));
-  // Base vide = catalogue vide (prod + build Vercel). Dev local : fallback mémoire sans écriture.
-  if (!isProductionRuntime()) {
-    return withVariants(applyGiftOverrides(seedCatalog()));
-  }
+  // Base vide = catalogue vide, en dev comme en production : la base est la
+  // seule source. Un repli en dur faisait diverger le dev de la prod.
   return [];
 }
 

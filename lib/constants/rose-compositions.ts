@@ -30,6 +30,33 @@ export function isRoseProduct(slug: string): boolean {
   return slug === "rose-unite" || /^bouquet-\d+-roses?$/.test(slug);
 }
 
+/**
+ * Rang d'une composition — l'index dans `ROSE_COMPOSITION_SLUGS`.
+ *
+ * `MAX_SAFE_INTEGER` pour tout le reste : un produit qui n'est pas une
+ * composition ne doit pas s'intercaler dans la gamme.
+ */
+function roseRank(slug: string): number {
+  const index = ROSE_COMPOSITION_SLUGS.indexOf(
+    slug as (typeof ROSE_COMPOSITION_SLUGS)[number],
+  );
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
+
+/**
+ * Tri d'affichage des compositions, du plus petit bouquet au plus grand.
+ *
+ * Sans lui, l'ordre est alphabétique : « Bouquet 10 roses » se glisse entre
+ * « 1 rose » et « 2 roses », et la gamme devient illisible. À utiliser partout
+ * où les roses sont listées — catalogue, back-office.
+ */
+export function compareRoseOrder(
+  a: { slug: string },
+  b: { slug: string },
+): number {
+  return roseRank(a.slug) - roseRank(b.slug);
+}
+
 /** Nombre de roses, lu dans le slug. `null` si ce n'est pas une composition. */
 export function getRoseCount(slug: string): number | null {
   if (slug === "rose-unite") return 1;

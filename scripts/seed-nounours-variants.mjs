@@ -41,7 +41,10 @@ const OFFICIAL_SIZES = [
   { cm: 150, price: 100_000 },
 ];
 
-/** Les trois types demandés. `nounours-beige` est volontairement exclu. */
+/**
+ * Les trois types demandés. L'ancienne fiche générique `nounours-beige` a été
+ * supprimée le 1er octobre 2026 — elle ne doit pas être réintroduite ici.
+ */
 const NOUNOURS = [
   { slug: "nounours-stitch", subtype: "stitch" },
   { slug: "nounours-teddy", subtype: "teddy" },

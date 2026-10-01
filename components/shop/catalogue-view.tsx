@@ -18,6 +18,7 @@ import {
   getPriceBounds,
   getProductCategory,
 } from "@/lib/catalog-utils";
+import { compareRoseOrder } from "@/lib/constants/rose-compositions";
 import { cn } from "@/lib/utils";
 import {
   defaultCatalogueFilters,
@@ -97,7 +98,12 @@ export function CatalogueView({
   );
 
   const fleursCatalog = useMemo(
-    () => fullCatalog.filter((p) => getProductCategory(p) === "Fleurs"),
+    () =>
+      fullCatalog
+        .filter((p) => getProductCategory(p) === "Fleurs")
+        // Du plus petit bouquet au plus grand — l'ordre du catalogue est
+        // alphabétique, donc « 10 roses » arrivait avant « 2 roses ».
+        .sort(compareRoseOrder),
     [fullCatalog],
   );
 

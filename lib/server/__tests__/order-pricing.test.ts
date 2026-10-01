@@ -1,26 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { priceOrderItems } from "@/lib/server/order-pricing";
+import type { Product } from "@/types/product";
 
 /**
- * Sans base : `getPrisma()` lève immédiatement et le catalogue retombe sur son
- * jeu de repli. Sans ça, chaque appel attend ~5 s l'échec d'une connexion
- * Supabase et le test expire — ce qui n'a rien à voir avec ce qu'on vérifie.
+ * Sans base : `getPrisma()` lève immédiatement. Sans ça, chaque appel attend
+ * ~5 s l'échec d'une connexion Supabase et le test expire — ce qui n'a rien à
+ * voir avec ce qu'on vérifie.
  */
 delete process.env.DATABASE_URL;
 delete process.env.DIRECT_URL;
 
 /**
- * Les variantes vivent désormais **en base**, pas dans une constante du code.
- * On remplace donc le dépôt par des fixtures : le test porte sur la logique de
- * facturation, pas sur Postgres.
+ * Le catalogue et les variantes vivent **en base**, pas dans une constante du
+ * code. On remplace donc les deux dépôts par des fixtures : le test porte sur
+ * la logique de facturation, pas sur Postgres.
  *
  * Grille officielle 20 cm → 150 cm. Deux produits :
- *   - « 12 » = Nounours beige, produit **à paliers** (le cas historique) ;
- *   - « 13 » = Bouquet de roses, produit **non nounours** à variantes : c'est
+ *   - « 12 » = nounours, produit **à paliers** (le cas historique) ;
+ *   - « 13 » = bouquet, produit **non nounours** à variantes : c'est
  *     la preuve que la résolution est générique et pas une branche nounours.
  */
-const { VARIANTS_BY_PRODUCT } = vi.hoisted(() => {
+const { VARIANTS_BY_PRODUCT, PRODUCT_FIXTURES } = vi.hoisted(() => {
   const grid: [number, number][] = [
     [20, 10_000],
     [25, 15_000],
@@ -91,8 +92,58 @@ const { VARIANTS_BY_PRODUCT } = vi.hoisted(() => {
     },
   ];
 
-  return { VARIANTS_BY_PRODUCT: new Map<string, typeof nounours>([["12", nounours], ["13", bouquet]]) };
+  /**
+   * Catalogue de test — volontairement autonome.
+   *
+   * Ce test portait autrefois sur le catalogue de démonstration `lib/mock-data`,
+   * supprimé : il dépendait de l'existence de vraies fiches commerciales pour
+   * vérifier une règle de facturation. Les trois produits ci-dessous suffisent,
+   * et les catégories sont « à stock illimité » pour que le test ne dépende ni
+   * du menu du jour ni du stock.
+   */
+  const product = (
+    id: string,
+    slug: string,
+    name: string,
+  ): Product => ({
+    id,
+    slug,
+    name,
+    description: "",
+    price: 1_000,
+    imageUrl: "",
+    stockRemaining: 99,
+    stockMinimum: 0,
+    isNew: false,
+    isPromotion: false,
+    isMenuDuJour: false,
+    isPopular: false,
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
+
+  const PRODUCT_FIXTURES: Product[] = [
+    { ...product("12", "nounours-test", "Nounours test"), category: "Nounours" },
+    { ...product("13", "bouquet-test", "Bouquet test"), category: "Cadeaux" },
+    { ...product("99", "glace-test", "Glace test"), category: "Cadeaux" },
+  ];
+
+  return {
+    VARIANTS_BY_PRODUCT: new Map<string, typeof nounours>([["12", nounours], ["13", bouquet]]),
+    PRODUCT_FIXTURES,
+  };
 });
+
+/**
+ * Le catalogue est mocké : sans lui, `getFullCatalog` interroge Postgres et le
+ * test ne porte plus sur la facturation. On remplace donc la source, comme on
+ * remplace déjà le dépôt de variantes ci-dessous.
+ */
+vi.mock("@/lib/server/shop-catalog", () => ({
+  getFullCatalog: async () => PRODUCT_FIXTURES,
+  // Aucun menu actif : les produits de test sont à stock illimité, donc la
+  // règle « doit être au menu » ne s'applique pas.
+  getShopProductsFromActiveMenu: async () => [],
+}));
 
 vi.mock("@/lib/server/variant-repository", () => ({
   // Émule le filtre `isActive` fait en base.
@@ -148,7 +199,7 @@ describe("facturation serveur — variantes de produit", () => {
     ];
 
     for (const [cm, price] of expected) {
-      const result = await priceOrderItems([item("nounours-beige", { sizeCm: cm })]);
+      const result = await priceOrderItems([item("nounours-test", { sizeCm: cm })]);
       expect(result.ok, `${cm} cm`).toBe(true);
       if (!result.ok) continue;
       expect(result.data.items[0]!.unitPrice, `${cm} cm`).toBe(price);
@@ -157,7 +208,7 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("accepte le code de variante explicite, pas seulement la taille héritée", async () => {
     const result = await priceOrderItems([
-      item("nounours-beige", { variantCode: "150" }),
+      item("nounours-test", { variantCode: "150" }),
     ]);
 
     expect(result.ok).toBe(true);
@@ -167,18 +218,18 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("fige la variante dans la ligne de commande (snapshot)", async () => {
     const result = await priceOrderItems([
-      item("nounours-beige", { sizeCm: 120 }),
+      item("nounours-test", { sizeCm: 120 }),
     ]);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.items[0]!.name).toBe("Nounours beige — 120 cm");
+    expect(result.data.items[0]!.name).toBe("Nounours test — 120 cm");
     expect(result.data.items[0]!.variantId).toBe("v-120");
     expect(result.data.items[0]!.variantLabel).toBe("120 cm");
   });
 
   it("refuse une commande sans variante choisie", async () => {
-    const result = await priceOrderItems([item("nounours-beige")]);
+    const result = await priceOrderItems([item("nounours-test")]);
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -187,7 +238,7 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("refuse un code de variante inexistant", async () => {
     const result = await priceOrderItems([
-      item("nounours-beige", { variantCode: "45" }),
+      item("nounours-test", { variantCode: "45" }),
     ]);
 
     expect(result.ok).toBe(false);
@@ -197,7 +248,7 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("refuse une variante désactivée", async () => {
     const result = await priceOrderItems([
-      item("nounours-beige", { variantCode: "115" }),
+      item("nounours-test", { variantCode: "115" }),
     ]);
 
     expect(result.ok).toBe(false);
@@ -207,7 +258,7 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("facture les variantes d'un produit qui n'est pas un nounours", async () => {
     const result = await priceOrderItems([
-      item("bouquet-roses", { variantCode: "grand" }),
+      item("bouquet-test", { variantCode: "grand" }),
     ]);
 
     expect(result.ok).toBe(true);
@@ -220,7 +271,7 @@ describe("facturation serveur — variantes de produit", () => {
     // Le type ne porte aucun prix : on force la charge utile d'un client
     // malveillant pour vérifier qu'elle n'a aucun effet.
     const hostile = {
-      ...item("nounours-beige", { variantCode: "140" }),
+      ...item("nounours-test", { variantCode: "140" }),
       unitPrice: 1,
       baseUnitPrice: 1,
       price: 1,
@@ -237,7 +288,7 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("multiplie correctement par la quantité", async () => {
     const result = await priceOrderItems([
-      item("nounours-beige", { sizeCm: 80, quantity: 2 }),
+      item("nounours-test", { sizeCm: 80, quantity: 2 }),
     ]);
 
     expect(result.ok).toBe(true);
@@ -247,12 +298,12 @@ describe("facturation serveur — variantes de produit", () => {
 
   it("respecte le stock propre à une variante", async () => {
     const tooMany = await priceOrderItems([
-      item("bouquet-roses", { variantCode: "prestige", quantity: 3 }),
+      item("bouquet-test", { variantCode: "prestige", quantity: 3 }),
     ]);
     expect(tooMany.ok).toBe(false);
 
     const fits = await priceOrderItems([
-      item("bouquet-roses", { variantCode: "prestige", quantity: 2 }),
+      item("bouquet-test", { variantCode: "prestige", quantity: 2 }),
     ]);
     expect(fits.ok).toBe(true);
     if (!fits.ok) return;
@@ -261,7 +312,7 @@ describe("facturation serveur — variantes de produit", () => {
   });
 
   it("n'impose aucune variante à un produit qui n'en a pas", async () => {
-    const result = await priceOrderItems([item("mango-passion")]);
+    const result = await priceOrderItems([item("glace-test")]);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -286,7 +337,7 @@ describe("facturation serveur — variantes de produit", () => {
 
     it("facture le palier officiel, jamais le prix d'entrée", async () => {
       const result = await withoutVariants(() =>
-        priceOrderItems([item("nounours-beige", { sizeCm: 150 })]),
+        priceOrderItems([item("nounours-test", { sizeCm: 150 })]),
       );
 
       expect(result.ok).toBe(true);
@@ -297,7 +348,7 @@ describe("facturation serveur — variantes de produit", () => {
 
     it("refuse une fiche nounours sans taille choisie", async () => {
       const result = await withoutVariants(() =>
-        priceOrderItems([item("nounours-beige")]),
+        priceOrderItems([item("nounours-test")]),
       );
 
       expect(result.ok).toBe(false);
@@ -307,7 +358,7 @@ describe("facturation serveur — variantes de produit", () => {
 
     it("refuse une taille hors grille", async () => {
       const result = await withoutVariants(() =>
-        priceOrderItems([item("nounours-beige", { sizeCm: 45 })]),
+        priceOrderItems([item("nounours-test", { sizeCm: 45 })]),
       );
 
       expect(result.ok).toBe(false);

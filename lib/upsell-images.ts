@@ -28,13 +28,6 @@ export const UPSELL_PRODUCT_IMAGES: UpsellImageEntry[] = [
     prompt: "",
   },
   {
-    slug: "bouquet-roses",
-    path: "/images/produits/bouquet-roses.webp",
-    subject:
-      "a bouquet of pink and white roses wrapped in elegant kraft paper with a ribbon",
-    prompt: "",
-  },
-  {
     slug: "carte-cadeau",
     path: "/images/catalog/carte-cadeau.webp",
     subject:
@@ -60,7 +53,6 @@ export function getUpsellImageUrl(slug: string): string | undefined {
 
 export const UPSELL_GIFT_SLUGS = [
   "nounours",
-  "bouquet-roses",
   "carte-cadeau",
 ] as const;
 

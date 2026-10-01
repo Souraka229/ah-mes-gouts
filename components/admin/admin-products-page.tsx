@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import type { AppError } from "@/lib/api/errors";
 import { safeFetch } from "@/lib/api/safe-fetch";
 import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
+import { compareRoseOrder } from "@/lib/constants/rose-compositions";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { ProductVariantsPanel } from "@/components/admin/product-variants-panel";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,8 @@ const ADMIN_TABS = [
   "Chocolats",
   "Carte",
   "Cadeaux",
+  "Vin / Spiritueux",
+  "Sur commande",
   "Menu du jour",
   "Promo",
 ] as const;
@@ -77,11 +80,21 @@ export function AdminProductsPage() {
   const [variantsProduct, setVariantsProduct] =
     useState<AdminProduct | null>(null);
 
-  const filteredProducts = products.filter((product) => {
+  const visibleProducts = products.filter((product) => {
     if (activeTab === "Tous") return true;
     if (activeTab === "Promo") return Boolean(product.isPromotion);
     return (product.category ?? "Entremets") === activeTab;
   });
+
+  /**
+   * Les compositions de roses se lisent du plus petit bouquet au plus grand.
+   * L'API les renvoie par nom : « Bouquet 10 roses » s'intercalait entre
+   * « 1 rose » et « 2 roses ».
+   */
+  const filteredProducts =
+    activeTab === "Fleurs"
+      ? [...visibleProducts].sort(compareRoseOrder)
+      : visibleProducts;
 
   const stocklessCategory = isUnlimitedStockCategory(form.category);
 

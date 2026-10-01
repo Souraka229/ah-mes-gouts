@@ -12,7 +12,6 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed-db.mjs",
-    "seed:legacy": "node scripts/seed-all.mjs",
     "seed:db": "node scripts/seed-db.mjs",
     "db:inspect": "node scripts/db-inspect.mjs",
     "db:health": "node scripts/db-health-check.mjs",

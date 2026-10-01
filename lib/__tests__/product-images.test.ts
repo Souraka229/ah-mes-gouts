@@ -35,8 +35,6 @@ describe("visuels produits", () => {
   it("chaque slug cadeau résout vers un fichier existant", () => {
     for (const slug of [
       "nounours",
-      "nounours-beige",
-      "bouquet-roses",
       "carte-cadeau",
       "supplement-chocolats",
       "supplement-chocolats-paquet",

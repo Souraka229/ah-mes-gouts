@@ -64,7 +64,8 @@ export function isGiftBandProduct(product: Product): boolean {
   return (
     isGiftCardProduct(product) ||
     isNounoursProduct(product.slug) ||
-    // `slug === "bouquet-roses"` ne correspondait à aucune composition réelle :
+    // Ne pas revenir à une comparaison de slug en dur : `bouquet-roses`, la
+    // fiche générique d'alors, ne correspondait à aucune composition réelle —
     // le filtre « cadeaux » du catalogue ne remontait donc aucun bouquet.
     isRoseProduct(product.slug)
   );

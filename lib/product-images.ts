@@ -23,11 +23,9 @@ const PRODUCT_IMAGES: Record<string, string> = {
   // getProductImageUrl tombait sur le repli cadeau et servait la mauvaise
   // image — ou aucune, quand le repli pointait vers un fichier absent.
   nounours: `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
-  "nounours-beige": `${PRODUCT_IMAGE_BASE}/nounours-beige.webp`,
   // Les trois nounours à variantes ont désormais de vraies photos en base :
   // aucune entrée de repli ici, sinon vider leur image ferait réapparaître un
   // visuel « non contractuel ».
-  "bouquet-roses": `${PRODUCT_IMAGE_BASE}/bouquet-roses.webp`,
   // Photos réelles des compositions — sans ces entrées, vider l'image d'une
   // fiche en base la ferait retomber sur la photo d'un autre bouquet.
   "bouquet-7-roses": `${PRODUCT_IMAGE_BASE}/bouquet-7-roses.webp`,

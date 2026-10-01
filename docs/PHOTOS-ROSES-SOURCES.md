@@ -82,7 +82,12 @@ Généré par `scripts/import-rose-placeholders.mjs` dans
 
 - `bouquet-7-roses`, `bouquet-9-roses`, `bouquet-12-roses` : **vraies photos de
   l'atelier**, déjà en place.
-- `bouquet-roses` (fiche générique) : garde son visuel.
+
+> La fiche générique `bouquet-roses` a été **supprimée** le 1er octobre 2026 —
+> elle ne correspondait à aucune composition réelle. Le fichier
+> `bouquet-roses.webp` reste dans `public/images/produits/` : plus aucun code
+> applicatif ne le référence (seuls un seed historique et deux fixtures de test
+> le citent). Il peut servir de visuel de repli, mais plus pour une fiche.
 
 ## Remplacer un visuel par une vraie photo
 

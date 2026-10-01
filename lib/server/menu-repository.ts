@@ -6,10 +6,12 @@ import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import {
   addShopDays,
   getShopDateKey,
-  isTodayAtShop,
+  isMenuServable,
   NEXT_DAY_ORDERING_OPENS_AT,
   shopDateTimeToUtc,
 } from "@/lib/business-date";
+import { getDeliveryConfig } from "@/lib/server/delivery-config-repository";
+import { isDateClosed } from "@/lib/delivery/slots";
 import { getPrisma } from "@/lib/prisma";
 import type { MenuStatus, ScheduledMenu } from "@/types/menu";
 import type { Product } from "@/types/product";
@@ -328,7 +330,10 @@ async function expireStaleActiveMenus(): Promise<number> {
     select: { id: true, date: true },
   });
 
-  const stale = activeRows.filter((row) => !isTodayAtShop(row.date));
+  // `isMenuServable`, pas `isTodayAtShop` : un menu activé à 20 h porte la date
+  // de DEMAIN. Le périmer parce que sa date n'est pas « aujourd'hui » le tuait
+  // quelques minutes après son ouverture, à chaque chargement de page.
+  const stale = activeRows.filter((row) => !isMenuServable(row.date));
   if (stale.length === 0) return 0;
 
   const result = await prisma.menu.updateMany({
@@ -425,12 +430,29 @@ export async function getShopProductsFromActiveMenu(): Promise<Product[]> {
   const catalog = await getAdminCatalog();
   const active = await getActiveMenu();
 
-  if (!active || !isTodayAtShop(active.date)) {
+  // `isMenuServable` couvre les deux moitiés de la vie d'un menu : la veille au
+  // soir dès 20 h (quand les commandes du lendemain s'ouvrent) et le jour servi
+  // jusqu'à la fermeture. Avec `isTodayAtShop`, la boutique restait vide de
+  // 20 h à minuit — précisément l'heure où l'on vend le menu du lendemain.
+  if (!active || !isMenuServable(active.date)) {
     return [];
   }
 
   if (active.productIds.length === 0) {
     return [];
+  }
+
+  // Jour de fermeture : la boutique ne prend pas de commande, proposer un menu
+  // n'aurait aucun sens.
+  try {
+    const { schedules } = await getDeliveryConfig();
+    const jourServi = new Date(active.date);
+    const closed =
+      isDateClosed(schedules, "delivery", jourServi) &&
+      isDateClosed(schedules, "pickup", jourServi);
+    if (closed) return [];
+  } catch {
+    // Config illisible : on sert le menu plutôt que de vider la boutique.
   }
 
   // Résolution robuste : par ID puis par slug. Après un reseed, les IDs du

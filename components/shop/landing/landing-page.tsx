@@ -20,7 +20,10 @@ export function LandingPage({ content }: { content: HomePageContent }) {
   // Le menu du jour est la seule section pilotée par les données : elle
   // n'apparaît qu'une fois le menu planifié puis publié (activation à 20 h la
   // veille). Le reste de la page est une vitrine éditoriale stable.
+  // Quatre cartes à l'affiche, mais on annonce le vrai nombre : la section
+  // reçoit le total pour le dire et renvoyer au catalogue au-delà.
   const menuItems = content.menuShowcase.slice(0, 4);
+  const menuTotal = content.menuShowcase.length;
   const hasPublishedMenu = menuItems.length > 0;
 
   return (
@@ -30,17 +33,19 @@ export function LandingPage({ content }: { content: HomePageContent }) {
         arrivant, et il n'existe que les jours où un menu est publié. Il ouvre la
         page plutôt que de s'intercaler entre deux sections.
       */}
-      <LandingMenuBanner count={content.menuShowcase.length} />
+      <LandingMenuBanner count={menuTotal} />
 
       <LandingHero
         featured={content.menuShowcase[0] ?? null}
         fallbackImage={content.hero.imageUrl}
         ctaHref={content.hero.ctaHref}
         ctaLabel={content.hero.ctaLabel}
-        menuCount={content.menuShowcase.length}
+        menuCount={menuTotal}
       />
 
-      {hasPublishedMenu && <LandingMenuSection items={menuItems} />}
+      {hasPublishedMenu && (
+        <LandingMenuSection items={menuItems} total={menuTotal} />
+      )}
 
       <LandingSignatures />
 

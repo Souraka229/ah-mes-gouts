@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   addShopDays,
   getShopDateKey,
+  isMenuServable,
   isNextDayOrderingOpen,
   isOrderableShopDate,
   NEXT_DAY_ORDERING_OPENS_AT,
+  SHOP_CLOSES_AT_MINUTES,
   shopDateTimeToUtc,
 } from "@/lib/business-date";
 
@@ -113,5 +115,51 @@ describe("règle d'ouverture d'un menu", () => {
   it("passe correctement un changement de mois", () => {
     expect(addShopDays("2026-09-01", -1)).toBe("2026-08-31");
     expect(addShopDays("2026-12-31", 1)).toBe("2027-01-01");
+  });
+});
+
+describe("fenêtre de vie d'un menu du jour", () => {
+  const jour = "2026-08-13";
+  const veille = "2026-08-12";
+  const surlendemain = "2026-08-14";
+
+  it("se ferme à la fin de la dernière vague de livraison", () => {
+    expect(SHOP_CLOSES_AT_MINUTES).toBe(19 * 60 + 30);
+  });
+
+  it("reste servable toute la journée qu'il sert, jusqu'à 19 h 29", () => {
+    expect(isMenuServable(atCotonou(jour, "00:30"), atCotonou(jour, "00:30"))).toBe(true);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "14:00"))).toBe(true);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:29"))).toBe(true);
+  });
+
+  it("ne l'est plus après la fermeture", () => {
+    // La boutique a fermé : proposer le menu n'aurait plus de sens.
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:31"))).toBe(false);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "22:00"))).toBe(false);
+  });
+
+  it("s'ouvre à 20 h la veille, pas avant", () => {
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(veille, "19:59"))).toBe(false);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(veille, "20:00"))).toBe(true);
+  });
+
+  it("ne survit pas au-delà de sa journée", () => {
+    expect(
+      isMenuServable(atCotonou(jour, "14:00"), atCotonou(surlendemain, "12:00")),
+    ).toBe(false);
+  });
+
+  /**
+   * Le bug d'origine : `expireStaleActiveMenus` périmait tout menu dont la date
+   * n'était pas « aujourd'hui ». Un menu activé à 20 h porte la date de demain —
+   * il était donc tué au premier chargement de page suivant son ouverture.
+   */
+  it("survit à son ouverture de 20 h, la veille", () => {
+    const instantDOuverture = atCotonou(veille, "20:00");
+    expect(getShopDateKey(atCotonou(jour, "14:00"))).not.toBe(
+      getShopDateKey(instantDOuverture),
+    );
+    expect(isMenuServable(atCotonou(jour, "14:00"), instantDOuverture)).toBe(true);
   });
 });

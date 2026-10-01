@@ -116,7 +116,11 @@ export async function getMenuDuJourShowcaseForLanding(): Promise<
   MenuShowcaseItem[]
 > {
   const menuProducts = await getShopProductsFromActiveMenu();
-  const picks = menuProducts.filter(isProductAvailable).slice(0, 4);
+  // Pas de plafond ici : c'est cette liste qui alimente les compteurs
+  // (« 6 créations ») du bandeau et du hero. La plafonner faisait annoncer 4
+  // alors que le menu en comptait 6. L'accueil décide lui-même combien de
+  // cartes il affiche.
+  const picks = menuProducts.filter(isProductAvailable);
   const hydrated = await attachVariants(picks);
 
   return hydrated.map((product) => ({

@@ -1,3 +1,5 @@
+import { DELIVERY_WAVES } from "@/lib/delivery/constants";
+
 /** Fuseau boutique — Cotonou / Porto-Novo (UTC+1, sans heure d’été). */
 export const SHOP_TIME_ZONE = "Africa/Porto-Novo";
 
@@ -45,6 +47,19 @@ export function getShopHour(date: Date | string = new Date()): number {
   return Number(hour) % 24;
 }
 
+/** Minutes écoulées depuis minuit, heure boutique. */
+export function getShopMinutes(date: Date | string = new Date()): number {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: SHOP_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(date));
+  const [h = "0", m = "0"] = parts.split(":");
+  // `en-GB` en 24 h rend « 24 » pour minuit — on le ramène à 0.
+  return (Number(h) % 24) * 60 + Number(m);
+}
+
 /** Décale une clé calendrier boutique de N jours (arithmétique calendaire). */
 export function addShopDays(dateKey: string, days: number): string {
   const [year = 0, month = 1, day = 1] = dateKey.split("-").map(Number);
@@ -78,6 +93,39 @@ export function isOrderableShopDate(
 ): boolean {
   if (isTodayAtShop(date, now)) return true;
   return isNextDayOrderingOpen(now) && isTomorrowAtShop(date, now);
+}
+
+/**
+ * Fermeture boutique, en minutes depuis minuit — la fin de la dernière vague
+ * de livraison. Dérivée des vagues plutôt que réécrite : si les tournées
+ * changent, la fermeture du menu suit.
+ */
+export const SHOP_CLOSES_AT_MINUTES = (() => {
+  const last = DELIVERY_WAVES[DELIVERY_WAVES.length - 1]!.end;
+  const [h = "0", m = "0"] = last.split(":");
+  return Number(h) * 60 + Number(m);
+})();
+
+/**
+ * Un menu du jour est-il encore servable ?
+ *
+ * Il ouvre à **20 h la veille** de la journée qu'il sert (`NEXT_DAY_ORDERING_OPENS_AT`,
+ * le moment où les commandes du lendemain s'ouvrent) et se ferme à la
+ * **fermeture de la boutique**, le jour qu'il sert — pas à minuit. Entre les
+ * deux, la boutique est fermée et aucun menu n'est proposé.
+ *
+ * Remplace `isTodayAtShop` pour tout ce qui touche au menu : un menu dont la
+ * date est *demain* est légitime à partir de 20 h, et le périmer à ce
+ * moment-là le tuait quelques minutes après son ouverture.
+ */
+export function isMenuServable(
+  menuDate: Date | string,
+  now = new Date(),
+): boolean {
+  if (isTodayAtShop(menuDate, now)) {
+    return getShopMinutes(now) < SHOP_CLOSES_AT_MINUTES;
+  }
+  return isNextDayOrderingOpen(now) && isTomorrowAtShop(menuDate, now);
 }
 
 /** Jour de la semaine (0 = dimanche) dans le fuseau boutique. */

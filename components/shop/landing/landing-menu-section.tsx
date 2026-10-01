@@ -11,17 +11,26 @@ import { isNextDayOrderingOpen } from "@/lib/business-date";
 import type { MenuShowcaseItem } from "@/lib/server/shop-catalog";
 
 type LandingMenuSectionProps = {
+  /** Les cartes réellement affichées — au plus 4, choix éditorial. */
   items: MenuShowcaseItem[];
+  /**
+   * Le nombre réel de créations du menu. Distinct de `items.length` dès que le
+   * menu en compte plus que les cartes affichées : sans lui, la section
+   * annonçait « 4 créations » pour un menu qui en avait 6.
+   */
+  total: number;
 };
 
 /**
  * Menu du jour — grille décalée verticalement pour éviter l'alignement au
  * cordeau. Chaque carte mène à la fiche produit : la landing reste sans JS.
  */
-export function LandingMenuSection({ items }: LandingMenuSectionProps) {
+export function LandingMenuSection({ items, total }: LandingMenuSectionProps) {
   if (items.length === 0) return null;
 
   const nextDayOpen = isNextDayOrderingOpen();
+  /** Des créations restent au catalogue : on ne les laisse pas introuvables. */
+  const hasMore = total > items.length;
 
   return (
     <section
@@ -45,8 +54,7 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
           Le menu du jour
         </h2>
         <p className="mt-4 max-w-lg font-body text-base text-muted-foreground">
-          {items.length} création{items.length > 1 ? "s" : ""} en quantité
-          limitée.{" "}
+          {total} création{total > 1 ? "s" : ""} en quantité limitée.{" "}
           {nextDayOpen
             ? "Les créneaux de demain sont ouverts."
             : "Le menu de demain s’ouvre ce soir à 20 h."}
@@ -118,6 +126,23 @@ export function LandingMenuSection({ items }: LandingMenuSectionProps) {
             </li>
           ))}
         </ul>
+
+        {/*
+          Quatre cartes seulement sont montrées, mais le menu peut en compter
+          davantage : sans ce lien, les créations en trop n'existaient nulle
+          part depuis l'accueil. Il disparaît quand tout est déjà affiché.
+        */}
+        {hasMore && (
+          <div className="mt-12 flex justify-center lg:mt-16">
+            <Link
+              href="/catalogue"
+              className="shadow-soft inline-flex cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-6 py-3 font-body text-sm font-semibold text-primary transition-colors hover:border-secondary hover:text-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary"
+            >
+              Voir les {total} créations
+              <ArrowUpRight className="size-4" aria-hidden />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -45,6 +45,24 @@ function isPwaAsset(pathname: string): boolean {
   return pathname.startsWith("/pwa/") || PWA_ASSET_PATHS.includes(pathname);
 }
 
+function isDriverPath(pathname: string): boolean {
+  return (
+    pathname === "/livreur" ||
+    pathname.startsWith("/livreur/") ||
+    pathname.startsWith("/api/livreur") ||
+    pathname.startsWith("/api/pwa/driver-manifest")
+  );
+}
+
+/** Domaine boutique — jamais le sous-domaine admin. */
+function publicSiteOrigin(request: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (configured) return configured;
+  const host = request.headers.get("host")?.split(":")[0] ?? "";
+  const publicHost = host.startsWith("admin.") ? host.slice("admin.".length) : host;
+  return `https://${publicHost}`;
+}
+
 /** Pages réservées au rôle administrateur (les employés n'y accèdent pas). */
 const ADMIN_ONLY_PREFIXES = [
   "/admin/parametres/boutique",
@@ -98,6 +116,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (adminHostConfigured) {
+    // Le portail livreur vit sur le domaine public, pas sur l'hôte admin :
+    // sinon le lien /livreur/… atterrit sur la page de connexion back-office.
+    if (isAdminHost && isDriverPath(pathname)) {
+      const target = new URL(pathname, publicSiteOrigin(request));
+      target.search = request.nextUrl.search;
+      return NextResponse.redirect(target, 308);
+    }
+
     // Le domaine public sert la boutique, pas le back-office : on renvoie
     // vers l'hôte admin plutôt qu'un 404. Le sous-domaine est de toute façon
     // visible dans le DNS, et un 404 ici enfermerait l'équipe dehors le jour

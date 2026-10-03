@@ -17,11 +17,23 @@ function driverFirstName(name: string): string {
   return name.trim().split(/\s+/)[0] ?? name;
 }
 
+function shopOrigin(explicit?: string): string {
+  if (explicit?.trim()) return explicit.replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (configured) return configured;
+  if (typeof window !== "undefined") {
+    const { protocol, hostname, port } = window.location;
+    const host = hostname.startsWith("admin.")
+      ? hostname.slice("admin.".length)
+      : hostname;
+    const suffix = port ? `:${port}` : "";
+    return `${protocol}//${host}${suffix}`;
+  }
+  return "";
+}
+
 export function buildDriverPortalUrl(accessToken: string, origin?: string): string {
-  const base =
-    origin ??
-    (typeof window !== "undefined" ? window.location.origin : "");
-  return `${base}/livreur/${accessToken}`;
+  return `${shopOrigin(origin)}/livreur/${accessToken}`;
 }
 
 export function buildDriverWelcomeMessage(

@@ -26,7 +26,9 @@ import {
 } from "@/components/admin/menu-product-editor";
 import { MenuProductPicker } from "@/components/admin/menu-product-picker";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { MenuPlanSteps } from "@/components/admin/menu-plan-steps";
 import { isDailyMenuCategory } from "@/lib/admin/categories";
+import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,6 +97,7 @@ export function AdminMenusPage() {
   const [targetDate, setTargetDate] = useState("");
   const [activateTime, setActivateTime] = useState("20:00");
   const [saving, setSaving] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -208,6 +211,7 @@ export function AdminMenusPage() {
     setActivateTime("20:00");
     setSelectedIds(ids);
     initDrafts(ids, qtyById);
+    setWizardStep(1);
     setFormOpen(true);
   };
 
@@ -231,6 +235,7 @@ export function AdminMenusPage() {
     });
     setSelectedIds(ids);
     initDrafts(ids, qtyById);
+    setWizardStep(1);
     setFormOpen(true);
   };
 
@@ -376,6 +381,7 @@ export function AdminMenusPage() {
         toast.success("Menu de demain programmé");
       }
       setFormOpen(false);
+      setWizardStep(1);
       await load();
     } catch (e) {
       toast.error(
@@ -641,94 +647,194 @@ export function AdminMenusPage() {
               {editing ? "Modifier le menu" : "Menu de demain"}
             </h2>
             <p className="mt-1 font-body text-sm text-muted-foreground">
-              Ouverture des ventes à 20 h la veille (heure boutique).
+              On choisit, on valide les quantités, puis on relit avant de
+              planifier.
             </p>
+            <MenuPlanSteps current={wizardStep} />
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="menu-date">Jour servi</Label>
-                <Input
-                  id="menu-date"
-                  type="date"
-                  value={targetDate}
-                  onChange={(e) => setTargetDate(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="menu-time">Ouverture des ventes (veille)</Label>
-                <Input
-                  id="menu-time"
-                  type="time"
-                  value={activateTime}
-                  onChange={(e) => setActivateTime(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
-            <p className="mt-6 font-body text-sm font-medium text-text">
-              1. Choisir les pièces ({selectedIds.length})
-            </p>
-            <div className="mt-3">
-              <MenuProductPicker
-                catalog={catalog}
-                selectedIds={selectedIds}
-                onToggle={toggleProduct}
-              />
-            </div>
-
-            <p className="mt-6 font-body text-sm font-medium text-text">
-              2. Ordre et quantité du jour
-            </p>
-            <ul className="mt-3 space-y-3">
-              {selectedIds.map((id, index) => {
-                const draft = productDrafts[id];
-                if (!draft) return null;
-                return (
-                  <li key={id}>
-                    <MenuProductEditor
-                      product={draft}
-                      displayIndex={index}
-                      dailyQty={dailyQty[id] ?? 0}
-                      onDailyQtyChange={(qty) =>
-                        setDailyQty((prev) => ({ ...prev, [id]: qty }))
+            {wizardStep === 1 && (
+              <div className="mt-6">
+                <p className="font-body text-sm font-medium text-text">
+                  Quelles pièces entre au menu ? ({selectedIds.length})
+                </p>
+                <div className="mt-3">
+                  <MenuProductPicker
+                    catalog={catalog}
+                    selectedIds={selectedIds}
+                    onToggle={toggleProduct}
+                  />
+                </div>
+                <div className="mt-6 flex gap-2">
+                  <Button
+                    type="button"
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      if (selectedIds.length === 0) {
+                        toast.error("Choisissez au moins une création.");
+                        return;
                       }
-                      onChange={(patch) => updateProductDraft(id, patch)}
-                      onMove={(dir) => moveProduct(index, dir)}
-                      onRemove={() => toggleProduct(id)}
-                      canMoveUp={index > 0}
-                      canMoveDown={index < selectedIds.length - 1}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
+                      setWizardStep(2);
+                    }}
+                  >
+                    Valider la sélection
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => setFormOpen(false)}
+                  >
+                    Annuler
+                  </Button>
+                </div>
+              </div>
+            )}
 
-            <div className="mt-6 flex gap-2">
-              <Button
-                type="button"
-                className="flex-1 cursor-pointer"
-                disabled={saving}
-                onClick={() => void saveMenu()}
-              >
-                {saving ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : editing ? (
-                  "Publier le menu"
-                ) : (
-                  "Publier le menu de demain"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="cursor-pointer"
-                onClick={() => setFormOpen(false)}
-              >
-                Annuler
-              </Button>
-            </div>
+            {wizardStep === 2 && (
+              <div className="mt-6">
+                <p className="font-body text-sm font-medium text-text">
+                  Ordre et quantité du jour
+                </p>
+                <p className="mt-1 font-body text-xs text-muted-foreground">
+                  C’est le stock remis à l’ouverture à 20 h, pas le stock
+                  catalogue.
+                </p>
+                <ul className="mt-3 space-y-3">
+                  {selectedIds.map((id, index) => {
+                    const draft = productDrafts[id];
+                    if (!draft) return null;
+                    return (
+                      <li key={id}>
+                        <MenuProductEditor
+                          product={draft}
+                          displayIndex={index}
+                          dailyQty={dailyQty[id] ?? 0}
+                          onDailyQtyChange={(qty) =>
+                            setDailyQty((prev) => ({ ...prev, [id]: qty }))
+                          }
+                          onChange={(patch) => updateProductDraft(id, patch)}
+                          onMove={(dir) => moveProduct(index, dir)}
+                          onRemove={() => toggleProduct(id)}
+                          canMoveUp={index > 0}
+                          canMoveDown={index < selectedIds.length - 1}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-6 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => setWizardStep(1)}
+                  >
+                    Retour
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1 cursor-pointer"
+                    onClick={() => {
+                      if (selectedIds.length === 0) {
+                        toast.error("Il ne reste aucune pièce.");
+                        setWizardStep(1);
+                        return;
+                      }
+                      setWizardStep(3);
+                    }}
+                  >
+                    Voir la revue
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {wizardStep === 3 && (
+              <div className="mt-6 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="menu-date">Jour servi</Label>
+                    <Input
+                      id="menu-date"
+                      type="date"
+                      value={targetDate}
+                      onChange={(e) => setTargetDate(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="menu-time">Ouverture (veille)</Label>
+                    <Input
+                      id="menu-time"
+                      type="time"
+                      value={activateTime}
+                      onChange={(e) => setActivateTime(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <p className="font-body text-xs text-muted-foreground">
+                  {targetDate
+                    ? `Les ventes s’ouvrent le ${addShopDays(targetDate, -1)} à ${activateTime}, pour le service du ${targetDate}.`
+                    : "Choisissez le jour servi."}
+                </p>
+                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+                  {selectedIds.map((id, index) => {
+                    const draft = productDrafts[id];
+                    if (!draft) return null;
+                    const qty = dailyQty[id] ?? 0;
+                    return (
+                      <li
+                        key={id}
+                        className="flex items-center justify-between gap-3 bg-white px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-body text-sm font-semibold text-primary">
+                            {index + 1}. {draft.name}
+                          </p>
+                          <p className="font-body text-xs text-muted-foreground">
+                            {formatPrice(draft.price)}
+                            {draft.keyword ? ` · ${draft.keyword}` : ""}
+                          </p>
+                        </div>
+                        <p
+                          className={cn(
+                            "shrink-0 font-body text-sm font-semibold tabular-nums",
+                            qty <= 0 ? "text-destructive" : "text-primary",
+                          )}
+                        >
+                          {qty <= 0 ? "Qté à préciser" : `${qty} pcs`}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="cursor-pointer"
+                    onClick={() => setWizardStep(2)}
+                  >
+                    Retour
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1 cursor-pointer"
+                    disabled={saving}
+                    onClick={() => void saveMenu()}
+                  >
+                    {saving ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : editing ? (
+                      "Confirmer la modification"
+                    ) : (
+                      "Planifier ce menu"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

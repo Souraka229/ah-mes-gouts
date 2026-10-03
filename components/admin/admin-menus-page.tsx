@@ -2,6 +2,9 @@
 
 import {
   addShopDays,
+  getShopDateKey,
+  getShopMinutes,
+  getTomorrowShopDateKey,
   NEXT_DAY_ORDERING_OPENS_AT,
   shopDateTimeToIso,
 } from "@/lib/business-date";
@@ -50,13 +53,25 @@ function addDays(d: Date, n: number): Date {
   return date;
 }
 
-function sameDay(a: Date, b: Date): boolean {
-  return a.toDateString() === b.toDateString();
+function formatShopDateFr(dateKey: string): string {
+  const [year = 2026, month = 1, day = 1] = dateKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
 }
 
-function toDateInput(d: Date): string {
-  return d.toISOString().slice(0, 10);
+/** Heure boutique HH:mm à partir d’un ISO — pas le fuseau du navigateur. */
+function shopTimeInput(iso: string): string {
+  const minutes = getShopMinutes(iso);
+  const hh = String(Math.floor(minutes / 60)).padStart(2, "0");
+  const mm = String(minutes % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
 }
+
+const DEFAULT_DAILY_QTY = 6;
 
 /**
  * Ouverture d'un menu : à l'heure choisie (20 h par défaut) LA VEILLE du jour
@@ -142,14 +157,25 @@ export function AdminMenusPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!formOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFormOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [formOpen]);
+
   const initDrafts = useCallback(
-    (ids: string[], qtyById?: Record<string, number>) => {
+    (ids: string[], qtyById?: Record<string, number>, fallbackQty = 0) => {
       const drafts: Record<string, MenuProductDraft> = {};
       const qty: Record<string, number> = {};
       for (const id of ids) {
         const product = catalog.find((p) => p.id === id);
         if (product) drafts[id] = { ...product };
-        qty[id] = qtyById?.[id] ?? product?.stockRemaining ?? 0;
+        const copied = qtyById?.[id];
+        qty[id] =
+          copied !== undefined && copied > 0 ? copied : fallbackQty;
       }
       setProductDrafts(drafts);
       setDailyQty(qty);
@@ -168,7 +194,7 @@ export function AdminMenusPage() {
       menus.find(
         (m) =>
           m.status === "active" &&
-          new Date(m.date).toDateString() === new Date().toDateString(),
+          getShopDateKey(m.date) === getShopDateKey(),
       ) ?? null,
     [menus],
   );
@@ -176,7 +202,7 @@ export function AdminMenusPage() {
   const menusByDay = useMemo(() => {
     const map = new Map<string, ScheduledMenu[]>();
     for (const menu of menus) {
-      const key = new Date(menu.date).toDateString();
+      const key = getShopDateKey(menu.date);
       const list = map.get(key) ?? [];
       list.push(menu);
       map.set(key, list);
@@ -185,8 +211,7 @@ export function AdminMenusPage() {
   }, [menus]);
 
   const openCreateTomorrow = () => {
-    const tomorrow = addDays(new Date(), 1);
-    tomorrow.setHours(0, 0, 0, 0);
+    const tomorrow = getTomorrowShopDateKey();
     const active = menus.find((m) => m.status === "active");
     const yesterday = menus
       .filter((m) => m.status !== "scheduled")
@@ -207,10 +232,10 @@ export function AdminMenusPage() {
       });
     }
     setEditing(null);
-    setTargetDate(toDateInput(tomorrow));
+    setTargetDate(tomorrow);
     setActivateTime("20:00");
     setSelectedIds(ids);
-    initDrafts(ids, qtyById);
+    initDrafts(ids, qtyById, DEFAULT_DAILY_QTY);
     setWizardStep(1);
     setFormOpen(true);
   };
@@ -223,11 +248,8 @@ export function AdminMenusPage() {
       if (!ok) return;
     }
     setEditing(menu);
-    setTargetDate(toDateInput(new Date(menu.date)));
-    const at = new Date(menu.activateAt);
-    setActivateTime(
-      `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`,
-    );
+    setTargetDate(getShopDateKey(menu.date));
+    setActivateTime(shopTimeInput(menu.activateAt));
     const ids = [...menu.productIds];
     const qtyById: Record<string, number> = {};
     ids.forEach((id, index) => {
@@ -256,7 +278,10 @@ export function AdminMenusPage() {
         const product = catalog.find((p) => p.id === id);
         if (product) {
           setProductDrafts((d) => ({ ...d, [id]: { ...product } }));
-          setDailyQty((q) => ({ ...q, [id]: product.stockRemaining || 0 }));
+          setDailyQty((q) => ({
+            ...q,
+            [id]: DEFAULT_DAILY_QTY,
+          }));
         }
       } else {
         setProductDrafts((d) => {
@@ -331,12 +356,10 @@ export function AdminMenusPage() {
     // le stock de chaque produit est remis à cette valeur.
     const dailyStock = selectedIds.map((id) => dailyQty[id] ?? 0);
 
-    if (!skipStockWarning && dailyStock.every((qty) => qty <= 0)) {
-      const ok = window.confirm(
-        "Aucune quantité du jour n'est définie pour ce menu — le stock ne sera pas renouvelé à l'activation, chaque produit gardera son stock actuel. Continuer quand même ?",
-      );
-      if (!ok) return;
-      return saveMenu(forceActive, true);
+    if (!skipStockWarning && dailyStock.some((qty) => qty <= 0)) {
+      toast.error("Précisez une quantité du jour pour chaque pièce.");
+      setWizardStep(2);
+      return;
     }
 
     setSaving(true);
@@ -393,12 +416,12 @@ export function AdminMenusPage() {
   };
 
   const duplicateMenu = async (menu: ScheduledMenu) => {
-    const tomorrow = addDays(new Date(menu.date), 1);
+    const nextDay = addShopDays(getShopDateKey(menu.date), 1);
     const result = await safeFetch("/api/admin/menus", {
       method: "POST",
       json: {
         duplicateFromId: menu.id,
-        date: tomorrow.toISOString(),
+        date: shopDateTimeToIso(nextDay, "00:00"),
       },
     });
     if (!result.ok) {
@@ -569,9 +592,9 @@ export function AdminMenusPage() {
         ) : (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {days.map((day) => {
-              const key = day.toDateString();
+              const key = getShopDateKey(day);
               const dayMenus = menusByDay.get(key) ?? [];
-              const isToday = sameDay(day, new Date());
+              const isToday = key === getShopDateKey();
 
               return (
                 <div
@@ -650,7 +673,10 @@ export function AdminMenusPage() {
               On choisit, on valide les quantités, puis on relit avant de
               planifier.
             </p>
-            <MenuPlanSteps current={wizardStep} />
+            <MenuPlanSteps
+              current={wizardStep}
+              onSelect={(step) => setWizardStep(step)}
+            />
 
             {wizardStep === 1 && (
               <div className="mt-6">
@@ -775,7 +801,7 @@ export function AdminMenusPage() {
                 </div>
                 <p className="font-body text-xs text-muted-foreground">
                   {targetDate
-                    ? `Les ventes s’ouvrent le ${addShopDays(targetDate, -1)} à ${activateTime}, pour le service du ${targetDate}.`
+                    ? `Service le ${formatShopDateFr(targetDate)}. Ouverture des ventes le ${formatShopDateFr(addShopDays(targetDate, -1))} à ${activateTime}.`
                     : "Choisissez le jour servi."}
                 </p>
                 <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
@@ -821,7 +847,10 @@ export function AdminMenusPage() {
                   <Button
                     type="button"
                     className="flex-1 cursor-pointer"
-                    disabled={saving}
+                    disabled={
+                      saving ||
+                      selectedIds.some((id) => (dailyQty[id] ?? 0) <= 0)
+                    }
                     onClick={() => void saveMenu()}
                   >
                     {saving ? (

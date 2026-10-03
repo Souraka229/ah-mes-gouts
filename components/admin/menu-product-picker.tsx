@@ -64,6 +64,10 @@ export function MenuProductPicker({
   const familyDef =
     family === "jour" ? CATEGORY_FAMILIES.jour : CATEGORY_FAMILIES.permanente;
 
+  const selectedNames = selectedIds
+    .map((id) => catalog.find((p) => p.id === id)?.name)
+    .filter((name): name is string => Boolean(name));
+
   return (
     <div className="space-y-3">
       <div className="flex gap-1 rounded-full border border-border bg-muted/50 p-1">
@@ -103,6 +107,13 @@ export function MenuProductPicker({
           aria-label="Rechercher dans le catalogue"
         />
       </div>
+
+      {selectedNames.length > 0 && (
+        <p className="font-body text-xs text-primary">
+          {selectedNames.length} choisie{selectedNames.length > 1 ? "s" : ""} :{" "}
+          {selectedNames.join(" · ")}
+        </p>
+      )}
 
       {filtered.length === 0 ? (
         <p className="font-body text-sm text-muted-foreground">

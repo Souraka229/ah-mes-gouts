@@ -24,7 +24,9 @@ import {
   MenuProductEditor,
   type MenuProductDraft,
 } from "@/components/admin/menu-product-editor";
+import { MenuProductPicker } from "@/components/admin/menu-product-picker";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { isDailyMenuCategory } from "@/lib/admin/categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,6 +91,7 @@ export function AdminMenusPage() {
   const [editing, setEditing] = useState<ScheduledMenu | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [productDrafts, setProductDrafts] = useState<Record<string, MenuProductDraft>>({});
+  const [dailyQty, setDailyQty] = useState<Record<string, number>>({});
   const [targetDate, setTargetDate] = useState("");
   const [activateTime, setActivateTime] = useState("20:00");
   const [saving, setSaving] = useState(false);
@@ -137,13 +140,16 @@ export function AdminMenusPage() {
   }, [load]);
 
   const initDrafts = useCallback(
-    (ids: string[]) => {
+    (ids: string[], qtyById?: Record<string, number>) => {
       const drafts: Record<string, MenuProductDraft> = {};
+      const qty: Record<string, number> = {};
       for (const id of ids) {
         const product = catalog.find((p) => p.id === id);
         if (product) drafts[id] = { ...product };
+        qty[id] = qtyById?.[id] ?? product?.stockRemaining ?? 0;
       }
       setProductDrafts(drafts);
+      setDailyQty(qty);
     },
     [catalog],
   );
@@ -186,14 +192,22 @@ export function AdminMenusPage() {
       )[0];
 
     const source = active ?? yesterday;
-    const ids = source
-      ? [...source.productIds]
-      : catalog.slice(0, 6).map((p) => p.id);
+    const sourceIds = source ? [...source.productIds] : [];
+    const ids = sourceIds.filter((id) => {
+      const product = catalog.find((p) => p.id === id);
+      return product ? isDailyMenuCategory(product.category) : true;
+    });
+    const qtyById: Record<string, number> = {};
+    if (source) {
+      source.productIds.forEach((id, index) => {
+        qtyById[id] = source.dailyStock[index] ?? 0;
+      });
+    }
     setEditing(null);
     setTargetDate(toDateInput(tomorrow));
     setActivateTime("20:00");
     setSelectedIds(ids);
-    initDrafts(ids);
+    initDrafts(ids, qtyById);
     setFormOpen(true);
   };
 
@@ -211,8 +225,12 @@ export function AdminMenusPage() {
       `${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}`,
     );
     const ids = [...menu.productIds];
+    const qtyById: Record<string, number> = {};
+    ids.forEach((id, index) => {
+      qtyById[id] = menu.dailyStock[index] ?? 0;
+    });
     setSelectedIds(ids);
-    initDrafts(ids);
+    initDrafts(ids, qtyById);
     setFormOpen(true);
   };
 
@@ -233,10 +251,16 @@ export function AdminMenusPage() {
         const product = catalog.find((p) => p.id === id);
         if (product) {
           setProductDrafts((d) => ({ ...d, [id]: { ...product } }));
+          setDailyQty((q) => ({ ...q, [id]: product.stockRemaining || 0 }));
         }
       } else {
         setProductDrafts((d) => {
           const copy = { ...d };
+          delete copy[id];
+          return copy;
+        });
+        setDailyQty((q) => {
+          const copy = { ...q };
           delete copy[id];
           return copy;
         });
@@ -300,9 +324,7 @@ export function AdminMenusPage() {
     const displayOrder = selectedIds.map((_, i) => i);
     // Stock du jour = quantité saisie par produit. À 20h (activation du menu),
     // le stock de chaque produit est remis à cette valeur.
-    const dailyStock = selectedIds.map(
-      (id) => productDrafts[id]?.stockRemaining ?? 0,
-    );
+    const dailyStock = selectedIds.map((id) => dailyQty[id] ?? 0);
 
     if (!skipStockWarning && dailyStock.every((qty) => qty <= 0)) {
       const ok = window.confirm(
@@ -338,7 +360,7 @@ export function AdminMenusPage() {
           return;
         }
         if (!result.ok) throw new Error(result.error.message);
-        toast.success("Menu et produits mis à jour");
+        toast.success("Menu mis à jour");
       } else {
         const result = await safeFetch("/api/admin/menus", {
           method: "POST",
@@ -351,7 +373,7 @@ export function AdminMenusPage() {
           },
         });
         if (!result.ok) throw new Error(result.error.message);
-        toast.success("Menu programmé");
+        toast.success("Menu de demain programmé");
       }
       setFormOpen(false);
       await load();
@@ -424,11 +446,11 @@ export function AdminMenusPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-semibold text-primary">
-            Menus journaliers
+            Menu du jour
           </h1>
           <p className="mt-2 font-body text-sm text-muted-foreground">
-            Images (jusqu&apos;à 3), prix et tags par produit — tout est
-            enregistré en base Postgres.
+            Composez les entremets du jour, fixez les quantités, publiez. Les
+            fiches (photos, prix) se règlent dans Produits.
           </p>
         </div>
         <Button
@@ -438,7 +460,7 @@ export function AdminMenusPage() {
           onClick={openCreateTomorrow}
         >
           <Calendar className="size-5" aria-hidden />
-          Programmer le menu de demain
+          Menu de demain
         </Button>
       </header>
 
@@ -616,12 +638,15 @@ export function AdminMenusPage() {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
           <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-white p-6 shadow-xl">
             <h2 className="font-display text-xl font-semibold text-primary">
-              {editing ? "Modifier le menu" : "Programmer un menu"}
+              {editing ? "Modifier le menu" : "Menu de demain"}
             </h2>
+            <p className="mt-1 font-body text-sm text-muted-foreground">
+              Ouverture des ventes à 20 h la veille (heure boutique).
+            </p>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="menu-date">Date du menu</Label>
+                <Label htmlFor="menu-date">Jour servi</Label>
                 <Input
                   id="menu-date"
                   type="date"
@@ -631,7 +656,7 @@ export function AdminMenusPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="menu-time">Heure d&apos;activation</Label>
+                <Label htmlFor="menu-time">Ouverture des ventes (veille)</Label>
                 <Input
                   id="menu-time"
                   type="time"
@@ -643,7 +668,18 @@ export function AdminMenusPage() {
             </div>
 
             <p className="mt-6 font-body text-sm font-medium text-text">
-              Produits du menu ({selectedIds.length})
+              1. Choisir les pièces ({selectedIds.length})
+            </p>
+            <div className="mt-3">
+              <MenuProductPicker
+                catalog={catalog}
+                selectedIds={selectedIds}
+                onToggle={toggleProduct}
+              />
+            </div>
+
+            <p className="mt-6 font-body text-sm font-medium text-text">
+              2. Ordre et quantité du jour
             </p>
             <ul className="mt-3 space-y-3">
               {selectedIds.map((id, index) => {
@@ -654,8 +690,13 @@ export function AdminMenusPage() {
                     <MenuProductEditor
                       product={draft}
                       displayIndex={index}
+                      dailyQty={dailyQty[id] ?? 0}
+                      onDailyQtyChange={(qty) =>
+                        setDailyQty((prev) => ({ ...prev, [id]: qty }))
+                      }
                       onChange={(patch) => updateProductDraft(id, patch)}
                       onMove={(dir) => moveProduct(index, dir)}
+                      onRemove={() => toggleProduct(id)}
                       canMoveUp={index > 0}
                       canMoveDown={index < selectedIds.length - 1}
                     />
@@ -663,27 +704,6 @@ export function AdminMenusPage() {
                 );
               })}
             </ul>
-
-            <p className="mt-4 font-body text-xs text-muted-foreground">
-              Ajouter / retirer du catalogue :
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {catalog.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => toggleProduct(p.id)}
-                  className={cn(
-                    "cursor-pointer rounded-full border px-2 py-1 font-body text-xs",
-                    selectedIds.includes(p.id)
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:border-primary/40",
-                  )}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
 
             <div className="mt-6 flex gap-2">
               <Button
@@ -694,8 +714,10 @@ export function AdminMenusPage() {
               >
                 {saving ? (
                   <Loader2 className="size-4 animate-spin" />
+                ) : editing ? (
+                  "Publier le menu"
                 ) : (
-                  "Enregistrer menu + produits"
+                  "Publier le menu de demain"
                 )}
               </Button>
               <Button

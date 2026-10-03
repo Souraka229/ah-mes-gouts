@@ -74,6 +74,52 @@ export const UPSELL_CATEGORIES: ProductCategory[] = [
   "Chocolats",
 ];
 
+/**
+ * Deux familles métier — pas neuf onglets égaux.
+ * Le menu du jour ne compose que les pièces (Entremets).
+ */
+export const CATEGORY_FAMILIES = {
+  jour: {
+    id: "jour" as const,
+    label: "Pièces du jour",
+    hint: "Entremets à l’unité, stockés par menu.",
+    categories: ["Entremets"] as const satisfies readonly ProductCategory[],
+  },
+  permanente: {
+    id: "permanente" as const,
+    label: "Carte permanente",
+    hint: "Toujours commandable, hors planning du jour.",
+    categories: [
+      "Sur commande",
+      "Nounours",
+      "Fleurs",
+      "Chocolats",
+      "Carte",
+      "Vin / Spiritueux",
+    ] as const satisfies readonly ProductCategory[],
+  },
+};
+
+export function isDailyMenuCategory(category: string | null | undefined): boolean {
+  return normalizeProductCategory(category) === "Entremets";
+}
+
+export function categoryInFamily(
+  family: keyof typeof CATEGORY_FAMILIES,
+  category: string | null | undefined,
+): boolean {
+  const normalized = normalizeProductCategory(category);
+  return (CATEGORY_FAMILIES[family].categories as readonly ProductCategory[]).includes(
+    normalized,
+  );
+}
+
+export function getCategoryFamily(
+  category: string | null | undefined,
+): keyof typeof CATEGORY_FAMILIES {
+  return isDailyMenuCategory(category) ? "jour" : "permanente";
+}
+
 export function inferCategoryFromSlug(slug: string): ProductCategory {
   const s = slug.toLowerCase();
   if (s.includes("nounours")) return "Nounours";

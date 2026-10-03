@@ -26,8 +26,11 @@ export type MenuProductDraft = Product & {
 type MenuProductEditorProps = {
   product: MenuProductDraft;
   displayIndex: number;
+  dailyQty: number;
+  onDailyQtyChange: (qty: number) => void;
   onChange: (patch: Partial<MenuProductDraft>) => void;
   onMove: (dir: -1 | 1) => void;
+  onRemove: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
 };
@@ -35,13 +38,16 @@ type MenuProductEditorProps = {
 export function MenuProductEditor({
   product,
   displayIndex,
+  dailyQty,
+  onDailyQtyChange,
   onChange,
   onMove,
+  onRemove,
   canMoveUp,
   canMoveDown,
 }: MenuProductEditorProps) {
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const images = normalizeProductImages(product).imageUrls;
   const slots = Array.from({ length: PRODUCT_GALLERY_MAX }, (_, i) => images[i] ?? "");
@@ -121,10 +127,26 @@ export function MenuProductEditor({
           <p className="mt-0.5 font-body text-xs text-muted-foreground">
             {formatPrice(product.price)}
             {product.keyword ? ` · ${product.keyword}` : ""}
-            {product.dirty ? " · modifié" : ""}
+            {product.dirty ? " · fiche catalogue modifiée" : ""}
+            {" · "}
+            {expanded ? "Masquer la fiche" : "Modifier la fiche"}
           </p>
         </button>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          <label className="sr-only" htmlFor={`qty-${product.id}`}>
+            Quantité du jour
+          </label>
+          <input
+            id={`qty-${product.id}`}
+            type="number"
+            min={0}
+            value={dailyQty}
+            onChange={(e) =>
+              onDailyQtyChange(Math.max(0, Math.round(Number(e.target.value) || 0)))
+            }
+            className="h-10 w-16 rounded-lg border border-border bg-white px-2 text-center font-body text-sm tabular-nums"
+            aria-label="Quantité du jour"
+          />
           <button
             type="button"
             disabled={!canMoveUp}
@@ -142,6 +164,13 @@ export function MenuProductEditor({
             aria-label="Descendre"
           >
             ↓
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer px-2 text-xs text-destructive hover:underline"
+            onClick={onRemove}
+          >
+            Retirer
           </button>
         </div>
       </div>
@@ -270,7 +299,7 @@ export function MenuProductEditor({
               />
             </div>
             <div>
-              <Label htmlFor={`stock-${product.id}`}>Stock</Label>
+              <Label htmlFor={`stock-${product.id}`}>Stock catalogue</Label>
               <Input
                 id={`stock-${product.id}`}
                 type="number"
@@ -284,6 +313,9 @@ export function MenuProductEditor({
                 }
                 className="mt-1"
               />
+              <p className="mt-1 font-body text-[11px] text-muted-foreground">
+                Distinct de la quantité du jour (ci-dessus).
+              </p>
             </div>
             <div>
               <Label htmlFor={`stock-min-${product.id}`}>Stock minimum</Label>

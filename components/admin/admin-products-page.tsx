@@ -20,7 +20,8 @@ import type { AppError } from "@/lib/api/errors";
 import { safeFetch } from "@/lib/api/safe-fetch";
 import { AdminPageSkeleton } from "@/components/admin/admin-page-skeleton";
 import {
-  PRODUCT_CATEGORIES,
+  CATEGORY_FAMILIES,
+  categoryInFamily,
   isUnlimitedStockCategory,
   normalizeProductCategory,
 } from "@/lib/admin/categories";
@@ -41,29 +42,12 @@ const emptyForm = {
   name: "",
   price: "5000",
   category: "Entremets" as string,
+  keyword: "",
+  description: "",
   imageUrl: "",
 };
 
-/**
- * Onglets de la liste produits.
- *
- * Chaque catégorie de `PRODUCT_CATEGORIES` doit avoir son onglet : sans lui,
- * ses fiches n'existent que sous « Tous ». C'est ce qui rendait les onze
- * compositions de roses introuvables (« Fleurs » manquait), alors qu'elles
- * étaient bien en base et bien en vente.
- */
-const ADMIN_TABS = [
-  "Tous",
-  "Entremets",
-  "Nounours",
-  "Fleurs",
-  "Chocolats",
-  "Carte",
-  "Vin / Spiritueux",
-  "Sur commande",
-  "Promo",
-] as const;
-type AdminTab = (typeof ADMIN_TABS)[number];
+type FamilyTab = "Tous" | "jour" | "permanente" | "Promo";
 
 export function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -78,15 +62,26 @@ export function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [activeTab, setActiveTab] = useState<AdminTab>("Tous");
+  const [activeTab, setActiveTab] = useState<FamilyTab>("Tous");
+  const [permanentFilter, setPermanentFilter] = useState<string>("Tous");
+  const [search, setSearch] = useState("");
   /** Produit dont on gère les tailles / options — `null` = panneau fermé. */
   const [variantsProduct, setVariantsProduct] =
     useState<AdminProduct | null>(null);
 
   const visibleProducts = products.filter((product) => {
+    const category = normalizeProductCategory(product.category);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      if (!product.name.toLowerCase().includes(q)) return false;
+    }
     if (activeTab === "Tous") return true;
     if (activeTab === "Promo") return Boolean(product.isPromotion);
-    return normalizeProductCategory(product.category) === activeTab;
+    if (activeTab === "jour") {
+      return categoryInFamily("jour", product.category);
+    }
+    if (permanentFilter !== "Tous") return category === permanentFilter;
+    return categoryInFamily("permanente", product.category);
   });
 
   /**
@@ -95,7 +90,8 @@ export function AdminProductsPage() {
    * « 1 rose » et « 2 roses ».
    */
   const filteredProducts =
-    activeTab === "Fleurs"
+    activeTab === "permanente" &&
+    (permanentFilter === "Fleurs" || permanentFilter === "Tous")
       ? [...visibleProducts].sort(compareRoseOrder)
       : visibleProducts;
 
@@ -381,6 +377,8 @@ export function AdminProductsPage() {
             name: form.name.trim(),
             price: Math.round(price),
             category: form.category,
+            keyword: form.keyword.trim() || undefined,
+            description: form.description.trim() || undefined,
             stock: stocklessCategory ? 9999 : 10,
             imageUrl: form.imageUrl || undefined,
             imageUrls: form.imageUrl ? [form.imageUrl] : undefined,
@@ -440,7 +438,8 @@ export function AdminProductsPage() {
             Produits
           </h1>
           <p className="mt-2 font-body text-sm text-muted-foreground">
-            4 champs : nom, catégorie, prix, photo. Simple et rapide.
+            Deux familles : pièces du jour (entremets) et carte permanente
+            (fleurs, nounours, vins…). Un formulaire, des groupes clairs.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -475,7 +474,8 @@ export function AdminProductsPage() {
             Nouveau produit
           </h2>
           <p className="mt-1 font-body text-sm text-muted-foreground">
-            La photo est optimisée automatiquement à l&apos;upload.
+            Identité d’abord. Les paliers (tailles, parts) se règlent ensuite
+            sur la ligne du tableau.
           </p>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -499,26 +499,59 @@ export function AdminProductsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Catégorie</Label>
+              <Label htmlFor="category">Famille</Label>
               <select
                 id="category"
                 value={form.category}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, category: e.target.value }))
                 }
-                className="flex h-10 w-full rounded-lg border border-border bg-white px-3 font-body text-sm"
+                className="flex h-10 w-full cursor-pointer rounded-lg border border-border bg-white px-3 font-body text-sm"
               >
-                {PRODUCT_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
+                <optgroup label={CATEGORY_FAMILIES.jour.label}>
+                  {CATEGORY_FAMILIES.jour.categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={CATEGORY_FAMILIES.permanente.label}>
+                  {CATEGORY_FAMILIES.permanente.categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
               {stocklessCategory && (
                 <p className="font-body text-xs text-muted-foreground">
-                  Stock illimité — toujours commandable.
+                  Carte permanente — toujours commandable, hors menu du jour.
                 </p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="keyword">Tag (carte menu)</Label>
+              <Input
+                id="keyword"
+                value={form.keyword}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, keyword: e.target.value }))
+                }
+                placeholder="Ex: Solaire, Floral"
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-2">
+              <Label htmlFor="description">Description courte</Label>
+              <textarea
+                id="description"
+                value={form.description}
+                rows={2}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+                className="w-full rounded-lg border border-border px-3 py-2 font-body text-sm"
+                placeholder="Facultatif — le goût, la texture, l’occasion."
+              />
             </div>
             <div className="sm:col-span-2">
               <Label>Image</Label>
@@ -601,22 +634,73 @@ export function AdminProductsPage() {
         </section>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {ADMIN_TABS.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => setActiveTab(tab)}
-            className={cn(
-              "cursor-pointer rounded-full px-4 py-2 font-body text-sm font-medium transition-colors",
-              activeTab === tab
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80",
-            )}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["Tous", "Tous"],
+              ["jour", CATEGORY_FAMILIES.jour.label],
+              ["permanente", CATEGORY_FAMILIES.permanente.label],
+              ["Promo", "Promo"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setActiveTab(id);
+                setPermanentFilter("Tous");
+              }}
+              className={cn(
+                "min-h-11 cursor-pointer rounded-full px-4 py-2 font-body text-sm font-medium transition-colors",
+                activeTab === id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {activeTab === "permanente" && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setPermanentFilter("Tous")}
+              className={cn(
+                "min-h-10 cursor-pointer rounded-full border px-3 py-1.5 font-body text-xs font-semibold",
+                permanentFilter === "Tous"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              Toute la carte
+            </button>
+            {CATEGORY_FAMILIES.permanente.categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setPermanentFilter(category)}
+                className={cn(
+                  "min-h-10 cursor-pointer rounded-full border px-3 py-1.5 font-body text-xs font-semibold",
+                  permanentFilter === category
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/40",
+                )}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
+        <Input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher un produit…"
+          className="h-11 max-w-md cursor-text"
+          aria-label="Rechercher un produit"
+        />
       </div>
 
       {/* Panne alors qu'on a déjà des produits : on garde l'affichage et on

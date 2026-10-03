@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       activateAt: body.activateAt,
       productIds: body.productIds,
       displayOrder,
+      dailyStock: body.dailyStock,
     });
 
     return NextResponse.json({ menu }, { status: 201 });

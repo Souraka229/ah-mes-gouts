@@ -2,6 +2,10 @@ import { randomUUID } from "crypto";
 
 import { Prisma } from "@prisma/client";
 
+import {
+  isUnlimitedStockCategory,
+  normalizeProductCategory,
+} from "@/lib/admin/categories";
 import type { StockClaim } from "@/lib/server/order-pricing";
 import { getPrisma } from "@/lib/prisma";
 import { buildDemoOrders } from "@/lib/server/demo-orders";
@@ -168,6 +172,35 @@ async function decrementStockForClaim(
     ]);
   }
 }
+
+/** Remet en stock après annulation d'une commande déjà débitée. */
+async function incrementStockForClaim(
+  tx: Prisma.TransactionClient,
+  claim: StockClaim,
+): Promise<void> {
+  if (claim.unlimitedStock) return;
+
+  if (claim.variantStockTracked && claim.variantId) {
+    await tx.productVariant.updateMany({
+      where: { id: claim.variantId, stockRemaining: { not: null } },
+      data: { stockRemaining: { increment: claim.quantity } },
+    });
+    return;
+  }
+
+  await tx.product.updateMany({
+    where: { slug: claim.slug },
+    data: { stockRemaining: { increment: claim.quantity } },
+  });
+}
+
+/** Statuts où le stock a déjà été débité (après paiement validé). */
+const STOCK_ALREADY_CLAIMED: ReadonlySet<OrderStatus> = new Set([
+  "paiement_confirme",
+  "preparation",
+  "prete",
+  "en_livraison",
+]);
 
 export async function createServerOrderWithStock(
   order: SavedOrder,
@@ -561,24 +594,87 @@ export async function updateServerOrderStatus(
   const prisma = getPrisma();
 
   try {
-    const row = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: toPrismaOrderStatus(status),
-        ...(extra?.driverStartedAt !== undefined
-          ? { driverStartedAt: extra.driverStartedAt }
-          : {}),
-        ...(extra?.driverDeliveredAt !== undefined
-          ? { driverDeliveredAt: extra.driverDeliveredAt }
-          : {}),
-      },
-      include: {
-        items: { include: { options: true } },
-        driver: { select: { name: true } },
-      },
+    return await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+
+      const existing = await tx.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: { include: { options: true } },
+          driver: { select: { name: true } },
+        },
+      });
+      if (!existing) return undefined;
+
+      const previous = fromPrismaOrderStatus(existing.status);
+
+      // Annulation après paiement : on remet les pièces en stock.
+      if (
+        status === "annulee" &&
+        previous !== "annulee" &&
+        STOCK_ALREADY_CLAIMED.has(previous)
+      ) {
+        for (const item of existing.items) {
+          if (!item.slug) continue;
+
+          if (item.variantId) {
+            const variant = await tx.productVariant.findUnique({
+              where: { id: item.variantId },
+              select: { stockRemaining: true },
+            });
+            if (variant && variant.stockRemaining !== null) {
+              await incrementStockForClaim(tx, {
+                slug: item.slug,
+                name: item.name,
+                quantity: item.quantity,
+                variantId: item.variantId,
+                variantStockTracked: true,
+              });
+              continue;
+            }
+          }
+
+          const product = await tx.product.findUnique({
+            where: { slug: item.slug },
+            select: { category: true },
+          });
+          if (
+            product &&
+            isUnlimitedStockCategory(
+              normalizeProductCategory(product.category),
+            )
+          ) {
+            continue;
+          }
+
+          await incrementStockForClaim(tx, {
+            slug: item.slug,
+            name: item.name,
+            quantity: item.quantity,
+          });
+        }
+      }
+
+      const row = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: toPrismaOrderStatus(status),
+          ...(extra?.driverStartedAt !== undefined
+            ? { driverStartedAt: extra.driverStartedAt }
+            : {}),
+          ...(extra?.driverDeliveredAt !== undefined
+            ? { driverDeliveredAt: extra.driverDeliveredAt }
+            : {}),
+        },
+        include: {
+          items: { include: { options: true } },
+          driver: { select: { name: true } },
+        },
+      });
+      return fromPrismaOrder(row);
     });
-    return fromPrismaOrder(row);
-  } catch {
+  } catch (error) {
+    console.error("[updateServerOrderStatus]", error);
     return undefined;
   }
 }

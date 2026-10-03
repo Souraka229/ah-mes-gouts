@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { revalidatePath, revalidateTag } from "next/cache";
+
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import { getAdminDisplayNameAsync } from "@/lib/server/admin-role";
@@ -50,6 +52,16 @@ export async function PATCH(request: Request, context: RouteContext) {
       summary: `Statut ${orderId} → ${status}`,
       details: { orderId, status },
     });
+
+    if (status === "annulee") {
+      try {
+        revalidateTag("catalog");
+        revalidatePath("/catalogue");
+        revalidatePath("/");
+      } catch {
+        /* ISR best-effort */
+      }
+    }
 
     return NextResponse.json({ order });
   } catch {

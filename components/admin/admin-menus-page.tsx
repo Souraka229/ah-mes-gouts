@@ -113,6 +113,11 @@ export function AdminMenusPage() {
   const [activateTime, setActivateTime] = useState("20:00");
   const [saving, setSaving] = useState(false);
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  /** Réassort rapide du menu actif — id produit → quantité tapée. */
+  const [liveStockDrafts, setLiveStockDrafts] = useState<Record<string, string>>(
+    {},
+  );
+  const [liveStockSaving, setLiveStockSaving] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -198,6 +203,73 @@ export function AdminMenusPage() {
       ) ?? null,
     [menus],
   );
+
+  const todayMenuProducts = useMemo(() => {
+    if (!todayMenu) return [];
+    return todayMenu.productIds
+      .map((id) => catalog.find((p) => p.id === id))
+      .filter((p): p is MenuProductDraft => Boolean(p));
+  }, [todayMenu, catalog]);
+
+  useEffect(() => {
+    if (!todayMenu) {
+      setLiveStockDrafts({});
+      return;
+    }
+    const next: Record<string, string> = {};
+    for (const id of todayMenu.productIds) {
+      const product = catalog.find((p) => p.id === id);
+      if (product) next[id] = String(product.stockRemaining);
+    }
+    setLiveStockDrafts(next);
+  }, [todayMenu, catalog]);
+
+  const saveLiveStock = async (productId: string) => {
+    const product = catalog.find((p) => p.id === productId);
+    if (!product) return;
+    const next = Number(liveStockDrafts[productId]);
+    if (!Number.isFinite(next) || next < 0 || !Number.isInteger(next)) {
+      toast.error("Stock invalide");
+      setLiveStockDrafts((prev) => ({
+        ...prev,
+        [productId]: String(product.stockRemaining),
+      }));
+      return;
+    }
+    if (next === product.stockRemaining) return;
+
+    setLiveStockSaving(productId);
+    try {
+      const result = await safeFetch<{ product?: MenuProductDraft }>(
+        `/api/admin/products/${productId}`,
+        {
+          method: "PATCH",
+          json: { stockRemaining: next },
+          requireJson: true,
+        },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        setLiveStockDrafts((prev) => ({
+          ...prev,
+          [productId]: String(product.stockRemaining),
+        }));
+        return;
+      }
+      setCatalog((prev) =>
+        prev.map((p) =>
+          p.id === productId ? { ...p, stockRemaining: next } : p,
+        ),
+      );
+      toast.success(
+        next === 0
+          ? `${product.name} → épuisé`
+          : `${product.name} → ${next} restant${next > 1 ? "s" : ""}`,
+      );
+    } finally {
+      setLiveStockSaving(null);
+    }
+  };
 
   const menusByDay = useMemo(() => {
     const map = new Map<string, ScheduledMenu[]>();
@@ -470,6 +542,95 @@ export function AdminMenusPage() {
             </p>
           )}
         </div>
+      )}
+
+      {todayMenu && todayMenuProducts.length > 0 && (
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-xl font-semibold text-primary">
+            Stock du jour
+          </h2>
+          <p className="mt-1 font-body text-sm text-muted-foreground">
+            Changez une quantité et validez — la vitrine se met à jour tout de
+            suite. Pas besoin de rouvrir le menu.
+          </p>
+          <ul className="mt-4 divide-y divide-border/70 rounded-xl border border-border">
+            {todayMenuProducts.map((product) => (
+              <li
+                key={product.id}
+                className="flex flex-wrap items-center gap-3 px-3 py-2.5"
+              >
+                <p className="min-w-0 flex-1 font-body text-sm font-medium text-text">
+                  {product.name}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    className="w-20 text-right tabular-nums"
+                    aria-label={`Stock de ${product.name}`}
+                    value={liveStockDrafts[product.id] ?? ""}
+                    onChange={(e) =>
+                      setLiveStockDrafts((prev) => ({
+                        ...prev,
+                        [product.id]: e.target.value,
+                      }))
+                    }
+                    onBlur={() => void saveLiveStock(product.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                    }}
+                    disabled={liveStockSaving === product.id}
+                  />
+                  <button
+                    type="button"
+                    title="Mettre à 0"
+                    className="min-h-10 cursor-pointer rounded-full px-3 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    disabled={liveStockSaving !== null}
+                    onClick={() => {
+                      setLiveStockDrafts((prev) => ({
+                        ...prev,
+                        [product.id]: "0",
+                      }));
+                      void (async () => {
+                        setLiveStockSaving(product.id);
+                        try {
+                          const result = await safeFetch(
+                            `/api/admin/products/${product.id}`,
+                            {
+                              method: "PATCH",
+                              json: { stockRemaining: 0 },
+                              requireJson: true,
+                            },
+                          );
+                          if (!result.ok) {
+                            toast.error(result.error.message);
+                            return;
+                          }
+                          setCatalog((prev) =>
+                            prev.map((p) =>
+                              p.id === product.id
+                                ? { ...p, stockRemaining: 0 }
+                                : p,
+                            ),
+                          );
+                          toast.success(`${product.name} → épuisé`);
+                        } finally {
+                          setLiveStockSaving(null);
+                        }
+                      })();
+                    }}
+                  >
+                    {liveStockSaving === product.id ? (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      "86"
+                    )}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

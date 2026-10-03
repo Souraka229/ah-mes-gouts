@@ -83,6 +83,8 @@ export function ProductVariantsPanel({
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [labelDraft, setLabelDraft] = useState("");
   const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  /** Chaîne vide = stock non suivi (illimité). */
+  const [stockDrafts, setStockDrafts] = useState<Record<string, string>>({});
 
   const productId = product?.id ?? "";
 
@@ -101,6 +103,14 @@ export function ProductVariantsPanel({
       setVariants(incoming);
       setPriceDrafts(
         Object.fromEntries(incoming.map((v) => [v.id, String(v.price)])),
+      );
+      setStockDrafts(
+        Object.fromEntries(
+          incoming.map((v) => [
+            v.id,
+            v.stockRemaining === null ? "" : String(v.stockRemaining),
+          ]),
+        ),
       );
       setLoadError(null);
       setHasLoaded(true);
@@ -197,6 +207,61 @@ export function ProductVariantsPanel({
         return;
       }
       await afterWrite(`${variant.label} → ${formatPrice(Math.round(next))}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveStock = async (variant: ProductVariantView) => {
+    const raw = (stockDrafts[variant.id] ?? "").trim();
+    const next: number | null =
+      raw === ""
+        ? null
+        : Number.isFinite(Number(raw)) && Number(raw) >= 0
+          ? Math.round(Number(raw))
+          : Number.NaN;
+
+    if (Number.isNaN(next)) {
+      toast.error("Stock invalide");
+      setStockDrafts((prev) => ({
+        ...prev,
+        [variant.id]:
+          variant.stockRemaining === null
+            ? ""
+            : String(variant.stockRemaining),
+      }));
+      return;
+    }
+    if (next === variant.stockRemaining) return;
+
+    setBusy(variant.id);
+    try {
+      const result = await safeFetch(
+        `/api/admin/products/${productId}/variants/${variant.id}`,
+        {
+          method: "PATCH",
+          json: { stockRemaining: next },
+          requireJson: true,
+        },
+      );
+      if (!result.ok) {
+        toast.error(result.error.message);
+        setStockDrafts((prev) => ({
+          ...prev,
+          [variant.id]:
+            variant.stockRemaining === null
+              ? ""
+              : String(variant.stockRemaining),
+        }));
+        return;
+      }
+      await afterWrite(
+        next === null
+          ? `${variant.label} → stock libre`
+          : next === 0
+            ? `${variant.label} → épuisé`
+            : `${variant.label} → stock ${next}`,
+      );
     } finally {
       setBusy(null);
     }
@@ -479,8 +544,6 @@ export function ProductVariantsPanel({
                       </p>
                       <p className="font-body text-xs text-muted-foreground">
                         code {variant.code}
-                        {variant.stockRemaining !== null &&
-                          ` · stock ${variant.stockRemaining}`}
                       </p>
                     </div>
 
@@ -506,11 +569,77 @@ export function ProductVariantsPanel({
                             e.currentTarget.blur();
                           }
                         }}
-                        className="w-24 text-right"
+                        className="w-20 text-right"
                       />
                       <span className="font-body text-xs text-muted-foreground">
                         F
                       </span>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        min={0}
+                        aria-label={`Stock de ${variant.label}`}
+                        placeholder="∞"
+                        title="Vide = pas de limite"
+                        value={stockDrafts[variant.id] ?? ""}
+                        onChange={(e) =>
+                          setStockDrafts((prev) => ({
+                            ...prev,
+                            [variant.id]: e.target.value,
+                          }))
+                        }
+                        onBlur={() => void saveStock(variant)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                          if (e.key === "Escape") {
+                            setStockDrafts((prev) => ({
+                              ...prev,
+                              [variant.id]:
+                                variant.stockRemaining === null
+                                  ? ""
+                                  : String(variant.stockRemaining),
+                            }));
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        className="w-16 text-right"
+                      />
+                      <button
+                        type="button"
+                        title="Mettre à 0"
+                        className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-destructive"
+                        disabled={busy === variant.id}
+                        onClick={() => {
+                          setStockDrafts((prev) => ({
+                            ...prev,
+                            [variant.id]: "0",
+                          }));
+                          void (async () => {
+                            setBusy(variant.id);
+                            try {
+                              const result = await safeFetch(
+                                `/api/admin/products/${productId}/variants/${variant.id}`,
+                                {
+                                  method: "PATCH",
+                                  json: { stockRemaining: 0 },
+                                  requireJson: true,
+                                },
+                              );
+                              if (!result.ok) {
+                                toast.error(result.error.message);
+                                return;
+                              }
+                              await afterWrite(`${variant.label} → épuisé`);
+                            } finally {
+                              setBusy(null);
+                            }
+                          })();
+                        }}
+                      >
+                        86
+                      </button>
                     </div>
 
                     <Button

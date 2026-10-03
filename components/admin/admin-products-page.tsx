@@ -32,7 +32,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/format";
-import { getEffectiveStock } from "@/lib/product-stock-display";
+import {
+  getEffectiveStock,
+  isExhausted,
+  isLowStock,
+} from "@/lib/product-stock-display";
 import { validateUploadFile } from "@/lib/uploads";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
@@ -49,6 +53,7 @@ const emptyForm = {
 };
 
 type FamilyTab = "Tous" | "jour" | "permanente" | "Promo";
+type StockFilter = "tous" | "bas" | "epuise" | "masque";
 
 export function AdminProductsPage() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -58,6 +63,8 @@ export function AdminProductsPage() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState("");
+  const [editingStock, setEditingStock] = useState<string | null>(null);
+  const [stockDraft, setStockDraft] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -65,6 +72,7 @@ export function AdminProductsPage() {
   const [importing, setImporting] = useState(false);
   const [activeTab, setActiveTab] = useState<FamilyTab>("Tous");
   const [permanentFilter, setPermanentFilter] = useState<string>("Tous");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("tous");
   const [search, setSearch] = useState("");
   /** Produit dont on gère les tailles / options — `null` = panneau fermé. */
   const [variantsProduct, setVariantsProduct] =
@@ -76,13 +84,27 @@ export function AdminProductsPage() {
       const q = search.trim().toLowerCase();
       if (!product.name.toLowerCase().includes(q)) return false;
     }
-    if (activeTab === "Tous") return true;
-    if (activeTab === "Promo") return Boolean(product.isPromotion);
-    if (activeTab === "jour") {
-      return categoryInFamily("jour", product.category);
+    if (activeTab === "Promo") {
+      if (!product.isPromotion) return false;
+    } else if (activeTab === "jour") {
+      if (!categoryInFamily("jour", product.category)) return false;
+    } else if (activeTab === "permanente") {
+      if (permanentFilter !== "Tous" && category !== permanentFilter) {
+        return false;
+      }
+      if (
+        permanentFilter === "Tous" &&
+        !categoryInFamily("permanente", product.category)
+      ) {
+        return false;
+      }
     }
-    if (permanentFilter !== "Tous") return category === permanentFilter;
-    return categoryInFamily("permanente", product.category);
+
+    const listed = (product.visibility ?? "published") === "published";
+    if (stockFilter === "masque") return !listed;
+    if (stockFilter === "bas") return isLowStock(product);
+    if (stockFilter === "epuise") return isExhausted(product);
+    return true;
   });
 
   /**
@@ -188,6 +210,28 @@ export function AdminProductsPage() {
       { price },
       `Prix → ${formatPrice(price)}`,
       () => patchProduct(product.id, { price: previous }, "Annulé"),
+    );
+  };
+
+  const saveStock = (product: AdminProduct) => {
+    const next = Number(stockDraft);
+    if (!Number.isFinite(next) || next < 0 || !Number.isInteger(next)) {
+      toast.error("Stock invalide");
+      setEditingStock(null);
+      return;
+    }
+    const previous = product.stockRemaining;
+    if (next === previous) {
+      setEditingStock(null);
+      return;
+    }
+    setEditingStock(null);
+    void patchProduct(
+      product.id,
+      { stockRemaining: next },
+      next === 0 ? `${product.name} → épuisé` : `Stock → ${next}`,
+      () =>
+        patchProduct(product.id, { stockRemaining: previous }, "Annulé"),
     );
   };
 
@@ -702,6 +746,30 @@ export function AdminProductsPage() {
           className="h-11 max-w-md cursor-text"
           aria-label="Rechercher un produit"
         />
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par stock">
+          {(
+            [
+              ["tous", "Tous"],
+              ["bas", "Stock bas"],
+              ["epuise", "Épuisés"],
+              ["masque", "Masqués"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setStockFilter(id)}
+              className={cn(
+                "min-h-10 cursor-pointer rounded-full border px-3 py-1.5 font-body text-xs font-semibold",
+                stockFilter === id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Panne alors qu'on a déjà des produits : on garde l'affichage et on
@@ -788,7 +856,7 @@ export function AdminProductsPage() {
                 <th className="px-4 py-3">Produit</th>
                 <th className="px-4 py-3">Prix</th>
                 <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3">Dispo</th>
+                <th className="px-4 py-3">Vitrine</th>
               </tr>
             </thead>
             <tbody>
@@ -939,8 +1007,94 @@ export function AdminProductsPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {unlimited ? "∞" : remaining}
+                    <td className="px-4 py-3">
+                      {unlimited ? (
+                        <span className="text-muted-foreground">∞</span>
+                      ) : variantSummary ? (
+                        <div className="space-y-0.5">
+                          <p
+                            className={cn(
+                              "tabular-nums font-medium",
+                              exhausted
+                                ? "text-destructive"
+                                : isLowStock(product)
+                                  ? "text-amber-700"
+                                  : "text-text",
+                            )}
+                          >
+                            {remaining}
+                            {exhausted ? " · épuisé" : isLowStock(product) ? " · bas" : ""}
+                          </p>
+                          <button
+                            type="button"
+                            className="cursor-pointer text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setVariantsProduct(product)}
+                          >
+                            Par taille
+                          </button>
+                        </div>
+                      ) : editingStock === product.id ? (
+                        <input
+                          type="number"
+                          min={0}
+                          autoFocus
+                          value={stockDraft}
+                          onChange={(e) => setStockDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveStock(product);
+                            if (e.key === "Escape") setEditingStock(null);
+                          }}
+                          onBlur={() => saveStock(product)}
+                          className="w-20 rounded-lg border border-border px-2 py-1 tabular-nums"
+                          aria-label={`Stock de ${product.name}`}
+                        />
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            title="Cliquer pour changer le stock"
+                            className={cn(
+                              "cursor-pointer rounded-lg px-2 py-1 tabular-nums font-medium hover:bg-bg",
+                              exhausted
+                                ? "text-destructive"
+                                : isLowStock(product)
+                                  ? "text-amber-700"
+                                  : "text-text",
+                            )}
+                            onClick={() => {
+                              setEditingStock(product.id);
+                              setStockDraft(String(product.stockRemaining));
+                            }}
+                          >
+                            {remaining}
+                            {exhausted ? " · épuisé" : isLowStock(product) ? " · bas" : ""}
+                          </button>
+                          {!exhausted && (
+                            <button
+                              type="button"
+                              title="Mettre à 0 (épuisé)"
+                              className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-destructive"
+                              onClick={() =>
+                                void patchProduct(
+                                  product.id,
+                                  { stockRemaining: 0 },
+                                  `${product.name} → épuisé`,
+                                  () =>
+                                    patchProduct(
+                                      product.id,
+                                      {
+                                        stockRemaining: product.stockRemaining,
+                                      },
+                                      "Annulé",
+                                    ),
+                                )
+                              }
+                            >
+                              86
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <button
@@ -953,20 +1107,12 @@ export function AdminProductsPage() {
                         onClick={() => toggleAvailable(product)}
                         className={cn(
                           "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold",
-                          !listed
-                            ? "bg-muted text-muted-foreground"
-                            : exhausted
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-emerald-100 text-emerald-800",
+                          listed
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-muted text-muted-foreground",
                         )}
                       >
-                        {!listed
-                          ? "Masqué"
-                          : exhausted
-                            ? "Épuisé"
-                            : unlimited
-                              ? "Toujours"
-                              : "Oui"}
+                        {listed ? "Visible" : "Masqué"}
                       </button>
                     </td>
                   </tr>

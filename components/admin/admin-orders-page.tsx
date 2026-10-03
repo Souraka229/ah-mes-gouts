@@ -306,15 +306,20 @@ export function AdminOrdersPage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
       );
-      toast.success(`→ ${ORDER_STATUS_LABELS[status]}`, {
-        action: {
-          label: "Annuler",
-          onClick: () => {
-            void updateStatus(orderId, previous, status);
+      toast.success(
+        status === "annulee" && previous !== "recue"
+          ? "Commande annulée — stock remis en rayon"
+          : `→ ${ORDER_STATUS_LABELS[status]}`,
+        {
+          action: {
+            label: "Annuler",
+            onClick: () => {
+              void updateStatus(orderId, previous, status);
+            },
           },
+          duration: 5000,
         },
-        duration: 5000,
-      });
+      );
     },
     [],
   );

@@ -604,8 +604,10 @@ export function AdminOrdersPage() {
 
       {loading && !hasLoaded ? (
         <div className="flex items-center gap-2 font-body text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" aria-hidden />
-          Chargement…
+          <Loader2 className="size-5 animate-spin text-primary" aria-hidden />
+          <span className="font-body text-sm font-medium text-primary">
+            Chargement des commandes…
+          </span>
         </div>
       ) : loadError && !hasLoaded ? (
         /* Premier chargement en échec : l'écran ne doit JAMAIS annoncer une

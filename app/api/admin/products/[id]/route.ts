@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { PRODUCT_CATEGORIES } from "@/lib/admin/categories";
+import {
+  PRODUCT_CATEGORIES,
+  normalizeProductCategory,
+} from "@/lib/admin/categories";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import { getAdminDisplayNameAsync } from "@/lib/server/admin-role";
@@ -103,10 +106,11 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (body.price !== undefined) patch.price = body.price;
     if (body.description !== undefined) patch.description = body.description;
     if (body.category !== undefined) {
-      // Même contrôle qu'à la création : sans lui, un PATCH pouvait écrire
-      // « nounours » ou « NOUNOURS » et créer une catégorie fantôme, invisible
-      // dans les onglets et donc dans la boutique.
-      const category = typeof body.category === "string" ? body.category.trim() : "";
+      // Normalise les anciennes valeurs (Cadeaux, Menu du jour…) vers le
+      // référentiel — évite les catégories fantômes hors onglets.
+      const category = normalizeProductCategory(
+        typeof body.category === "string" ? body.category : undefined,
+      );
       if (
         !PRODUCT_CATEGORIES.includes(
           category as (typeof PRODUCT_CATEGORIES)[number],

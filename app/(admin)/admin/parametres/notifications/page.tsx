@@ -1,5 +1,6 @@
-import { AdminNotificationsPage } from "@/components/admin/admin-notifications-page";
+import { redirect } from "next/navigation";
 
+/** Stub retiré — pas de push configuré pour l'instant. */
 export default function Page() {
-  return <AdminNotificationsPage />;
+  redirect("/admin/parametres/boutique");
 }

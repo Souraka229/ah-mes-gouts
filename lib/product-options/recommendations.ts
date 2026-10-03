@@ -29,7 +29,7 @@ type RecommendationRule = {
 const RULES: RecommendationRule[] = [
   {
     id: "fleurs-duo",
-    forCategories: ["Fleurs", "Cadeaux"],
+    forCategories: ["Fleurs"],
     title: "Un duo rose + chocolat ?",
     subtitle: "Ajoutez une douceur pour compléter votre bouquet.",
     pick: (catalog) => getExtraProducts(catalog),

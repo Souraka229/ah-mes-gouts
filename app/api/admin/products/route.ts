@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 
-import { PRODUCT_CATEGORIES } from "@/lib/admin/categories";
+import {
+  PRODUCT_CATEGORIES,
+  normalizeProductCategory,
+} from "@/lib/admin/categories";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import { getAdminDisplayNameAsync } from "@/lib/server/admin-role";
@@ -33,7 +36,10 @@ export async function GET() {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const products = await getAdminCatalog();
+  const products = (await getAdminCatalog()).map((product) => ({
+    ...product,
+    category: normalizeProductCategory(product.category),
+  }));
   return NextResponse.json(
     { products },
     { headers: { "Cache-Control": "no-store" } },
@@ -109,16 +115,10 @@ export async function POST(request: Request) {
         }
         // Une catégorie inconnue dans le manifeste retomberait hors de tous les
         // onglets : on la ramène à une valeur du référentiel.
-        const importCategory = PRODUCT_CATEGORIES.includes(
-          item.category as (typeof PRODUCT_CATEGORIES)[number],
-        )
-          ? item.category
-          : "Entremets";
-
         const product = await createCatalogProduct({
           name: item.name,
           price: item.price,
-          category: importCategory,
+          category: normalizeProductCategory(item.category),
           description: item.description,
           keyword: item.keyword,
           imageUrl: item.imageUrl,
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
-    const category = data.category?.trim() || "Entremets";
+    const category = normalizeProductCategory(data.category);
 
     if (
       !PRODUCT_CATEGORIES.includes(

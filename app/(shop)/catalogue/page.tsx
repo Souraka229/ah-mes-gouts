@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { CatalogueView } from "@/components/shop/catalogue-view";
+import { ShopPageSkeleton } from "@/components/shop/shop-page-skeleton";
 import { JsonLd } from "@/components/seo/json-ld";
 import { isUnlimitedStockCategory } from "@/lib/admin/categories";
 import { getProductCategory } from "@/lib/catalog-utils";
@@ -18,8 +19,11 @@ const breadcrumbs = [
   { name: "Catalogue", path: "/catalogue" },
 ];
 
-/** Toujours lire la base — évite un catalogue démo figé en cache après vidage. */
-export const dynamic = "force-dynamic";
+/**
+ * ISR court : le menu / stock bougent souvent, mais force-dynamic
+ * forçait un aller-retour DB à chaque hit (lent sur mobile).
+ */
+export const revalidate = 60;
 
 export const metadata: Metadata = createPageMetadata({
   title: "Catalogue glaces artisanales — Cotonou",
@@ -44,13 +48,7 @@ export default async function CataloguePage() {
   return (
     <>
       <JsonLd data={buildBreadcrumbSchema(breadcrumbs)} />
-      <Suspense
-        fallback={
-          <div className="mx-auto max-w-7xl px-4 py-16 font-body text-muted-foreground">
-            Chargement du catalogue…
-          </div>
-        }
-      >
+      <Suspense fallback={<ShopPageSkeleton />}>
         <CatalogueView
           menuProducts={menuProducts}
           allProducts={dailyCatalog}

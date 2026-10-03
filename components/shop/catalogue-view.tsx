@@ -127,7 +127,7 @@ export function CatalogueView({
     () =>
       fullCatalog.filter((p) => {
         const cat = getProductCategory(p);
-        return cat === "Carte" || cat === "Cadeaux" || cat === "Sur commande";
+        return cat === "Carte" || cat === "Sur commande";
       }),
     [fullCatalog],
   );
@@ -253,7 +253,7 @@ export function CatalogueView({
             ["fleurs", "Fleurs"],
             ["nounours", "Nounours"],
             ["vin", "Vin / Spiritueux"],
-            ["carte", "Sur commande"],
+            ["carte", "Cartes & sur mesure"],
             ["all", "Toute la carte"],
           ] as const
         ).map(([tab, label]) => (

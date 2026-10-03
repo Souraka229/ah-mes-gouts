@@ -18,7 +18,12 @@ import { toast } from "sonner";
 
 import type { AppError } from "@/lib/api/errors";
 import { safeFetch } from "@/lib/api/safe-fetch";
-import { PRODUCT_CATEGORIES, isUnlimitedStockCategory } from "@/lib/admin/categories";
+import { AdminPageSkeleton } from "@/components/admin/admin-page-skeleton";
+import {
+  PRODUCT_CATEGORIES,
+  isUnlimitedStockCategory,
+  normalizeProductCategory,
+} from "@/lib/admin/categories";
 import { compareRoseOrder } from "@/lib/constants/rose-compositions";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { ProductVariantsPanel } from "@/components/admin/product-variants-panel";
@@ -54,10 +59,8 @@ const ADMIN_TABS = [
   "Fleurs",
   "Chocolats",
   "Carte",
-  "Cadeaux",
   "Vin / Spiritueux",
   "Sur commande",
-  "Menu du jour",
   "Promo",
 ] as const;
 type AdminTab = (typeof ADMIN_TABS)[number];
@@ -83,7 +86,7 @@ export function AdminProductsPage() {
   const visibleProducts = products.filter((product) => {
     if (activeTab === "Tous") return true;
     if (activeTab === "Promo") return Boolean(product.isPromotion);
-    return (product.category ?? "Entremets") === activeTab;
+    return normalizeProductCategory(product.category) === activeTab;
   });
 
   /**
@@ -640,10 +643,7 @@ export function AdminProductsPage() {
       )}
 
       {loading && !hasLoaded ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" />
-          Chargement…
-        </div>
+        <AdminPageSkeleton rows={6} />
       ) : loadError && !hasLoaded ? (
         /* Premier chargement en échec : « Catalogue vide » serait un mensonge. */
         <div
@@ -782,7 +782,7 @@ export function AdminProductsPage() {
                         <div>
                           <p className="font-medium text-text">{product.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {product.category}
+                            {normalizeProductCategory(product.category)}
                           </p>
                         </div>
                       </div>

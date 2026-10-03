@@ -2,19 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Bell,
-  Calendar,
-  IceCreamCone,
-  Info,
-  ScrollText,
-  Sparkles,
-  Truck,
-  Users,
-} from "lucide-react";
+import { Info, ScrollText, Truck } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Paramètres = réglages rares uniquement.
+ * Produits / Menus / Options / stubs (utilisateurs, notifications) retirés :
+ * ils vivent ailleurs ou n'étaient pas utilisables.
+ */
 const SETTINGS_NAV = [
   {
     href: "/admin/parametres/boutique",
@@ -26,25 +22,12 @@ const SETTINGS_NAV = [
     label: "Zones & horaires",
     icon: Truck,
   },
-  { href: "/admin/menus", label: "Menus & packs", icon: Calendar },
   {
-    href: "/admin/parametres/utilisateurs",
-    label: "Utilisateurs & rôles",
-    icon: Users,
+    href: "/admin/parametres/journal",
+    label: "Journal des actions",
+    icon: ScrollText,
   },
-  { href: "/admin/parametres/journal", label: "Journal des actions", icon: ScrollText },
-  {
-    href: "/admin/parametres/notifications",
-    label: "Notifications",
-    icon: Bell,
-  },
-  { href: "/admin/produits", label: "Catalogue produits", icon: IceCreamCone },
-  {
-    href: "/admin/parametres/options",
-    label: "Options & compléments",
-    icon: Sparkles,
-  },
-];
+] as const;
 
 export default function ParametresLayout({
   children,
@@ -63,31 +46,18 @@ export default function ParametresLayout({
           {SETTINGS_NAV.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
-            const className = cn(
-              "flex items-center gap-2 rounded-xl px-3 py-2 font-body text-sm transition-colors",
-              active
-                ? "bg-primary/10 font-medium text-primary"
-                : "text-muted-foreground hover:bg-bg hover:text-text",
-            );
-            if ("external" in item && item.external) {
-              return (
-                <li key={item.href}>
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={className}
-                  >
-                    <Icon className="size-4 shrink-0" />
-                    {item.label}
-                  </a>
-                </li>
-              );
-            }
             return (
               <li key={item.href}>
-                <Link href={item.href} className={className}>
-                  <Icon className="size-4 shrink-0" />
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex min-h-11 cursor-pointer items-center gap-2 rounded-xl px-3 py-2 font-body text-sm transition-colors",
+                    active
+                      ? "bg-primary/10 font-medium text-primary"
+                      : "text-muted-foreground hover:bg-bg hover:text-text",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
                   {item.label}
                 </Link>
               </li>

@@ -506,8 +506,10 @@ export function AdminMenusPage() {
 
         {loading && !hasLoaded ? (
           <div className="mt-8 flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-5 animate-spin" />
-            Chargement…
+            <Loader2 className="size-5 animate-spin text-primary" aria-hidden />
+            <span className="font-body text-sm font-medium text-primary">
+              Chargement des menus…
+            </span>
           </div>
         ) : loadError && !hasLoaded ? (
           /* Premier chargement en échec : « aucun menu programmé » serait un

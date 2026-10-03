@@ -84,6 +84,7 @@ function NavLink({
   return (
     <Link
       href={item.href}
+      prefetch
       onClick={onNavigate}
       className={cn(
         "relative flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 font-body text-sm transition-colors duration-150",
@@ -196,7 +197,7 @@ export function AdminShell({
 
   const logout = () => {
     void fetch("/api/admin/auth", { method: "DELETE" }).then(() => {
-      window.location.href = "/";
+      window.location.href = "/admin/connexion?raison=session";
     });
   };
 

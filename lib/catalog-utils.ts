@@ -4,6 +4,7 @@ import { GIFT_CARD_SLUG } from "@/lib/constants/products";
 import {
   inferCategoryFromSlug,
   isUnlimitedStockCategory,
+  normalizeProductCategory,
 } from "@/lib/admin/categories";
 import type { Product } from "@/types/product";
 
@@ -36,7 +37,10 @@ export function getProductStartingPrice(product: Product): number {
 }
 
 export function getProductCategory(product: Product): string {
-  return product.category?.trim() || inferCategoryFromSlug(product.slug);
+  if (product.category?.trim()) {
+    return normalizeProductCategory(product.category);
+  }
+  return inferCategoryFromSlug(product.slug);
 }
 
 /** Plafond UI pour catégories sans limite de stock (Nounours, Carte…). */

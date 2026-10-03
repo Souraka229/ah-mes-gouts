@@ -1,41 +1,56 @@
 /**
  * Catégories produits — source unique admin + boutique.
+ *
+ * Liste volontairement courte : « Menu du jour » est un planning (écran Menus),
+ * pas une catégorie de fiche ; « Cadeaux » se fond dans Fleurs (bouquets).
  */
 export const PRODUCT_CATEGORIES = [
   "Entremets",
-  "Menu du jour",
   /** Grands entremets vendus à la part, 72 h de préparation. */
   "Sur commande",
   "Nounours",
-  /** Bouquets de roses fraîches — stock non suivi, montés à la demande. */
+  /** Bouquets et compositions florales — stock non suivi. */
   "Fleurs",
   /** Chocolats d'accompagnement — vendus en duo avec un bouquet. */
   "Chocolats",
+  /** Cartes de vœux / messages. */
   "Carte",
-  "Cadeaux",
   /**
-   * Vins, spiritueux **et champagnes** — vendus en bouteille, à emporter ou en
-   * complément.
-   *
-   * Libellé exact voulu par la maison : « Vin / Spiritueux ». Ni
-   * « Vin / Champagne », ni « Vins & Spiritueux ».
-   *
-   * Les champagnes y sont rattachés : « Boissons » et « Boissons & Extras »
-   * découpaient la même famille en trois, et « Boissons & Extras » n'existait
-   * que dans les données, jamais dans le code.
+   * Vins, spiritueux **et champagnes** — vendus en bouteille.
+   * Libellé exact : « Vin / Spiritueux ».
    */
   "Vin / Spiritueux",
 ] as const;
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
-/** Stock non consommé à la commande — toujours commandables. */
+/**
+ * Anciennes valeurs encore présentes en base / imports.
+ * Toujours normaliser à la lecture et à l'écriture.
+ */
+const LEGACY_CATEGORY_ALIASES: Record<string, ProductCategory> = {
+  "Menu du jour": "Entremets",
+  Cadeaux: "Fleurs",
+  Boissons: "Vin / Spiritueux",
+  "Boissons & Extras": "Vin / Spiritueux",
+  "Vin / Champagne": "Vin / Spiritueux",
+  "Vins & Spiritueux": "Vin / Spiritueux",
+};
+
+/** Ramène toute chaîne catégorie vers le référentiel courant. */
+export function normalizeProductCategory(raw: string | null | undefined): ProductCategory {
+  const trimmed = raw?.trim() || "Entremets";
+  if (PRODUCT_CATEGORIES.includes(trimmed as ProductCategory)) {
+    return trimmed as ProductCategory;
+  }
+  return LEGACY_CATEGORY_ALIASES[trimmed] ?? "Entremets";
+}
+
 /**
  * Stock non consommé à la commande.
  *
  * Ces produits ne dépendent pas du menu du jour : ils sont montés ou
- * réapprovisionnés à la demande. Les inclure dans le suivi de stock
- * bloquerait des ventes sans raison.
+ * réapprovisionnés à la demande.
  */
 export const UNLIMITED_STOCK_CATEGORIES: ProductCategory[] = [
   "Nounours",
@@ -43,27 +58,15 @@ export const UNLIMITED_STOCK_CATEGORIES: ProductCategory[] = [
   "Chocolats",
   "Sur commande",
   "Carte",
-  "Cadeaux",
-  /**
-   * Les bouteilles s'achètent et se réapprovisionnent, elles ne se préparent
-   * pas le jour même : les faire dépendre du menu du jour les rendrait
-   * invendables dès qu'aucun menu n'est actif.
-   */
   "Vin / Spiritueux",
 ];
 
 export function isUnlimitedStockCategory(category: string): boolean {
-  return UNLIMITED_STOCK_CATEGORIES.includes(category as ProductCategory);
+  return UNLIMITED_STOCK_CATEGORIES.includes(normalizeProductCategory(category));
 }
 
 /**
  * Candidats à l'upsell du checkout : nounours, cartes, chocolats.
- *
- * Les chocolats manquaient ici, alors que `step-upsell.tsx` contient déjà
- * toute la logique « duo rose + chocolat » (`isChocolateSupplement`) : faute
- * de candidats, cette branche ne se déclenchait jamais. Les compositions de
- * roses n'y sont pas : proposer un bouquet à qui en a déjà un n'a pas de sens,
- * leur cross-sell vit sur la fiche produit.
  */
 export const UPSELL_CATEGORIES: ProductCategory[] = [
   "Nounours",
@@ -76,6 +79,7 @@ export function inferCategoryFromSlug(slug: string): ProductCategory {
   if (s.includes("nounours")) return "Nounours";
   if (s.startsWith("vin-") || s.includes("champagne")) return "Vin / Spiritueux";
   if (s.includes("carte") || s.includes("cadeau")) return "Carte";
-  if (s.startsWith("bouquet")) return "Cadeaux";
+  if (s.startsWith("bouquet") || s.includes("rose")) return "Fleurs";
+  if (s.includes("chocolat")) return "Chocolats";
   return "Entremets";
 }

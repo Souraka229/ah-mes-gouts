@@ -43,8 +43,9 @@ function getDevAdminContext(): AdminContext {
  *
  * Vérifie la signature seule : le middleware Edge ne peut pas interroger
  * Postgres. Une session révoquée reste acceptée ici au plus jusqu'à
- * l'expiration du JWT (12 h), mais toute action réelle passe par les routes
- * API, qui vérifient la révocation via verifyAdminSession().
+ * l'expiration du JWT (jusqu'à 400 j, re-signé au renouvellement DB), mais
+ * toute action réelle passe par les routes API, qui vérifient la révocation
+ * via verifyAdminSession().
  */
 export async function getAdminContextFromRequest(
   request: NextRequest,

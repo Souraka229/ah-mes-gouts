@@ -117,9 +117,13 @@ export async function middleware(request: NextRequest) {
     return withDeviceCookie(request);
   }
 
-  // Point d'échange du lien magique, et page d'atterrissage des sessions
-  // absentes : les deux doivent rester joignables sans session.
-  if (pathname === "/admin/entree" || pathname === "/admin/connexion") {
+  // Point d'échange du lien magique, atterrissage sans session, et shell
+  // hors-ligne PWA : joignables sans cookie (sinon le precache SW échoue).
+  if (
+    pathname === "/admin/entree" ||
+    pathname === "/admin/connexion" ||
+    pathname === "/admin/offline"
+  ) {
     return NextResponse.next();
   }
 

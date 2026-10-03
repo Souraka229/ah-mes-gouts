@@ -1,16 +1,16 @@
 {
-  "id": "/admin",
+  "id": "/admin/",
   "name": "Gift & ENTREMETS — Back-office",
   "short_name": "G&E Admin",
   "description": "Commandes, menus, stock et livraisons.",
   "lang": "fr",
   "dir": "ltr",
-  "start_url": "/admin",
-  "scope": "/admin",
+  "start_url": "/admin/",
+  "scope": "/admin/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FAF7F5",
-  "theme_color": "#D62828",
+  "theme_color": "#3B1F4D",
   "icons": [
     {
       "src": "/pwa/admin-icon-192.png",

@@ -2,7 +2,6 @@ import { createHash } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { getAdminContextAsync } from "@/lib/server/admin-auth";
 import {
   ADMIN_SESSION_COOKIE,
   buildAdminSessionCookie,
@@ -17,16 +16,27 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const context = await getAdminContextAsync();
-  if (!context) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+  const claims = await verifyAdminSession(token);
+  if (!claims) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     authenticated: true,
-    role: context.role,
-    name: context.name,
+    role: claims.role,
+    name: claims.name,
   });
+  response.headers.set("Cache-Control", "no-store, private");
+
+  // Heartbeat : repose le cookie (et un JWT frais si la DB a glissé).
+  const jwt = claims.renewedJwt ?? token;
+  if (jwt) {
+    response.cookies.set(buildAdminSessionCookie(jwt));
+  }
+
+  return response;
 }
 
 export async function POST(request: Request) {

@@ -123,20 +123,24 @@ describe("fenêtre de vie d'un menu du jour", () => {
   const veille = "2026-08-12";
   const surlendemain = "2026-08-14";
 
-  it("se ferme à la fin de la dernière vague de livraison", () => {
+  it("conserve la fermeture boutique (vagues) à 19 h 30 — distincte du menu", () => {
     expect(SHOP_CLOSES_AT_MINUTES).toBe(19 * 60 + 30);
   });
 
-  it("reste servable toute la journée qu'il sert, jusqu'à 19 h 29", () => {
+  it("reste servable toute la journée qu'il sert, jusqu'à 19 h 59", () => {
     expect(isMenuServable(atCotonou(jour, "00:30"), atCotonou(jour, "00:30"))).toBe(true);
     expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "14:00"))).toBe(true);
-    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:29"))).toBe(true);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:31"))).toBe(true);
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:59"))).toBe(true);
   });
 
-  it("ne l'est plus après la fermeture", () => {
-    // La boutique a fermé : proposer le menu n'aurait plus de sens.
-    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "19:31"))).toBe(false);
-    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "22:00"))).toBe(false);
+  it("cède la place à 20 h au menu du lendemain (pas de trou)", () => {
+    // À 20 h le jour J, le menu du jour n'est plus servable…
+    expect(isMenuServable(atCotonou(jour, "14:00"), atCotonou(jour, "20:00"))).toBe(false);
+    // …mais celui du lendemain l'est déjà.
+    expect(
+      isMenuServable(atCotonou(surlendemain, "14:00"), atCotonou(jour, "20:00")),
+    ).toBe(true);
   });
 
   it("s'ouvre à 20 h la veille, pas avant", () => {

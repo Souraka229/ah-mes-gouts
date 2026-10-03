@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { PwaRegistrar } from "@/components/pwa/PwaRegistrar";
+
 /**
  * Atterrissage du back-office sans session.
  *
@@ -74,6 +76,7 @@ export default async function ConnexionPage({
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-bg px-4 py-16">
+      <PwaRegistrar serviceWorker="/admin-sw.js" scope="/admin/" />
       <div className="w-full max-w-md rounded-[24px] border border-border bg-white p-6 shadow-[0_12px_40px_rgba(59,31,77,0.06)] sm:p-8">
         <p className="font-display text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Gift &amp; ENTREMETS

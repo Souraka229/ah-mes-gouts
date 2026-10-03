@@ -109,21 +109,22 @@ export const SHOP_CLOSES_AT_MINUTES = (() => {
 /**
  * Un menu du jour est-il encore servable ?
  *
- * Il ouvre à **20 h la veille** de la journée qu'il sert (`NEXT_DAY_ORDERING_OPENS_AT`,
- * le moment où les commandes du lendemain s'ouvrent) et se ferme à la
- * **fermeture de la boutique**, le jour qu'il sert — pas à minuit. Entre les
- * deux, la boutique est fermée et aucun menu n'est proposé.
+ * Fenêtre métier : **20 h la veille → 20 h le jour servi**.
+ * - Ouverture = `NEXT_DAY_ORDERING_OPENS_AT` (20 h) la veille.
+ * - Fermeture = 20 h le jour du menu, au moment où le menu du lendemain
+ *   prend le relais — plus de trou 19h30→20h où rien n'était proposé.
  *
- * Remplace `isTodayAtShop` pour tout ce qui touche au menu : un menu dont la
- * date est *demain* est légitime à partir de 20 h, et le périmer à ce
- * moment-là le tuait quelques minutes après son ouverture.
+ * Les vagues de livraison (`SHOP_CLOSES_AT_MINUTES` = 19h30) restent la
+ * limite des créneaux ; le catalogue / vitrine reste visible jusqu'à 20 h.
  */
 export function isMenuServable(
   menuDate: Date | string,
   now = new Date(),
 ): boolean {
   if (isTodayAtShop(menuDate, now)) {
-    return getShopMinutes(now) < SHOP_CLOSES_AT_MINUTES;
+    // Jusqu'à 20 h inclus côté commande du jour ; à 20 h pile le menu
+    // de demain devient servable et remplace celui-ci.
+    return getShopHour(now) < NEXT_DAY_ORDERING_OPENS_AT;
   }
   return isNextDayOrderingOpen(now) && isTomorrowAtShop(menuDate, now);
 }

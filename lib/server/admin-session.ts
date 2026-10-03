@@ -131,16 +131,25 @@ export async function verifyAdminJwt(
   }
 }
 
+export type AdminSessionVerification = AdminClaims & {
+  /**
+   * Présent quand la session DB a été prolongée : le JWT doit être
+   * re-signé et reposé en cookie, sinon `exp` figerait la session à 400 j
+   * malgré le sliding DB.
+   */
+  renewedJwt?: string;
+};
+
 /**
  * Vérification complète, révocation incluse. Runtime Node uniquement.
  *
  * Prolonge la session au passage : tant que le back-office est utilisé, la
- * date d'expiration recule. C'est ce qui fait qu'on ne se déconnecte jamais,
- * sans renoncer à pouvoir couper un accès.
+ * date d'expiration recule. Quand la DB est prolongée, un nouveau JWT est
+ * émis — le middleware Edge et le cookie navigateur suivent.
  */
 export async function verifyAdminSession(
   token: string | undefined,
-): Promise<AdminClaims | null> {
+): Promise<AdminSessionVerification | null> {
   const claims = await verifyAdminJwt(token);
   if (!claims) return null;
 
@@ -155,8 +164,9 @@ export async function verifyAdminSession(
   }
 
   const remaining = session.expiresAt.getTime() - Date.now();
+  const shouldRenew = remaining < RENEW_WHEN_REMAINING_MS;
   const data: { lastSeenAt: Date; expiresAt?: Date } = { lastSeenAt: new Date() };
-  if (remaining < RENEW_WHEN_REMAINING_MS) {
+  if (shouldRenew) {
     data.expiresAt = new Date(Date.now() + TTL_MS);
   }
 
@@ -166,7 +176,14 @@ export async function verifyAdminSession(
     .update({ where: { id: claims.sid }, data })
     .catch(() => null);
 
-  return claims;
+  if (!shouldRenew) return claims;
+
+  try {
+    const renewedJwt = await signSession(claims);
+    return { ...claims, renewedJwt };
+  } catch {
+    return claims;
+  }
 }
 
 /**

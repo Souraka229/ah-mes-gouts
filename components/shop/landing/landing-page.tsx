@@ -20,10 +20,10 @@ export function LandingPage({ content }: { content: HomePageContent }) {
   // Le menu du jour est la seule section pilotée par les données : elle
   // n'apparaît qu'une fois le menu planifié puis publié (activation à 20 h la
   // veille). Le reste de la page est une vitrine éditoriale stable.
-  // Quatre cartes à l'affiche, mais on annonce le vrai nombre : la section
-  // reçoit le total pour le dire et renvoyer au catalogue au-delà.
-  const menuItems = content.menuShowcase.slice(0, 4);
-  const menuTotal = content.menuShowcase.length;
+  // Toutes les créations du menu sont affichées — plus de plafond artificiel
+  // à 4 qui faisait dire « 6 » dans le bandeau tout en n'en montrant que 4.
+  const menuItems = content.menuShowcase;
+  const menuTotal = menuItems.length;
   const hasPublishedMenu = menuItems.length > 0;
 
   return (

@@ -24,7 +24,10 @@ const legalLinks = [
 
 export function SiteFooter() {
   return (
-    <footer id="contact" className="border-t border-border bg-card">
+    <footer
+      id="contact"
+      className="border-t border-border bg-card pb-[calc(6.25rem+env(safe-area-inset-bottom))] md:pb-0"
+    >
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           <div>
@@ -128,13 +131,13 @@ export function SiteFooter() {
 
         {/* Signature studio — délibérément en retrait : elle se lit quand on la
             cherche, sans jamais concurrencer les informations de la boutique. */}
-        <p className="mt-6 text-center font-body text-[11px] text-muted-foreground/55 sm:text-left">
+        <p className="mt-8 text-center font-body text-xs text-muted-foreground sm:text-left">
           Designed &amp; built by{" "}
           <a
             href="https://restafy.shop"
             target="_blank"
-            rel="noopener"
-            className="cursor-pointer font-medium underline-offset-4 transition-colors hover:text-secondary hover:underline"
+            rel="noopener noreferrer"
+            className="cursor-pointer font-medium text-primary underline-offset-4 transition-colors hover:text-secondary hover:underline"
           >
             RESTAFY
           </a>

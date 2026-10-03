@@ -22,6 +22,7 @@ import { useCartStore, useCartTotals } from "@/lib/cart-store";
 import { useCheckoutStore } from "@/lib/checkout-store";
 import { CARD_MESSAGE_LABEL } from "@/lib/admin/order-board";
 import { getLineUnitPrice, getLineTotal } from "@/lib/cart-utils";
+import { UNLIMITED_CART_MAX_QTY } from "@/lib/catalog-utils";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,7 @@ function CartLineItem({
   onIncrease: () => void;
 }) {
   const unitPrice = getLineUnitPrice(item);
+  const atMax = item.quantity >= UNLIMITED_CART_MAX_QTY;
 
   return (
     <li className="rounded-xl border border-border bg-card p-3 sm:p-4">
@@ -136,7 +138,8 @@ function CartLineItem({
               <button
                 type="button"
                 onClick={onIncrease}
-                className="flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted active:bg-muted"
+                disabled={atMax}
+                className="flex size-10 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-muted active:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Augmenter"
               >
                 <Plus className="size-4" />
@@ -215,7 +218,10 @@ export function CartDrawer() {
                     updateQuantity(item.lineId, item.quantity - 1)
                   }
                   onIncrease={() =>
-                    updateQuantity(item.lineId, item.quantity + 1)
+                    updateQuantity(
+                      item.lineId,
+                      Math.min(UNLIMITED_CART_MAX_QTY, item.quantity + 1),
+                    )
                   }
                 />
               ))}

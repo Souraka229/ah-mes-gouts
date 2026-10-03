@@ -287,6 +287,7 @@ export function StepPayment() {
           slug: item.slug,
           name: item.name,
           quantity: item.quantity,
+          ...(item.variantCode ? { variantCode: item.variantCode } : {}),
         })),
       },
       // La route doit renvoyer la liste des problèmes : un corps vide est une

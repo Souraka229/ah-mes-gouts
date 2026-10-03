@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/format";
+import { getEffectiveStock } from "@/lib/product-stock-display";
 import { validateUploadFile } from "@/lib/uploads";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
@@ -160,15 +161,15 @@ export function AdminProductsPage() {
   };
 
   const toggleAvailable = (product: AdminProduct) => {
-    const wasAvailable = product.stockRemaining > 0;
+    const wasVisible = (product.visibility ?? "published") === "published";
     void patchProduct(
       product.id,
       { toggleAvailable: true },
-      wasAvailable ? "Produit masqué" : "Produit disponible",
+      wasVisible ? "Retiré de la vitrine" : "Remis en vitrine",
       () =>
         patchProduct(
           product.id,
-          { stockRemaining: wasAvailable ? 10 : 0 },
+          { visibility: wasVisible ? "published" : "hidden" },
           "Annulé",
         ),
     );
@@ -792,10 +793,13 @@ export function AdminProductsPage() {
             </thead>
             <tbody>
               {filteredProducts.map((product) => {
-                const unlimited = isUnlimitedStockCategory(
-                  product.category ?? "Entremets",
-                );
-                const available = unlimited || product.stockRemaining > 0;
+                const remaining = getEffectiveStock(product);
+                const unlimited =
+                  isUnlimitedStockCategory(product.category ?? "Entremets") ||
+                  remaining === null;
+                const listed =
+                  (product.visibility ?? "published") === "published";
+                const exhausted = !unlimited && remaining === 0;
                 // Seuls les paliers actifs sont proposés à la cliente : ce sont
                 // eux, et eux seuls, qui définissent la gamme de prix affichée.
                 const activeVariants = (product.variants ?? []).filter(
@@ -936,32 +940,34 @@ export function AdminProductsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {unlimited ? "∞" : product.stockRemaining}
+                      {unlimited ? "∞" : remaining}
                     </td>
                     <td className="px-4 py-3">
-                      {unlimited ? (
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                          Toujours
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          title={
-                            available
-                              ? "Masquer du catalogue"
-                              : "Rendre disponible"
-                          }
-                          onClick={() => toggleAvailable(product)}
-                          className={cn(
-                            "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold",
-                            available
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-muted text-muted-foreground",
-                          )}
-                        >
-                          {available ? "Oui" : "Non"}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        title={
+                          listed
+                            ? "Masquer de la vitrine (le stock n’est pas modifié)"
+                            : "Remettre en vitrine"
+                        }
+                        onClick={() => toggleAvailable(product)}
+                        className={cn(
+                          "cursor-pointer rounded-full px-3 py-1 text-xs font-semibold",
+                          !listed
+                            ? "bg-muted text-muted-foreground"
+                            : exhausted
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-emerald-100 text-emerald-800",
+                        )}
+                      >
+                        {!listed
+                          ? "Masqué"
+                          : exhausted
+                            ? "Épuisé"
+                            : unlimited
+                              ? "Toujours"
+                              : "Oui"}
+                      </button>
                     </td>
                   </tr>
                 );

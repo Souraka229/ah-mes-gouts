@@ -172,6 +172,8 @@ export async function priceOrderItems(
     const category = getProductCategory(product);
     const unlimitedStock = isUnlimitedStockCategory(category);
 
+    const variants = activeVariants.get(product.id) ?? [];
+
     if (!unlimitedStock) {
       if (!activeMenuSlugs.has(product.slug)) {
         issues.push({
@@ -182,36 +184,40 @@ export async function priceOrderItems(
         continue;
       }
 
-      const stockRemaining =
-        liveStock.get(product.slug) ?? product.stockRemaining;
+      // Stock au niveau produit uniquement s'il n'y a pas de variantes :
+      // sinon `Product.stockRemaining` n'est plus la source de vérité.
+      if (variants.length === 0) {
+        const stockRemaining =
+          liveStock.get(product.slug) ?? product.stockRemaining;
 
-      if (
-        process.env.NODE_ENV === "production" &&
-        !liveStock.has(product.slug)
-      ) {
-        issues.push({
-          name: product.name,
-          message: "Ce produit n'est plus disponible.",
-        });
-        continue;
-      }
+        if (
+          process.env.NODE_ENV === "production" &&
+          !liveStock.has(product.slug)
+        ) {
+          issues.push({
+            name: product.name,
+            message: "Ce produit n'est plus disponible.",
+          });
+          continue;
+        }
 
-      if (stockRemaining <= 0) {
-        issues.push({
-          name: product.name,
-          message: "Ce produit vient d'être épuisé.",
-        });
-        continue;
-      }
+        if (stockRemaining <= 0) {
+          issues.push({
+            name: product.name,
+            message: "Ce produit vient d'être épuisé.",
+          });
+          continue;
+        }
 
-      if (raw.quantity > stockRemaining) {
-        issues.push({
-          name: product.name,
-          message: `Stock insuffisant (${stockRemaining} restant${
-            stockRemaining > 1 ? "s" : ""
-          }).`,
-        });
-        continue;
+        if (raw.quantity > stockRemaining) {
+          issues.push({
+            name: product.name,
+            message: `Stock insuffisant (${stockRemaining} restant${
+              stockRemaining > 1 ? "s" : ""
+            }).`,
+          });
+          continue;
+        }
       }
     }
 
@@ -226,8 +232,6 @@ export async function priceOrderItems(
     let variantLabel: string | undefined;
     let variantStockTracked = false;
     let itemName = product.name;
-
-    const variants = activeVariants.get(product.id) ?? [];
     if (variants.length > 0) {
       const code = resolveVariantCode(raw);
 

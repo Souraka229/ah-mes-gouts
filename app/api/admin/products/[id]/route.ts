@@ -64,14 +64,18 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!product) {
         return NextResponse.json({ error: "Produit introuvable" }, { status: 404 });
       }
-      const nextStock = product.stockRemaining > 0 ? 0 : 10;
-      const updated = await updateCatalogStock(id, nextStock);
+      const currentlyVisible =
+        (product.visibility ?? "published") === "published";
+      const nextVisibility = currentlyVisible ? "hidden" : "published";
+      const updated = await updateCatalogProduct(id, {
+        visibility: nextVisibility,
+      });
       void appendAdminActionLog({
         adminName,
         source: "manual",
         action: "product_toggle",
-        summary: `Disponibilité ${product.name} → stock ${nextStock}`,
-        details: { productId: id, stock: nextStock },
+        summary: `${product.name} → ${currentlyVisible ? "masqué" : "en vitrine"}`,
+        details: { productId: id, visibility: nextVisibility },
       });
       return NextResponse.json({ product: updated });
     }

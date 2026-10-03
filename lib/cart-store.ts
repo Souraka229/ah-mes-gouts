@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { getCartTotals, mergeCartLine } from "@/lib/cart-utils";
+import { UNLIMITED_CART_MAX_QTY } from "@/lib/catalog-utils";
 import { trackActivity } from "@/lib/crm/track";
 import type { AddToCartPayload, CartLineItem } from "@/types/cart";
 
@@ -53,7 +54,12 @@ export const useCartStore = create<CartState>()(
             quantity <= 0
               ? state.items.filter((item) => item.lineId !== lineId)
               : state.items.map((item) =>
-                  item.lineId === lineId ? { ...item, quantity } : item,
+                  item.lineId === lineId
+                    ? {
+                        ...item,
+                        quantity: Math.min(UNLIMITED_CART_MAX_QTY, quantity),
+                      }
+                    : item,
                 ),
         })),
 

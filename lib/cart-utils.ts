@@ -1,3 +1,4 @@
+import { UNLIMITED_CART_MAX_QTY } from "@/lib/catalog-utils";
 import type {
   AddToCartPayload,
   CartLineItem,
@@ -109,7 +110,7 @@ export function mergeCartLine(
         imageUrl: payload.imageUrl,
         baseUnitPrice: payload.baseUnitPrice,
         supplements: payload.supplements,
-        quantity: payload.quantity,
+        quantity: Math.min(UNLIMITED_CART_MAX_QTY, payload.quantity),
         variantCode: payload.variantCode,
         sizeCm: payload.sizeCm,
       },
@@ -118,7 +119,13 @@ export function mergeCartLine(
 
   return items.map((item, index) =>
     index === existingIndex
-      ? { ...item, quantity: item.quantity + payload.quantity }
+      ? {
+          ...item,
+          quantity: Math.min(
+            UNLIMITED_CART_MAX_QTY,
+            item.quantity + payload.quantity,
+          ),
+        }
       : item,
   );
 }

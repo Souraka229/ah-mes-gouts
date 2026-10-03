@@ -1,11 +1,16 @@
 import { getProductCategory } from "@/lib/catalog-utils";
 import { isUnlimitedStockCategory } from "@/lib/admin/categories";
-import { getFullCatalog } from "@/lib/server/shop-catalog";
+import { isLowStock, getEffectiveStock } from "@/lib/product-stock-display";
+import {
+  attachVariants,
+  getFullCatalog,
+} from "@/lib/server/shop-catalog";
 import { appendAdminActionLog } from "@/lib/server/admin-action-log";
 import { sendOrderNotifications } from "@/lib/notifications/order-notifications";
 import {
   alertDeliveryWaveFull,
   alertNewOrder,
+  alertStockLow,
   notifyOps,
 } from "@/lib/notifications/ops-alerts";
 import { formatFulfillmentSummary } from "@/lib/delivery/fulfillment-summary";
@@ -25,6 +30,8 @@ import {
   getServerOrder,
 } from "@/lib/server/order-repository";
 import { isPendingPaymentExpired } from "@/lib/orders/payment-expiration";
+import { revalidatePath, revalidateTag } from "next/cache";
+import type { StockClaim } from "@/lib/server/order-pricing";
 
 /**
  * Prévient la boutique dès qu'une vague de livraison est complète (35).
@@ -105,29 +112,46 @@ export async function confirmOrderPayment(
     };
   }
 
-  const catalog = await getFullCatalog();
+  const catalog = await attachVariants(await getFullCatalog());
   const bySlug = new Map(catalog.map((p) => [p.slug, p]));
 
-  const stockClaims = existing.items
-    .filter((item) => item.slug)
-    .map((item) => {
-      const product = bySlug.get(item.slug!);
-      const category = product ? getProductCategory(product) : undefined;
-      const unlimitedStock = category
-        ? isUnlimitedStockCategory(category)
-        : false;
-      return {
-        slug: item.slug!,
-        name: item.name,
-        quantity: item.quantity,
-        category,
-        unlimitedStock,
-      };
+  const stockClaims = new Map<string, StockClaim>();
+  for (const item of existing.items) {
+    if (!item.slug) continue;
+    const product = bySlug.get(item.slug);
+    const category = product ? getProductCategory(product) : undefined;
+    const unlimitedStock = category
+      ? isUnlimitedStockCategory(category)
+      : false;
+    const variant = item.variantId
+      ? product?.variants?.find((entry) => entry.id === item.variantId)
+      : undefined;
+    const variantStockTracked = Boolean(
+      variant && variant.stockRemaining !== null,
+    );
+    const key = variantStockTracked
+      ? `${item.slug}:${item.variantId}`
+      : item.slug;
+    const current = stockClaims.get(key);
+    if (current) {
+      current.quantity += item.quantity;
+      continue;
+    }
+    stockClaims.set(key, {
+      slug: item.slug,
+      name: item.name,
+      quantity: item.quantity,
+      category,
+      unlimitedStock,
+      variantId: item.variantId,
+      variantStockTracked,
     });
+  }
+  const claims = [...stockClaims.values()];
 
   const confirmed = await confirmServerOrderPayment(
     orderId,
-    stockClaims,
+    claims,
     paymentReference,
   );
 
@@ -148,7 +172,7 @@ export async function confirmOrderPayment(
     };
   }
 
-  const trackedClaims = stockClaims.filter((c) => !c.unlimitedStock);
+  const trackedClaims = claims.filter((c) => !c.unlimitedStock);
   if (trackedClaims.length > 0) {
     void appendAdminActionLog({
       adminName: "Client",
@@ -196,6 +220,36 @@ export async function confirmOrderPayment(
   void notifyIfDeliveryWaveFull(confirmed).catch(() => {
     /* non bloquant */
   });
+
+  try {
+    revalidateTag("catalog");
+    revalidateTag("menu");
+    revalidatePath("/");
+    revalidatePath("/catalogue");
+    for (const claim of trackedClaims) {
+      revalidatePath(`/produit/${claim.slug}`);
+    }
+  } catch {
+    /* ISR best-effort */
+  }
+
+  const catalogAfter = await attachVariants(await getFullCatalog()).catch(
+    () => [] as typeof catalog,
+  );
+  for (const claim of trackedClaims) {
+    const product = catalogAfter.find((p) => p.slug === claim.slug);
+    if (!product) continue;
+    const remaining = getEffectiveStock(product);
+    if (remaining === null) continue;
+    if (isLowStock(product) || remaining === 0) {
+      notifyOps(
+        alertStockLow({
+          productName: product.name,
+          remaining,
+        }),
+      );
+    }
+  }
 
   return { ok: true, orderId };
 }

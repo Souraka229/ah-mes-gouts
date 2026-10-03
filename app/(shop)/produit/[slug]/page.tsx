@@ -18,7 +18,7 @@ import {
   buildProductSchema,
 } from "@/lib/seo/schemas";
 import {
-  getFullCatalog,
+  getShopCatalogue,
   getProductGalleryUrls,
   getShopProductBySlug,
   getSimilarShopProducts,
@@ -40,12 +40,12 @@ type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export const revalidate = 300;
+export const revalidate = 60;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
   try {
-    const catalog = await getFullCatalog();
+    const catalog = await getShopCatalogue();
     return catalog.map((product) => ({ slug: product.slug }));
   } catch {
     return [];
@@ -83,7 +83,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const [similar, catalog, optionGroups, messageCategories] = await Promise.all([
     getSimilarShopProducts(slug),
-    getFullCatalog(),
+    getShopCatalogue(),
     getActiveOptionGroupsForProduct(product.id),
     getMessageCategories(),
   ]);

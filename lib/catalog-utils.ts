@@ -6,6 +6,7 @@ import {
   isUnlimitedStockCategory,
   normalizeProductCategory,
 } from "@/lib/admin/categories";
+import { getEffectiveStock } from "@/lib/product-stock-display";
 import type { Product } from "@/types/product";
 
 /** Prix effectif (promo incluse) — source unique côté shop. */
@@ -46,18 +47,33 @@ export function getProductCategory(product: Product): string {
 /** Plafond UI pour catégories sans limite de stock (Nounours, Carte…). */
 export const UNLIMITED_CART_MAX_QTY = 99;
 
-export function getMaxOrderQuantity(product: Product): number {
+export function getMaxOrderQuantity(
+  product: Product,
+  variantCode?: string,
+): number {
   if (isUnlimitedStockCategory(getProductCategory(product))) {
     return UNLIMITED_CART_MAX_QTY;
   }
-  return Math.max(0, product.stockRemaining);
+  if (variantCode) {
+    const variant = (product.variants ?? []).find(
+      (entry) => entry.isActive && entry.code === variantCode,
+    );
+    if (variant && variant.stockRemaining !== null) {
+      return Math.max(0, variant.stockRemaining);
+    }
+  }
+  const remaining = getEffectiveStock(product);
+  if (remaining === null) return UNLIMITED_CART_MAX_QTY;
+  return Math.max(0, remaining);
 }
 
 export function isProductAvailable(product: Product): boolean {
   if (isUnlimitedStockCategory(getProductCategory(product))) {
     return true;
   }
-  return product.stockRemaining > 0;
+  const remaining = getEffectiveStock(product);
+  if (remaining === null) return true;
+  return remaining > 0;
 }
 
 export function isGiftCardProduct(product: Product): boolean {

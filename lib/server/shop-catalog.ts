@@ -75,7 +75,10 @@ export async function attachVariants(products: Product[]): Promise<Product[]> {
 /** Catalogue public : produits publiés, variantes actives attachées. */
 export async function getShopCatalogue(): Promise<Product[]> {
   const catalog = await getFullCatalog();
-  return attachVariants(catalog.filter(isPubliclyVisible));
+  const visible = catalog.filter(isPubliclyVisible);
+  const hydrated = await attachVariants(visible);
+  // Stock = 0 → retiré du catalogue public (règle métier).
+  return hydrated.filter(isProductAvailable);
 }
 
 /** Catalogue complet — **usage interne** (admin, facturation). Brouillons inclus. */

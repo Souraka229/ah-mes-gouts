@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { validateCartStockWithCatalog } from "@/lib/validate-cart-stock";
-import { getFullCatalog } from "@/lib/server/shop-catalog";
+import {
+  attachVariants,
+  getFullCatalog,
+} from "@/lib/server/shop-catalog";
 
 const bodySchema = z.object({
   items: z.array(
@@ -10,6 +13,7 @@ const bodySchema = z.object({
       slug: z.string(),
       name: z.string(),
       quantity: z.number().int().positive(),
+      variantCode: z.string().min(1).max(40).optional(),
     }),
   ),
 });
@@ -27,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Panier invalide" }, { status: 400 });
   }
 
-  const catalog = await getFullCatalog();
+  const catalog = await attachVariants(await getFullCatalog());
   const issues = validateCartStockWithCatalog(parsed.data.items, catalog);
 
   return NextResponse.json({ issues });

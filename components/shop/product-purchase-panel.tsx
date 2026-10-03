@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Minus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,11 @@ export function ProductPurchasePanel({
   const usesStoredVariants = activeVariants.length > 0;
 
   const [selectedCode, setSelectedCode] = useState<string | undefined>(
-    () => activeVariants[0]?.code,
+    () =>
+      activeVariants.find(
+        (variant) =>
+          variant.stockRemaining === null || (variant.stockRemaining ?? 0) > 0,
+      )?.code ?? activeVariants[0]?.code,
   );
   const selectedVariant = activeVariants.find(
     (variant) => variant.code === selectedCode,
@@ -99,7 +103,19 @@ export function ProductPurchasePanel({
   const [selectedCm, setSelectedCm] = useState<number>(NOUNOURS_SIZES[0]!.cm);
 
   const available = isProductAvailable(product);
-  const maxQuantity = getMaxOrderQuantity(product);
+  const variantSoldOut = Boolean(
+    selectedVariant &&
+      selectedVariant.stockRemaining !== null &&
+      selectedVariant.stockRemaining <= 0,
+  );
+  const maxQuantity = getMaxOrderQuantity(product, selectedVariant?.code);
+
+  useEffect(() => {
+    setQuantity((current) => {
+      if (maxQuantity < 1) return 1;
+      return Math.min(Math.max(1, current), maxQuantity);
+    });
+  }, [maxQuantity]);
 
   const selectedSize = isLegacyNounours
     ? getNounoursSizeByCm(selectedCm)
@@ -150,7 +166,7 @@ export function ProductPurchasePanel({
     );
 
   const handleAddToCart = async () => {
-    if (!available || isAdding) return;
+    if (!available || isAdding || variantSoldOut || maxQuantity < 1) return;
 
     setIsAdding(true);
     await new Promise((resolve) => window.setTimeout(resolve, 450));
@@ -162,7 +178,7 @@ export function ProductPurchasePanel({
       imageUrl: product.imageUrl,
       baseUnitPrice,
       supplements,
-      quantity,
+      quantity: Math.min(quantity, Math.max(1, maxQuantity)),
       // Seul un **code de choix** part au serveur : jamais un montant. Le
       // serveur résout le prix dans sa propre table.
       variantCode: usesStoredVariants ? selectedVariant?.code : undefined,
@@ -338,7 +354,7 @@ export function ProductPurchasePanel({
           "w-full cursor-pointer transition-all duration-200",
           addedFeedback && "bg-success text-primary-foreground hover:bg-success/90",
         )}
-        disabled={isAdding}
+        disabled={isAdding || variantSoldOut || maxQuantity < 1}
         onClick={handleAddToCart}
       >
         {isAdding ? (
@@ -348,6 +364,8 @@ export function ProductPurchasePanel({
           </>
         ) : addedFeedback ? (
           "Ajouté au panier"
+        ) : variantSoldOut ? (
+          "Cette option est épuisée"
         ) : (
           "Ajouter au panier"
         )}

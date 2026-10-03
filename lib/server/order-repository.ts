@@ -197,13 +197,17 @@ export async function confirmServerOrderPayment(
   const prisma = getPrisma();
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(
+      async (tx) => {
+      // Verrou d'abord, lecture ensuite : sinon le statut lu peut être périmé.
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${orderId} FOR UPDATE`;
+
       const existing = await tx.order.findUnique({
         where: { id: orderId },
         include: {
-        items: { include: { options: true } },
-        driver: { select: { name: true } },
-      },
+          items: { include: { options: true } },
+          driver: { select: { name: true } },
+        },
       });
 
       if (!existing) return undefined;
@@ -218,9 +222,9 @@ export async function confirmServerOrderPayment(
           where: { id: orderId },
           data: { status: toPrismaOrderStatus("annulee") },
           include: {
-        items: { include: { options: true } },
-        driver: { select: { name: true } },
-      },
+            items: { include: { options: true } },
+            driver: { select: { name: true } },
+          },
         });
         return fromPrismaOrder(expired);
       }
@@ -236,17 +240,20 @@ export async function confirmServerOrderPayment(
           ...(paymentReference ? { paymentReference } : {}),
         },
         include: {
-        items: { include: { options: true } },
-        driver: { select: { name: true } },
-      },
+          items: { include: { options: true } },
+          driver: { select: { name: true } },
+        },
       });
 
       return fromPrismaOrder(row);
-    });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
   } catch (error) {
     if (error instanceof OrderStockError) {
       throw error;
     }
+    console.error("[confirmServerOrderPayment]", error);
     return undefined;
   }
 }

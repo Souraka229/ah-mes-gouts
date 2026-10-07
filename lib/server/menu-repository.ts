@@ -47,6 +47,8 @@ function toScheduledMenu(row: {
   productIds: string[];
   displayOrder: number[];
   dailyStock: number[];
+  label?: string | null;
+  archivedAt?: Date | null;
   createdAt: Date;
 }): ScheduledMenu {
   return {
@@ -57,6 +59,8 @@ function toScheduledMenu(row: {
     productIds: row.productIds,
     displayOrder: row.displayOrder,
     dailyStock: row.dailyStock,
+    label: row.label ?? null,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -70,6 +74,8 @@ function toMenuRow(menu: ScheduledMenu) {
     productIds: menu.productIds,
     displayOrder: menu.displayOrder,
     dailyStock: menu.dailyStock,
+    label: menu.label ?? null,
+    archivedAt: menu.archivedAt ? new Date(menu.archivedAt) : null,
     createdAt: new Date(menu.createdAt),
   };
 }
@@ -143,7 +149,10 @@ async function seedMenus(): Promise<ScheduledMenu[]> {
 async function readMenusFromDb(): Promise<ScheduledMenu[] | null> {
   try {
     const prisma = getPrisma();
-    const rows = await prisma.menu.findMany({ orderBy: { activateAt: "desc" } });
+    const rows = await prisma.menu.findMany({
+      where: { archivedAt: null },
+      orderBy: { activateAt: "desc" },
+    });
     if (rows.length === 0) return null;
     return rows.map(toScheduledMenu);
   } catch {
@@ -215,6 +224,7 @@ export async function createMenu(input: {
   productIds: string[];
   displayOrder: number[];
   dailyStock?: number[];
+  label?: string | null;
 }): Promise<ScheduledMenu> {
   const menu: ScheduledMenu = {
     id: randomUUID(),
@@ -225,6 +235,8 @@ export async function createMenu(input: {
     displayOrder: input.displayOrder,
     // Par défaut : pas de cible de stock (0 = illimité, on ne réinitialise pas).
     dailyStock: input.dailyStock ?? input.productIds.map(() => 0),
+    label: input.label ?? null,
+    archivedAt: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -238,7 +250,13 @@ export async function updateMenu(
   patch: Partial<
     Pick<
       ScheduledMenu,
-      "date" | "activateAt" | "productIds" | "displayOrder" | "status" | "dailyStock"
+      | "date"
+      | "activateAt"
+      | "productIds"
+      | "displayOrder"
+      | "status"
+      | "dailyStock"
+      | "label"
     >
   >,
   options?: { forceActiveEdit?: boolean },
@@ -276,12 +294,32 @@ export async function duplicateMenu(
     ? getShopDateKey(targetDate)
     : addShopDays(getShopDateKey(), 1);
 
+  const copyLabel = source.label?.trim()
+    ? `Copie · ${source.label.trim()}`
+    : "Copie · menu";
+
   return createMenu({
     date: shopDateTimeToUtc(dateKey, "00:00").toISOString(),
     activateAt: defaultActivateAt(dateKey),
     productIds: [...source.productIds],
     displayOrder: [...source.displayOrder],
     dailyStock: [...source.dailyStock],
+    label: copyLabel,
+  });
+}
+
+/** Retire un menu du studio (programmé uniquement). */
+export async function archiveMenu(id: string): Promise<void> {
+  const menu = await getMenuById(id);
+  if (!menu) throw new Error("Menu introuvable");
+  if (menu.status === "active") {
+    throw new Error("MENU_ACTIVE_ARCHIVE_FORBIDDEN");
+  }
+
+  const prisma = getPrisma();
+  await prisma.menu.update({
+    where: { id },
+    data: { archivedAt: new Date() },
   });
 }
 

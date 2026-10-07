@@ -13,6 +13,16 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
  * settlePaymentByReference() revérifie tout auprès de l'API FeexPay avant de
  * confirmer quoi que ce soit. Le rate-limit reste actif contre le spam d'URL.
  */
+function feexPayWebhookAuthorized(request: Request): boolean {
+  const expected = process.env.FEEXPAY_WEBHOOK_SECRET?.trim();
+  if (!expected) return true;
+  const header =
+    request.headers.get("x-feexpay-webhook-secret")?.trim() ??
+    request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  if (!header) return false;
+  return header === expected;
+}
+
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   const { allowed, retryAfterSec } = await checkRateLimit(
@@ -26,6 +36,10 @@ export async function POST(request: Request) {
       { error: "Trop de requêtes." },
       { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
     );
+  }
+
+  if (!feexPayWebhookAuthorized(request)) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   try {

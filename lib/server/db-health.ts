@@ -5,7 +5,27 @@ export type HealthCheckResult = {
   ok: boolean;
   storage: "json" | "postgres" | "unknown";
   details: Record<string, string>;
+  channels?: {
+    whatsapp: {
+      sendReady: boolean;
+      webhookSecret: boolean;
+      cronSecret: boolean;
+    };
+  };
 };
+
+function whatsappChannelHealth(): HealthCheckResult["channels"] {
+  return {
+    whatsapp: {
+      sendReady: Boolean(
+        process.env.KAPSO_API_KEY?.trim() &&
+          process.env.KAPSO_PHONE_NUMBER_ID?.trim(),
+      ),
+      webhookSecret: Boolean(process.env.KAPSO_WEBHOOK_SECRET?.trim()),
+      cronSecret: Boolean(process.env.CRON_SECRET?.trim()),
+    },
+  };
+}
 
 async function checkPrisma(): Promise<{ ok: boolean; details: string }> {
   if (!process.env.DATABASE_URL) {
@@ -64,6 +84,7 @@ export async function runHealthCheck(): Promise<HealthCheckResult> {
       ok: prisma.ok && sb.ok,
       storage: "postgres",
       details,
+      channels: whatsappChannelHealth(),
     };
   }
 
@@ -73,5 +94,6 @@ export async function runHealthCheck(): Promise<HealthCheckResult> {
     ok: prisma.ok,
     storage: prisma.ok ? "postgres" : "unknown",
     details,
+    channels: whatsappChannelHealth(),
   };
 }

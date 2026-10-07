@@ -152,9 +152,17 @@ export function OrderBoardCard({
             <h3 className="font-display text-lg font-semibold text-primary">
               Commande {order.id}
             </h3>
-            <span className="font-body text-xs text-muted-foreground">
-              {ORDER_STATUS_LABELS[order.status]}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {order.salesChannel === "whatsapp" ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-body text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  <MessageCircle className="size-3" aria-hidden />
+                  WhatsApp
+                </span>
+              ) : null}
+              <span className="font-body text-xs text-muted-foreground">
+                {ORDER_STATUS_LABELS[order.status]}
+              </span>
+            </div>
           </div>
 
           {isForTomorrow && (

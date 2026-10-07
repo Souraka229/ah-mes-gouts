@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { isAdminAuthorizedAsync } from "@/lib/server/admin-auth";
 import {
+  archiveMenu,
   getMenuById,
   updateMenu,
 } from "@/lib/server/menu-repository";
@@ -37,6 +38,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       productIds?: string[];
       displayOrder?: number[];
       dailyStock?: number[];
+      label?: string | null;
       forceActiveEdit?: boolean;
     };
 
@@ -48,6 +50,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         productIds: body.productIds,
         displayOrder: body.displayOrder,
         dailyStock: body.dailyStock,
+        label: body.label,
       },
       { forceActiveEdit: body.forceActiveEdit },
     );
@@ -65,5 +68,32 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
     return NextResponse.json({ error: "Modification impossible" }, { status: 400 });
+  }
+}
+
+export async function DELETE(_request: Request, context: RouteContext) {
+  if (!(await isAdminAuthorizedAsync())) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+
+  try {
+    await archiveMenu(id);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "MENU_ACTIVE_ARCHIVE_FORBIDDEN"
+    ) {
+      return NextResponse.json(
+        {
+          error: "MENU_ACTIVE_ARCHIVE_FORBIDDEN",
+          message: "Le menu en ligne ne peut pas être supprimé ici.",
+        },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ error: "Suppression impossible" }, { status: 400 });
   }
 }

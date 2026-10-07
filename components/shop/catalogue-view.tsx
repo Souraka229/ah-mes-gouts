@@ -25,23 +25,27 @@ import {
   type CatalogueFilters,
 } from "@/types/product";
 import type { Product } from "@/types/product";
+import type { CatalogueMenuEditor } from "@/types/studio";
+import { StudioMenuProductGrid } from "@/components/studio/studio-menu-product-grid";
+import {
+  CatalogueAlsoBrowse,
+  CatalogueCategoryTabs,
+  type CatalogueTabId,
+} from "@/components/shop/catalogue-category-tabs";
 
-type CatalogueTab =
-  | "menu"
-  | "fleurs"
-  | "nounours"
-  | "vin"
-  | "carte"
-  | "all";
+type CatalogueTab = CatalogueTabId;
 
 type CatalogueViewProps = {
   menuProducts?: Product[];
   allProducts?: Product[];
+  /** Mode studio : même écran que le client, édition du menu du jour. */
+  menuEditor?: CatalogueMenuEditor;
 };
 
 export function CatalogueView({
   menuProducts: menuProductsProp,
   allProducts: allProductsProp,
+  menuEditor,
 }: CatalogueViewProps) {
   const searchParams = useSearchParams();
   const initialPromotionsOnly = searchParams.get("promotions") === "1";
@@ -57,8 +61,18 @@ export function CatalogueView({
   const noMenuToday = menuCatalog.length === 0;
 
   const [activeTab, setActiveTab] = useState<CatalogueTab>(
-    noMenuToday ? "fleurs" : "menu",
+    menuEditor ? "menu" : noMenuToday ? "fleurs" : "menu",
   );
+
+  useEffect(() => {
+    if (menuEditor) setActiveTab("menu");
+  }, [menuEditor]);
+
+  useEffect(() => {
+    if (noMenuToday && !menuEditor && activeTab === "menu") {
+      setActiveTab("fleurs");
+    }
+  }, [noMenuToday, menuEditor, activeTab]);
 
   const [minPrice, maxPrice] = useMemo(
     () => getPriceBounds(fullCatalog),
@@ -217,9 +231,9 @@ export function CatalogueView({
         <h1 className="font-display text-3xl font-semibold text-primary sm:text-5xl">
           Catalogue
         </h1>
-        <p className="mt-3 max-w-2xl font-body text-muted-foreground">
-          Explorez nos créations artisanales et trouvez la glace qui vous
-          ressemble.
+        <p className="mt-3 max-w-2xl font-body text-sm text-muted-foreground">
+          Glaces, fleurs, nounours et carte cadeau — faites glisser les onglets
+          ci-dessous.
         </p>
       </div>
 
@@ -242,48 +256,38 @@ export function CatalogueView({
         <CatalogueFiltersDrawer {...filterPanelProps} />
       </div>
 
-      <div
-        className="mb-8 flex gap-2 overflow-x-auto rounded-full border border-border bg-muted/50 p-1 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="tablist"
-        aria-label="Sections du catalogue"
-      >
-        {(
-          [
-            ["menu", "Menu du jour"],
-            ["fleurs", "Fleurs"],
-            ["nounours", "Nounours"],
-            ["vin", "Vin / Spiritueux"],
-            ["carte", "Cartes & sur mesure"],
-            ["all", "Toute la carte"],
-          ] as const
-        ).map(([tab, label]) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={cn(
-              "shrink-0 cursor-pointer rounded-full px-4 py-2.5 font-body text-sm font-semibold transition-colors",
-              activeTab === tab
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-primary",
-            )}
-            onClick={() => setActiveTab(tab)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <CatalogueCategoryTabs
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        hideMenuTab={noMenuToday && !menuEditor}
+      />
 
       <div className="flex gap-8">
         <CatalogueFiltersSidebar {...filterPanelProps} />
 
         <div className="min-w-0 flex-1">
           {activeTab === "menu" && (
-            <section id="menu-du-jour" aria-labelledby="menu-du-jour-title">
-              <div className="mb-8 rounded-2xl border border-secondary/60 bg-secondary/15 px-5 py-6 sm:px-8">
+            <section
+              id="menu-du-jour"
+              aria-labelledby="menu-du-jour-title"
+              onDoubleClick={
+                menuEditor
+                  ? (e) => {
+                      if (e.target === e.currentTarget) menuEditor.onRequestAdd();
+                    }
+                  : undefined
+              }
+            >
+              <div
+                className={cn(
+                  "mb-8 rounded-2xl border border-secondary/60 bg-secondary/15 px-5 py-6 sm:px-8",
+                  menuEditor && "cursor-pointer ring-offset-2 hover:ring-2 hover:ring-secondary/50",
+                )}
+                onDoubleClick={menuEditor ? () => menuEditor.onRequestAdd() : undefined}
+                title={menuEditor ? "Double-clic pour ajouter des créations" : undefined}
+              >
                 <p className="font-body text-xs font-semibold tracking-[0.28em] text-muted-foreground uppercase">
-                  Sélection du jour
+                  {menuEditor ? "Studio · aperçu client" : "Sélection du jour"}
                 </p>
                 <h2
                   id="menu-du-jour-title"
@@ -292,12 +296,35 @@ export function CatalogueView({
                   Le menu du jour
                 </h2>
                 <p className="mt-2 font-body text-sm text-muted-foreground">
-                  {noMenuToday
-                    ? `${todayLabel} — la sélection d'aujourd'hui n'est pas encore en ligne.`
-                    : `${todayLabel} — stock limité, renouvelé chaque jour.`}
+                  {menuEditor
+                    ? "Double-clic ici pour ajouter · glissez les cartes pour réordonner · corbeille au survol."
+                    : noMenuToday
+                      ? `${todayLabel} — la sélection d'aujourd'hui n'est pas encore en ligne.`
+                      : `${todayLabel} — stock limité, renouvelé chaque jour.`}
                 </p>
               </div>
-              {noMenuToday ? (
+              {menuEditor ? (
+                menuEditor.products.length > 0 ? (
+                  <StudioMenuProductGrid
+                    products={menuEditor.products}
+                    onReorder={menuEditor.onReorder}
+                    onRemove={menuEditor.onRemove}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onDoubleClick={() => menuEditor.onRequestAdd()}
+                    className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-secondary/70 bg-muted/30 px-6 text-center transition hover:border-secondary hover:bg-secondary/10"
+                  >
+                    <p className="font-display text-xl font-semibold text-primary">
+                      Menu vide
+                    </p>
+                    <p className="mt-2 max-w-sm font-body text-sm text-muted-foreground">
+                      Double-cliquez pour choisir les entremets de cette version.
+                    </p>
+                  </button>
+                )
+              ) : noMenuToday ? (
                 <MenuUnavailableNotice
                   onBrowseAll={() => setActiveTab("all")}
                   onBrowseFleurs={() => setActiveTab("fleurs")}
@@ -323,6 +350,12 @@ export function CatalogueView({
                   Roses, gypsophile, bambou et bouquets composés — toujours
                   disponibles.
                 </p>
+                <CatalogueAlsoBrowse
+                  className="mt-4"
+                  exclude="fleurs"
+                  hideMenu={noMenuToday && !menuEditor}
+                  onSelect={setActiveTab}
+                />
               </div>
               {renderProductGrid(filteredFleurs)}
             </section>

@@ -103,6 +103,8 @@ export type SavedOrder = {
   isGift: boolean;
   gift: GiftDetails | null;
   paymentMethod: PaymentMethod;
+  /** web | whatsapp */
+  salesChannel?: "web" | "whatsapp";
   items: {
     name: string;
     quantity: number;

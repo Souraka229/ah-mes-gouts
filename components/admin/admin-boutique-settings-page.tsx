@@ -9,8 +9,16 @@ import { safeFetch } from "@/lib/api/safe-fetch";
 import { Button } from "@/components/ui/button";
 import type { BoutiqueSettings } from "@/types/boutique";
 
+type BoutiqueTextFieldKey =
+  | "siteName"
+  | "parentCompany"
+  | "phone"
+  | "address"
+  | "hours"
+  | "instagramHandle";
+
 const FIELDS: {
-  key: keyof Omit<BoutiqueSettings, "updatedAt">;
+  key: BoutiqueTextFieldKey;
   label: string;
   placeholder: string;
 }[] = [
@@ -165,7 +173,7 @@ export function AdminBoutiqueSettingsPage() {
               {field.label}
             </label>
             <input
-              value={settings[field.key]}
+              value={String(settings[field.key] ?? "")}
               onChange={(e) =>
                 setSettings({ ...settings, [field.key]: e.target.value })
               }

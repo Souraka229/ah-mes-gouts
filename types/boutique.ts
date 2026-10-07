@@ -5,6 +5,9 @@ export type BoutiqueSettings = {
   address: string;
   hours: string;
   instagramHandle: string;
+  /** false = aucune réponse auto (inbox Kapso / équipe). */
+  whatsappBotEnabled?: boolean;
+  whatsappBotPausedMessage?: string;
   updatedAt: string;
 };
 

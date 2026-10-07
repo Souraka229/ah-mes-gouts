@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       displayOrder?: number[];
       dailyStock?: number[];
       duplicateFromId?: string;
+      label?: string | null;
     };
 
     if (body.duplicateFromId) {
@@ -42,23 +43,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ menu }, { status: 201 });
     }
 
-    if (!body.date || !body.activateAt || !body.productIds?.length) {
+    if (!body.date || !body.activateAt || !Array.isArray(body.productIds)) {
       return NextResponse.json(
         { error: "date, activateAt et productIds requis" },
         { status: 400 },
       );
     }
 
+    const productIds = body.productIds;
     const displayOrder =
-      body.displayOrder ??
-      body.productIds.map((_, i) => i);
+      body.displayOrder ?? productIds.map((_, i) => i);
 
     const menu = await createMenu({
       date: body.date,
       activateAt: body.activateAt,
-      productIds: body.productIds,
+      productIds,
       displayOrder,
       dailyStock: body.dailyStock,
+      label: body.label,
     });
 
     return NextResponse.json({ menu }, { status: 201 });

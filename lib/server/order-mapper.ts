@@ -142,6 +142,7 @@ export function toPrismaOrderCreateInput(order: SavedOrder) {
     total: order.total,
     paymentMethod: toPrismaPaymentMethod(order.paymentMethod),
     paymentReference: order.paymentReference ?? null,
+    salesChannel: order.salesChannel === "whatsapp" ? "whatsapp" : "web",
     trackingToken: order.trackingToken ?? null,
     clientFirstName: order.client.firstName,
     clientLastName: order.client.lastName,
@@ -238,6 +239,8 @@ export function fromPrismaOrder(row: OrderWithItems): SavedOrder {
     paymentMethod: fromPrismaPaymentMethod(row.paymentMethod),
     paymentReference: row.paymentReference,
     trackingToken: row.trackingToken,
+    salesChannel:
+      row.salesChannel === "whatsapp" ? "whatsapp" : ("web" as const),
     items: row.items.map((item) => ({
       name: item.name,
       quantity: item.quantity,

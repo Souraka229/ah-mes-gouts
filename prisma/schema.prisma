@@ -205,6 +205,8 @@ model Order {
   total         Int
   paymentMethod PaymentMethod
   paymentReference String?
+  /// web | whatsapp — canal d’initiation du paiement (analytics / bot).
+  salesChannel  String   @default("web")
 
   /// Jeton de suivi opaque — remis une seule fois à la création.
   /// Exigé par /api/orders/[id]/tracking : ferme l'énumération de commandes.
@@ -586,10 +588,15 @@ model Menu {
   displayOrder Int[]
   /** Stock du jour par produit (aligné sur productIds) — appliqué à l'activation 20h. */
   dailyStock   Int[]      @default([])
+  /** Nom libre : « Brouillon vendredi », « Version A » — affiché dans le studio. */
+  label        String?
+  /** Suppression douce : le menu disparaît du studio mais reste en historique. */
+  archivedAt   DateTime?
   createdAt    DateTime   @default(now())
 
   @@index([status])
   @@index([activateAt])
+  @@index([archivedAt])
 }
 
 model SiteSettingsStore {
@@ -647,6 +654,111 @@ model PushSubscription {
   lastSeenAt DateTime @default(now())
 
   @@index([isActive])
+}
+
+/// Journal léger agent WhatsApp (Kapso) — cockpit admin
+model WhatsAppBotLog {
+  id             String   @id @default(cuid())
+  direction      String
+  phoneLast4     String?
+  intent         String?
+  tier           String?
+  bodyPreview    String   @db.VarChar(500)
+  replyPreview   String?  @db.VarChar(500)
+  usedLlm        Boolean  @default(false)
+  llmProvider    String?
+  kapsoMessageId String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt(sort: Desc)])
+}
+
+/// Session paiement in-chat WhatsApp (FeexPay + confirmation dans le chat).
+model WhatsAppPaySession {
+  id        String   @id @default(cuid())
+  phoneKey  String   @unique
+  state     String
+  orderId   String?
+  method    String?
+  payPhone  String?
+  reference String?
+  amount    Int?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+/// Brouillon commande WhatsApp (panier → créneau → RECUE → paiement).
+model WhatsAppOrderDraft {
+  id             String   @id @default(cuid())
+  phoneKey       String   @unique
+  state          String
+  cartJson       Json     @default("[]")
+  mode           String?
+  slotStart      String?
+  slotEnd        String?
+  firstName      String?
+  lastName       String?
+  paymentMethod  String?
+  orderId        String?
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+/// Numéro MoMo mémorisé par cliente (WhatsApp) — normalisé E.164.
+model WhatsAppSavedPayPhone {
+  id        String   @id @default(cuid())
+  phoneKey  String   @unique
+  payPhone  String
+  updatedAt DateTime @updatedAt
+}
+
+/// Jobs entrants — webhook répond 200 vite, traitement async + cron de secours.
+model WhatsAppInboundQueue {
+  id             String   @id @default(cuid())
+  kapsoMessageId String?  @unique
+  fromPhone      String
+  text           String   @db.VarChar(2000)
+  phoneNumberId  String?
+  status         String   @default("pending")
+  attempts       Int      @default(0)
+  nextAttemptAt  DateTime @default(now())
+  lastError      String?  @db.VarChar(500)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+}
+
+/// Sortants en échec / retry — évite perte de réponse + respect des limites Meta.
+model WhatsAppOutboundQueue {
+  id            String   @id @default(cuid())
+  toPhone       String
+  body          String   @db.VarChar(4096)
+  phoneNumberId String?
+  bodyHash      String
+  status        String   @default("pending")
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?  @db.VarChar(500)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([toPhone, bodyHash, createdAt])
+}
+
+/// Idempotence webhooks Kapso (`X-Idempotency-Key`)
+model WhatsAppWebhookDedup {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  eventName      String?
+  processedAt    DateTime @default(now())
 }
 
 /// Packs combinés (ex: nounours + bouquet) — prévue pour usage futur

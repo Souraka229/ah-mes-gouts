@@ -38,6 +38,16 @@ jobs:
           # Un échec doit être visible : sans ça, un paiement perdu passe inaperçu.
           test "$code" = "200"
 
+      - name: Autopilot WhatsApp (files + paiements)
+        if: always()
+        run: |
+          code=$(curl -sS -o /tmp/out.json -w "%{http_code}" --max-time 60 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.SITE_URL }}/api/cron/whatsapp-autopilot")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          test "$code" = "200"
+
       - name: Activation des menus dus
         if: always()
         run: |

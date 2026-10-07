@@ -375,7 +375,13 @@ export async function getServerOrdersForAdmin(
   const prisma = getPrisma();
   await expireAllPendingOrders();
   const rows = await prisma.order.findMany({
-    where: { createdAt: { gte: since } },
+    where: {
+      createdAt: { gte: since },
+      // WhatsApp : visible back-office seulement après paiement confirmé.
+      NOT: {
+        AND: [{ salesChannel: "whatsapp" }, { status: "RECUE" }],
+      },
+    },
     include: {
         items: { include: { options: true } },
         driver: { select: { name: true } },

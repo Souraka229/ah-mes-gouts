@@ -208,6 +208,17 @@ export async function confirmOrderPayment(
     /* non bloquant */
   });
 
+  if (confirmed.salesChannel === "whatsapp") {
+    void import("@/lib/whatsapp/payment-notify").then(({ notifyWhatsAppPaymentSuccess }) =>
+      notifyWhatsAppPaymentSuccess({
+        orderId: confirmed.id,
+        toPhone: confirmed.client.phone,
+      }),
+    ).catch(() => {
+      /* non bloquant */
+    });
+  }
+
   notifyOps(
     alertNewOrder({
       orderId: confirmed.id,

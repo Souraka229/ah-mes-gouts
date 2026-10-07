@@ -6,10 +6,12 @@ import { useState } from "react";
 import {
   Calendar,
   ChevronDown,
+  Eye,
   IceCreamCone,
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageCircle,
   Package,
   Settings,
   Sparkles,
@@ -36,7 +38,9 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/commandes", label: "Commandes", icon: Package },
   { href: "/admin/produits", label: "Produits", icon: IceCreamCone },
-  { href: "/admin/menus", label: "Menu du jour", icon: Calendar },
+  { href: "/admin/studio", label: "Studio vitrine", icon: Eye },
+  { href: "/admin/whatsapp", label: "WhatsApp", icon: MessageCircle, secondary: true },
+  { href: "/admin/menus", label: "Menu du jour", icon: Calendar, secondary: true },
   {
     href: "/admin/parametres/livraison",
     label: "Livraison",

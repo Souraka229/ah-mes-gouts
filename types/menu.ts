@@ -12,6 +12,10 @@ export type ScheduledMenu = {
   /** Stock du jour par produit (même ordre que productIds). Réinitialise le
    *  stockRemaining à l'activation du menu (20h la veille). */
   dailyStock: number[];
+  /** Nom affiché dans le studio (brouillon, version…). */
+  label?: string | null;
+  /** Menu retiré du studio (corbeille), sans effacer l'historique. */
+  archivedAt?: string | null;
   createdAt: string;
 };
 
